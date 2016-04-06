@@ -1,0 +1,97 @@
+LISKASYST
+
+podpurny informacni system pro lesni materskou skolu Listicka
+
+* GOALS
+
+** zjednodusit odhlasovani obedu / zaslani omluvenky / aktualni seznam deti na dany den / pocet obedu
+
+** usnadnit praci pri vypocitani platby na dalsi obdobi
+
+** moznost aktualizace kontaktnich udaju 
+
+
+
+* TECHNOLOGY CHOICES
+
+** open source
+** cloud
+** datomic (+conformity?)
+** mobile-first design
+** cljs (chrome+safari)
+** SSL
+** backups
+** emails
+** multilanguage (cz+en)
+** local storage for offline contacts / mobile app?
+
+
+* Data model
+
+:role/label
+:role/ident (:child :parent :assistant :admin ...)
+
+:person/roles
+:person/email
+:person/passwd
+:person/firstname
+:person/lastname
+:person/nickname
+:person/birthdate
+:person/phones
+:person/addresses
+
+:contact/label
+:contact/person
+
+:child/contacts
+:child/attendances
+:child/cancellation-dates
+
+:attendance/from
+:attendance/to
+:attendance/weekdays (:mo :tu :we :th :fr :sa :su) + :full :half :half+lunch => {:mo :half :we :half+lunch :fr :full}
+:attendance/confirmed?
+
+:price-list/from
+:price-list/to
+:price-list/lunch
+:price-list/half-day
+:price-list/one-day
+:price-list/two-days
+:price-list/three-days
+:price-list/four-days
+:price-list/five-days
+
+:settings/lunch-cancel-deadline (hours before noon)
+
+* Pages
+
+** login (email + password)
+** my info
+** for parents:
+*** my chilren
+**** attendance (this+next week)
+**** lunches
+*** my contacts
+*** my billing
+** for assistants
+*** children list / day (check-in?)
+*** find contacts
+** for admins
+*** lunch count / day
+*** billing / child
+*** edit everything...
+**** people by roles + all info & contacts
+**** attendance
+**** price list
+**** settings
+
+
+* First simplest version = admin part
+
+** create/read/update/delete data
+** cancel-attendance+lunch per child/day
+** display lunch count per day
+** display list of children per day
+** display billing info per child/month (minus previously cancelled lunches)
