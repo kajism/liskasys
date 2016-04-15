@@ -2,6 +2,51 @@ LISKASYST
 
 podpurny informacni system pro lesni materskou skolu Listicka
 
+* obědy a platby = první verze po domluvě s Dankou
+** příhlášení email+variabilní symbol
+** možnost zrušit oběd do 10:00 předchozího dne (do nastavení X hodin před polednem tj. 26 hodin)
+** zobrazit platbu na následující období (vypočítat obědy - odhlášené)
+** kontakt na ITka: Milan Vlahovič 776700724
+** přehodnocení technologií?
+*** embeded H2, bez CLJS, bez modelování
+*** čisté HTML+bootstrap (z CDN), SQL
+** data
+*** user
+**** firstname
+**** lastname
+**** email
+**** phone
+**** passwd
+**** admin?
+*** child
+**** firstname
+**** lastname
+**** variable-symbol
+*** user-child
+**** id
+**** user-id
+**** child-id
+*** attendance
+**** child-id
+**** valid-from
+**** valid-to
+**** edn
+{:full-days #{:tu :we :th :fr}
+ :half-days #{}
+ :lunch #{:tu :we :th :fr}}
+|     | none / half / full   | no lunch |
+|-----+----------------------+----------|
+| Mon | o none o half o full | [ ]      |
+| Tue | o none o half x full | [ ]      |
+| Wed | o none o half x full | [ ]      |
+| Thu | o none x half o full | [x]      |
+| Fri | o none o half x full | [ ]      |
+*** cancellation
+**** child-id
+**** date
+**** cancel-lunch?
+**** user-id
+
 * GOALS
 
 ** zjednodusit odhlasovani obedu / zaslani omluvenky / aktualni seznam deti na dany den / pocet obedu
@@ -31,12 +76,12 @@ podpurny informacni system pro lesni materskou skolu Listicka
 :role/label
 :role/ident (:child :parent :assistant :admin ...)
 
-:person/roles
-:person/email
-:person/passwd
 :person/firstname
 :person/lastname
 :person/nickname
+:person/email
+:person/roles
+:person/passwd
 :person/birthdate
 :person/phones
 :person/addresses
@@ -45,7 +90,7 @@ podpurny informacni system pro lesni materskou skolu Listicka
 :contact/person
 
 :child/contacts
-:child/attendances
+:child/attendancesp
 :child/cancellation-dates
 
 :attendance/from
