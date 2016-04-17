@@ -8,8 +8,7 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** zobrazit platbu na následující období (vypočítat obědy - odhlášené)
 ** kontakt na ITka: Milan Vlahovič 776700724
 ** přehodnocení technologií?
-*** embeded H2, bez CLJS, bez modelování
-*** čisté HTML+bootstrap (z CDN), SQL
+*** embeded H2, bez modelování
 ** data
 *** user
 **** firstname
@@ -17,6 +16,7 @@ podpurny informacni system pro lesni materskou skolu Listicka
 **** email
 **** phone
 **** passwd
+**** failed-logins
 **** admin?
 *** child
 **** firstname
