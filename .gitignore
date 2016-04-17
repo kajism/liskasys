@@ -9,3 +9,5 @@ pom.xml.asc
 /.nrepl-port
 /profiles.clj
 dev/local.clj
+*.db.trace.db
+*.db.mv.db
