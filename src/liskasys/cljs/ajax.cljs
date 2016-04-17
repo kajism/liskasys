@@ -1,7 +1,8 @@
 (ns liskasys.cljs.ajax
   (:require [ajax.core :as ajax]
             [cljs.pprint :refer [pprint]]
-            [re-frame.core :as re-frame]))
+            [re-frame.core :as re-frame]
+            [taoensso.timbre :as timbre]))
 
 (defn server-call
   ([request-msg response-msg]
@@ -12,9 +13,9 @@
    (ajax/POST "/api"
        (merge
         {:headers {;;"Accept" "application/transit+json"
-                   "x-csrf-token" (some->
-                                   (.getElementById js/document "__anti-forgery-token")
-                                   .-value)}
+                   "x-csrf-token" (timbre/spy (some->
+                                               (.getElementById js/document "__anti-forgery-token")
+                                               .-value))}
          :handler #(when response-msg (re-frame/dispatch (conj response-msg %)))
          :error-handler #(re-frame/dispatch [:set-msg :error
                                              (or (get-in % [:parse-error :original-text])

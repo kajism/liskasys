@@ -1,3 +1,7 @@
-(ns liskasys.cljc.schema)
+(ns liskasys.cljc.schema
+  (:require [schema.core :as s]))
 
-(def AppDb {})
+(def AppDb
+  {:current-page s/Keyword
+   (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
+                          (s/optional-key :info) (s/maybe s/Str)}})

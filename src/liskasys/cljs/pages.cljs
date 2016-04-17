@@ -40,14 +40,14 @@
         info-msg (re-frame/subscribe [:msg :info])
         user (re-frame/subscribe [:auth-user])]
     (fn []
-      (if-not (and @current-page @user)
-        [re-com/throbber]
-        [:div
-         [(get @pages @current-page)]
-         (when-not (str/blank? @info-msg)
-           [re-com/alert-box
-            :alert-type :info
-            :body @info-msg
-            :style {:position "absolute"}])
-         (when-not (str/blank? @error-msg)
-           [error-msg-popup "Systémová chyba" @error-msg #(re-frame/dispatch [:set-msg :error nil])])]))))
+      [:div
+       (if-not (and @current-page @user)
+         [re-com/throbber]
+         [(get @pages @current-page)])
+       (when-not (str/blank? @info-msg)
+         [re-com/alert-box
+          :alert-type :info
+          :body @info-msg
+          :style {:position "absolute"}])
+       (when-not (str/blank? @error-msg)
+         [error-msg-popup "Systémová chyba" @error-msg #(re-frame/dispatch [:set-msg :error nil])])])))

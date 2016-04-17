@@ -84,19 +84,12 @@
       [:span.icon-bar]
       [:span.icon-bar]]
      [:a {:href "#"}
-      [:img {:src "img/logo.svg" :alt "LISKASYS"}]]]
+      [:img {:src "img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
     [:div#masyst-navbar.collapse.navbar-collapse
      [:ul.nav.navbar-nav
       [:li
-       [:a {:href "#/test"} "Test"]]
-      [:li.dropdown
-       [:a.dropdown-toggle  {:data-toggle "dropdown" :href "#"} "Plc simulátor" [:span.caret]]
-       [:ul.dropdown-menu
-        [:li [:a {:href "#/plc-sim/alarms"} "Alarmy"]]]]]
+       [:a {:href "#/test"} "Test"]]]
      [:ul.nav.navbar-nav.navbar-right
-      [:li
-       [:a
-        {:href "#/users"} "Uživatelé"]]
       [:li
        [:a
         {:href "/logout"} "Odhlásit"]]]]]])
@@ -109,7 +102,6 @@
 (secretary/defroute "/test" []
   (re-frame/dispatch [:set-current-page :test]))
 
-
 (defn page-test []
   [:div
    [:h3 "Test"]])
@@ -118,15 +110,12 @@
 
 (defn main-app-area []
   (let [user (re-frame/subscribe [:auth-user])]
+    (re-frame/dispatch [:init-app])
     (fn []
-      (if-not @user
-        [re-com/throbber]
-        [:div
-         [menu @user]
-         [:div.container-fluid
-          [pages/page]]
-         [:div.container
-          [:img.img-responsive {:src "img/pata.svg" :alt "Nopova 3639/38  •  61500 Brno  •  info@maservis.cz"}]]]))))
+      [:div
+       [menu @user]
+       [:div.container-fluid
+        [pages/page]]])))
 
 (defn main []
   (hook-browser-navigation!)
