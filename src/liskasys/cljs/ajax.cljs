@@ -13,12 +13,12 @@
    (ajax/POST "/api"
        (merge
         {:headers {;;"Accept" "application/transit+json"
-                   "x-csrf-token" (timbre/spy (some->
-                                               (.getElementById js/document "__anti-forgery-token")
-                                               .-value))}
+                   "x-csrf-token" (some->
+                                   (.getElementById js/document "__anti-forgery-token")
+                                   .-value)}
          :handler #(when response-msg (re-frame/dispatch (conj response-msg %)))
          :error-handler #(re-frame/dispatch [:set-msg :error
-                                             (or (get-in % [:parse-error :original-text])
+                                             (or (get-in (timbre/spy %) [:parse-error :original-text])
                                                  "Server je nedostupný")
                                              rollback-db])
          :response-format (ajax/transit-response-format)}
