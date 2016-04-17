@@ -8,6 +8,7 @@
             [meta-merge.core :refer [meta-merge]]
             [reloaded.repl :refer [system init start stop go reset]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
+            [duct.component.ragtime :as ragtime]
             [duct.component.figwheel :as figwheel]
             [liskasys.config :as config]
             [liskasys.system :as system]))
@@ -42,6 +43,13 @@
 
 (defn cljs-repl []
   (figwheel/cljs-repl (:figwheel system)))
+
+(defn migrate []
+  (-> system :ragtime ragtime/reload ragtime/migrate))
+
+(defn rollback
+  ([]  (rollback 1))
+  ([x] (-> system :ragtime ragtime/reload (ragtime/rollback x))))
 
 (when (io/resource "local.clj")
   (load "local"))

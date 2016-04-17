@@ -14,7 +14,10 @@
                  [ring-jetty-component "0.3.1"]
                  [ring-webjars "0.1.1"]
                  [org.slf4j/slf4j-nop "1.7.14"]
-                 [org.webjars/normalize.css "3.0.2"]]
+                 [org.webjars/normalize.css "3.0.2"]
+                 [duct/hikaricp-component "0.1.0"]
+                 [com.h2database/h2 "1.4.191"]
+                 [duct/ragtime-component "0.1.3"]]
   :plugins [[lein-environ "1.0.2"]
             [lein-gen "0.2.2"]
             [lein-cljsbuild "1.1.2"]]
@@ -51,5 +54,7 @@
                    :source-paths ["dev"]
                    :repl-options {:init-ns user
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
-                   :env {:port "3000"}}
+                   :env {:dev true
+                         :port "3000"
+                         :database-url "jdbc:h2:./liskasys-dev.db"}}
    :project/test  {}})

@@ -3,6 +3,8 @@
             [com.stuartsierra.component :as component]
             [duct.component.endpoint :refer [endpoint-component]]
             [duct.component.handler :refer [handler-component]]
+            [duct.component.hikaricp :refer [hikaricp]]
+            [duct.component.ragtime :refer [ragtime]]
             [duct.middleware.not-found :refer [wrap-not-found]]
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
             [meta-merge.core :refer [meta-merge]]
@@ -18,15 +20,19 @@
                       [wrap-route-aliases :aliases]]
          :not-found  (io/resource "liskasys/errors/404.html")
          :defaults   (meta-merge site-defaults {:static {:resources "liskasys/public"}})
-         :aliases    {"/" "/index.html"}}})
+         :aliases    {"/" "/index.html"}}
+   :ragtime {:resource-path "liskasys/migrations"}})
 
 (defn new-system [config]
   (let [config (meta-merge base-config config)]
     (-> (component/system-map
          :app  (handler-component (:app config))
          :http (jetty-server (:http config))
+         :db   (hikaricp (:db config))
+         :ragtime (ragtime (:ragtime config))
          :example (endpoint-component example-endpoint))
         (component/system-using
          {:http [:app]
           :app  [:example]
-          :example []}))))
+          :ragtime [:db]
+          :example [:db]}))))
