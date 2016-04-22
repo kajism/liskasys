@@ -1,12 +1,13 @@
 (ns liskasys.cljs.core
   (:require [clojure.string :as str]
-            [liskasys.cljs.pages :as pages]
-            [liskasys.cljs.ajax :refer [server-call]]
-            [liskasys.cljs.util :as util]
             [goog.events :as events]
             [goog.history.EventType :as EventType]
-            [re-frame.core :as re-frame]
+            [liskasys.cljs.ajax :refer [server-call]]
+            [liskasys.cljs.common :as common]
+            [liskasys.cljs.pages :as pages]
+            liskasys.cljs.user
             [re-com.core :as re-com]
+            [re-frame.core :as re-frame]
             [reagent.core :as reagent]
             [reagent.ratom :as ratom]
             [secretary.core :as secretary]
@@ -27,7 +28,7 @@
 
 (re-frame/register-handler
  :load-auth-user
- util/debug-mw
+ common/debug-mw
  (fn [db [_]]
    (server-call [:user/auth {}]
                 [:set-auth-user])
@@ -35,26 +36,19 @@
 
 (re-frame/register-handler
  :set-auth-user
- util/debug-mw
+ common/debug-mw
  (fn [db [_ auth-user]]
    (assoc db :auth-user auth-user)))
 
 (re-frame/register-handler
  :set-current-page
- util/debug-mw
+ common/debug-mw
  (fn [db [_ current-page]]
    (assoc db :current-page current-page)))
 
 (re-frame/register-handler
- :test/response
- util/debug-mw
- (fn [db [_ reply]]
-   (timbre/debug "test reply" reply)
-   db))
-
-(re-frame/register-handler
  :init-app
- util/debug-mw
+ common/debug-mw
  (fn [db [_]]
    (re-frame/dispatch [:load-auth-user])
    (merge db
@@ -88,7 +82,9 @@
     [:div#masyst-navbar.collapse.navbar-collapse
      [:ul.nav.navbar-nav
       [:li
-       [:a {:href "#/test"} "Test"]]]
+       [:a {:href "#/children"} "Děti"]]
+      [:li
+       [:a {:href "#/users"} "Uživatelé"]]]
      [:ul.nav.navbar-nav.navbar-right
       [:li
        [:a
@@ -99,14 +95,6 @@
    [:h3 "LISKASYS"]])
 
 (pages/add-page :main #'page-main)
-(secretary/defroute "/test" []
-  (re-frame/dispatch [:set-current-page :test]))
-
-(defn page-test []
-  [:div
-   [:h3 "Test"]])
-
-(pages/add-page :test #'page-test)
 
 (defn main-app-area []
   (let [user (re-frame/subscribe [:auth-user])]

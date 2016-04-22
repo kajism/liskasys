@@ -1,9 +1,9 @@
 (ns liskasys.cljs.pages
   (:require [clojure.string :as str]
-            [liskasys.cljs.util :as util]
-            [reagent.ratom :as ratom]
+            [liskasys.cljs.common :as common]
             [re-com.core :as re-com]
-            [re-frame.core :as re-frame]))
+            [re-frame.core :as re-frame]
+            [reagent.ratom :as ratom]))
 
 (def pages (atom {}))
 
@@ -17,7 +17,7 @@
 
 (re-frame/register-handler
  :set-msg
- util/debug-mw
+ common/debug-mw
  (fn [db [_ kw msg rollback-db]]
    (when (and msg (= :info kw))
      (js/setTimeout #(re-frame/dispatch [:set-msg :info nil]) 2000))
