@@ -21,22 +21,16 @@
    (context "/api" {{user :user} :session}
      (POST "/" [req-msg]
        (timbre/debug req-msg)
-       (let [[msg-id ?data] req-msg]
+       (let [[msg-id ?data] req-msg
+             table-kw (keyword (namespace msg-id))
+             action (name msg-id)]
          #_(when-not (get-in user [:-rights msg-id])
              (throw (Exception. "Not authorized")))
          (response/response
-          (case msg-id
-            :user/auth {}
-
-            :user/select (jdbc-common/select db :user {})
-            :user/save (jdbc-common/save! db :user ?data)
-            :user/delete (jdbc-common/delete! db :user ?data)
-
-            :child/select (jdbc-common/select db :child {})
-            :child/save (jdbc-common/save! db :child ?data)
-            :child/delete (jdbc-common/delete! db :child ?data)
-
-            :user-child/select (jdbc-common/select db :user-child {})
-            :user-child/save (jdbc-common/save! db :user-child ?data)
-            :user-child/delete (jdbc-common/delete! db :user-child ?data)
-            (throw (Exception. (str "Unknown msg-id: " msg-id))))))))))
+          (case action
+            "select" (jdbc-common/select db table-kw {})
+            "save!" (jdbc-common/save! db table-kw ?data)
+            "delete!" (jdbc-common/delete! db table-kw ?data)
+            (case msg-id
+              :user/auth {}
+              (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))

@@ -62,6 +62,7 @@
   (let [child (re-frame/subscribe [:entity-edit :child])
         user-childs (re-frame/subscribe [:entities :user-child])
         users (re-frame/subscribe [:entities :user])
+        attendances (re-frame/subscribe [:entities :attendance])
         validation-fn #(cond-> {}
                          (str/blank? (:firstname %))
                          (assoc :firstname "Vyplňte správně jméno")
@@ -83,7 +84,9 @@
                                (util/sort-by-locale :-fullname))
               sorted-users (->> (apply dissoc @users (map :user-id child-users))
                                 vals
-                                (util/sort-by-locale :-fullname))]
+                                (util/sort-by-locale :-fullname))
+              child-attendances [{}]
+              week-days (array-map 1 "pondělí" 2 "úterý" 3 "středa" 4  "čtvrtek" 5 "pátek")]
           [re-com/v-box :gap "5px"
            :children
            [[:h3 "Dítě"]
@@ -98,29 +101,62 @@
                [:td [input-text item :child :firstname]]
                [:td [input-text item :child :var-symbol util/parse-int]]]]]
             [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :child validation-fn])]
-            [:h3 "Rodiče"]
             (when (:id item)
-              [:table
-               [:tbody
-                [:tr
-                 (doall
-                  (for [child-user child-users]
-                    ^{:key (:id child-user)}
-                    [:td
-                     [re-com/label :label (:-fullname child-user)]
-                     [buttons/delete-button #(re-frame/dispatch [:entity-delete :user-child (:id child-user)])]]))]
-                [:tr
-                 [:td
-                  [re-com/single-dropdown
-                   :model nil
-                   :on-change #(server-call [:user-child/save {:user-id % :child-id (:id item)}]
-                                            nil
-                                            [:entity-saved :user-child])
-                   :choices sorted-users
-                   :label-fn :-fullname
-                   :placeholder "Přidat rodiče..."
-                   :filter-box? true
-                   :width "250px"]]]]])
+              [re-com/v-box
+               :children
+               [[:h3 "Rodiče"]
+                [:table
+                 [:tbody
+                  [:tr
+                   (doall
+                    (for [child-user child-users]
+                      ^{:key (:id child-user)}
+                      [:td
+                       [re-com/label :label (:-fullname child-user)]
+                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :user-child (:id child-user)])]]))]
+                  [:tr
+                   [:td
+                    [re-com/single-dropdown
+                     :model nil
+                     :on-change #(server-call [:user-child/save {:user-id % :child-id (:id item)}]
+                                              nil
+                                              [:entity-saved :user-child])
+                     :choices sorted-users
+                     :label-fn :-fullname
+                     :placeholder "Přidat rodiče..."
+                     :filter-box? true
+                     :width "250px"]]]]]
+                [:h3 "Docházka"]
+                [:table
+                 [:thead
+                  [:tr
+                   [:td "Platná od - do"]
+                   (doall
+                    (for [[day-no day-label] week-days]
+                      ^{:key day-no}
+                      [:td day-label]))]]
+                 [:tbody
+                  (doall
+                   (for [att child-attendances]
+                     ^{:key (:id att)}
+                     [:tr
+                      [:td
+                       [re-com/datepicker-dropdown
+                        :model (:valid-from att)
+                        :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-from %])] -
+                       [re-com/datepicker-dropdown
+                        :model (:valid-to att)
+                        :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-to %])]]
+                      (doall
+                       (for [[day-no day-label] week-days]
+                         ^{:key day-no}
+                         [:td [re-com/single-dropdown
+                               :model 0
+                               :choices [{:id 0 :label "-"}
+                                         {:id 1 :label "celá"}
+                                         {:id 2 :label "dopo"}]
+                               :on-change #()
+                               :width "80px"]]))]))]]]])
             [:pre (with-out-str (pprint item))]]])))))
 
 (secretary/defroute "/children" []
