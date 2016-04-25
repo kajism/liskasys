@@ -2,13 +2,16 @@
   (:require [clj-brnolib.cljs.comp.buttons :as buttons]
             [clj-brnolib.cljs.comp.data-table :refer [data-table]]
             [clj-brnolib.cljs.util :as util]
+            [clj-brnolib.validation :as validation]
+            [cljs.pprint :refer [pprint]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [secretary.core :as secretary]
             [taoensso.timbre :as timbre]
-            [cljs.pprint :refer [pprint]]))
+            [reagent.core :as reagent]
+            [clojure.string :as str]))
 
 (re-frame/register-handler
  ::save
@@ -55,25 +58,44 @@
                   :none]]]]])))
 
 (defn page-user []
-  (let [user (re-frame/subscribe [:entity-edit :user])]
+  (let [user (re-frame/subscribe [:entity-edit :user])
+        validation-fn #(cond-> {}
+                         (str/blank? (:firstname %))
+                         (assoc :firstname "Vyplňte správně jméno")
+                         (str/blank? (:lastname %))
+                         (assoc :lastname "Vyplňte správně příjmení")
+                         (not (validation/valid-email? (:email %)))
+                         (assoc :email "Vyplňte správně emailovou adresu")
+                         true
+                         timbre/spy)]
     (fn []
-      (let [item @user]
+      (let [item @user
+            errors (:-errors item)]
         [re-com/v-box :gap "5px"
          :children
          [[:h3 "Uživatel"]
           [re-com/label :label "Jméno"]
           [re-com/input-text
            :model (str (:firstname item))
-           :on-change #(re-frame/dispatch [:entity-change :user (:id item) :firstname %])]
+           :on-change #(re-frame/dispatch [:entity-change :user (:id item) :firstname %])
+           :status (when (:firstname errors) :warning)
+           :status-icon? true
+           :status-tooltip (:firstname errors)]
           [re-com/label :label "Příjmení"]
           [re-com/input-text
            :model (str (:lastname item))
-           :on-change #(re-frame/dispatch [:entity-change :user (:id item) :lastname %])]
+           :on-change #(re-frame/dispatch [:entity-change :user (:id item) :lastname %])
+           :status (when (:lastname errors) :warning)
+           :status-icon? true
+           :status-tooltip (:lastname errors)]
           [re-com/label :label "Email"]
           [re-com/input-text
            :model (str (:email item))
-           :on-change #(re-frame/dispatch [:entity-change :user (:id item) :email %])]
-          [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :user])]
+           :on-change #(re-frame/dispatch [:entity-change :user (:id item) :email %])
+           :status (when (:email errors) :warning)
+           :status-icon? true
+           :status-tooltip (:email errors)]
+          [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :user validation-fn])]
           [:pre (with-out-str (pprint item))]]]))))
 
 (secretary/defroute "/users" []

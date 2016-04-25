@@ -11,7 +11,8 @@
    (s/optional-key :roles) s/Any
    (s/optional-key :failed-logins) (s/maybe s/Int)
    (s/optional-key :created) s/Inst
-   (s/optional-key :modified) s/Inst})
+   (s/optional-key :modified) s/Inst
+   (s/optional-key :-errors) {s/Keyword s/Str}})
 
 (def AppDb
   {:current-page s/Keyword

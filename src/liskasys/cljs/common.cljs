@@ -81,15 +81,18 @@
 (re-frame/register-handler
  :entity-save
  debug-mw
- (fn [db [_ kw]]
-   (let [ent (get-in db [kw (get-in db [:entity-edit kw :id])])
+ (fn [db [_ kw validation-fn]]
+   (let [id (get-in db [:entity-edit kw :id])
+         ent (get-in db [kw id])
+         errors (when validation-fn (validation-fn ent))
          file (:-file ent)]
-     (server-call [(keyword (name kw) "save") (timbre/spy
-                                               (-> ent
-                                                   util/dissoc-temp-keys))]
-                  file
-                  [:entity-saved kw]))
-   db))
+     (when (empty? errors)
+       (server-call [(keyword (name kw) "save") (timbre/spy
+                                                 (-> ent
+                                                     util/dissoc-temp-keys))]
+                    file
+                    [:entity-saved kw]))
+     (assoc-in db [kw id :-errors] errors))))
 
 (re-frame/register-handler
  :entity-saved
