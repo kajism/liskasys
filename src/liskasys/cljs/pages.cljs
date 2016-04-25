@@ -20,7 +20,7 @@
  common/debug-mw
  (fn [db [_ kw msg rollback-db]]
    (when (and msg (= :info kw))
-     (js/setTimeout #(re-frame/dispatch [:set-msg :info nil]) 2000))
+     (js/setTimeout #(re-frame/dispatch [:set-msg :info nil]) 1000))
    (let [db (or rollback-db db)]
      (assoc-in db [:msg kw] msg))))
 

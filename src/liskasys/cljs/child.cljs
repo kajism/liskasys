@@ -39,8 +39,8 @@
         [data-table
          :table-id :children
          :rows @children
-         :colls [["Jméno" :firstname]
-                 ["Příjmení" :lastname]
+         :colls [["Příjmení" :lastname]
+                 ["Jméno" :firstname]
                  ["Variabilní symbol" :var-symbol]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
@@ -90,12 +90,12 @@
             [:table
              [:tbody
               [:tr
-               [:td [re-com/label :label "Jméno"]]
                [:td [re-com/label :label "Příjmení"]]
+               [:td [re-com/label :label "Jméno"]]
                [:td [re-com/label :label "Variabilní symbol"]]]
               [:tr
-               [:td [input-text item :child :firstname]]
                [:td [input-text item :child :lastname]]
+               [:td [input-text item :child :firstname]]
                [:td [input-text item :child :var-symbol util/parse-int]]]]]
             [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :child validation-fn])]
             [:h3 "Rodiče"]
@@ -113,12 +113,13 @@
                  [:td
                   [re-com/single-dropdown
                    :model nil
-                   :choices sorted-users
-                   :label-fn :-fullname
-                   :placeholder "Přidat rodiče..."
                    :on-change #(server-call [:user-child/save {:user-id % :child-id (:id item)}]
                                             nil
                                             [:entity-saved :user-child])
+                   :choices sorted-users
+                   :label-fn :-fullname
+                   :placeholder "Přidat rodiče..."
+                   :filter-box? true
                    :width "250px"]]]]])
             [:pre (with-out-str (pprint item))]]])))))
 

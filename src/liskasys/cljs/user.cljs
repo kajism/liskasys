@@ -75,10 +75,10 @@
         [re-com/v-box :gap "5px"
          :children
          [[:h3 "Uživatel"]
-          [re-com/label :label "Jméno"]
-          [input-text item :user :firstname]
           [re-com/label :label "Příjmení"]
           [input-text item :user :lastname]
+          [re-com/label :label "Jméno"]
+          [input-text item :user :firstname]
           [re-com/label :label "Email"]
           [input-text item :user :email]
           [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :user validation-fn])]

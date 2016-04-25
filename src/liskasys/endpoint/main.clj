@@ -3,8 +3,13 @@
             [clojure.pprint :refer [pprint]]
             [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
+            liskasys.db
             [liskasys.endpoint.hiccup :as hiccup]
-            [ring.util.response :as response :refer [content-type resource-response]]
+            [ring.util.response
+             :as
+             response
+             :refer
+             [content-type resource-response]]
             [taoensso.timbre :as timbre]))
 
 (defn main-endpoint [{{db :spec} :db}]
@@ -23,8 +28,7 @@
           (case msg-id
             :user/auth {}
 
-            :user/select (map #(assoc % :-fullname (str (:lastname %) " " (:firstname %)))
-                              (jdbc-common/select db :user {}))
+            :user/select (jdbc-common/select db :user {})
             :user/save (jdbc-common/save! db :user ?data)
             :user/delete (jdbc-common/delete! db :user ?data)
 
