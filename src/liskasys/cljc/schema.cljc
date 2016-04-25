@@ -47,7 +47,7 @@
    (s/optional-key :user) {(s/maybe s/Int) (s/maybe User)}
    (s/optional-key :child) {(s/maybe s/Int) (s/maybe Child)}
    (s/optional-key :user-child) {s/Int UserChild}
-   (s/optional-key :attendance) {s/Int Attendance}
+   (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
    (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
                           (s/optional-key :info) (s/maybe s/Str)}})
 

@@ -138,25 +138,62 @@
                  [:tbody
                   (doall
                    (for [att child-attendances]
-                     ^{:key (:id att)}
+                     ^{:key (str "a" (:id att))}
                      [:tr
                       [:td
-                       [re-com/datepicker-dropdown
-                        :model (:valid-from att)
-                        :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-from %])] -
-                       [re-com/datepicker-dropdown
-                        :model (:valid-to att)
-                        :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-to %])]]
+                       [re-com/v-box :gap "5px"
+                        :children
+                        [[re-com/datepicker-dropdown
+                          :model (:valid-from att)
+                          :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-from %])]
+                         [re-com/datepicker-dropdown
+                          :model (:valid-to att)
+                          :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-to %])]]]]
                       (doall
                        (for [[day-no day-label] week-days]
                          ^{:key day-no}
-                         [:td [re-com/single-dropdown
-                               :model 0
-                               :choices [{:id 0 :label "-"}
-                                         {:id 1 :label "celá"}
-                                         {:id 2 :label "dopo"}]
-                               :on-change #()
-                               :width "80px"]]))]))]]]])
+                         [:td
+                          [re-com/v-box
+                          :children
+                           [[re-com/radio-button
+                             :model nil
+                             :value 0
+                             :label "-"
+                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-type (fn [v] (assoc v day-no %))])]
+                            [re-com/radio-button
+                             :model nil
+                             :value 2
+                             :label "půldenní"
+                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-type (fn [v] (assoc v day-no %))])]
+                            [re-com/radio-button
+                             :model nil
+                             :value 1
+                             :label "celodenní"
+                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-type (fn [v] (assoc v day-no %))])]
+                            [re-com/checkbox
+                            :label "oběd?"
+                            :model false
+                            :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-lunch? (fn [v] (assoc v day-no %))])]]
+                          ;; [re-com/h-box
+                          ;;  :children
+                          ;;  [[re-com/single-dropdown
+                          ;;    :model 0
+                          ;;    :choices [{:id 0 :label "-"}
+                          ;;              {:id 1 :label "celá"}
+                          ;;              {:id 2 :label "dopo"}]
+                          ;;    :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-type (fn [v] (assoc v day-no %))])
+                          ;;    :width "60px"]
+                          ;;   [re-com/checkbox
+                          ;;    :model false
+                          ;;    :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-lunch? (fn [v] (assoc v day-no %))])]]]
+                           ]]))
+                      [:td
+                       [re-com/button :label "Uložit" :class "btn-success"
+                        :on-click #(re-frame/dispatch [:entity-save :attendance])]
+                       #_[re-com/md-icon-button
+                        :md-icon-name "zmdi-save"
+                        :tooltip "Uložit"
+                        :on-click #(re-frame/dispatch [:entity-save :attendance])]]]))]]]])
             [:pre (with-out-str (pprint item))]]])))))
 
 (secretary/defroute "/children" []
