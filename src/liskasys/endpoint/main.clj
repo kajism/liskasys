@@ -1,5 +1,6 @@
 (ns liskasys.endpoint.main
-  (:require [clojure.pprint :refer [pprint]]
+  (:require [clj-brnolib.jdbc-common :as jdbc-common]
+            [clojure.pprint :refer [pprint]]
             [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
             [liskasys.endpoint.hiccup :as hiccup]
@@ -21,4 +22,7 @@
          (response/response
           (case msg-id
             :user/auth {}
+            :user/select (jdbc-common/select db :user {})
+            :user/save (jdbc-common/save! db :user ?data)
+            :user/delete (jdbc-common/delete! db :user ?data)
             (throw (Exception. (str "Unknown msg-id: " msg-id))))))))))
