@@ -99,7 +99,8 @@
  debug-mw
  (fn [db [_ kw new-ent]]
    (re-frame/dispatch [:set-msg :info "Záznam byl uložen"])
-   (set! js/window.location.hash (str "#/" (get @kw->url kw) "/" (:id new-ent) "e"))
+   (when (get @kw->url kw)
+     (set! js/window.location.hash (str "#/" (get @kw->url kw) "/" (:id new-ent) "e")))
    (-> db
        (assoc-in [kw (:id new-ent)] new-ent)
        (update kw #(dissoc % nil)))))

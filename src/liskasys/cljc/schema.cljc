@@ -11,6 +11,7 @@
    {(s/optional-key :id) s/Int
     (s/optional-key :firstname) s/Str
     (s/optional-key :lastname) s/Str
+    (s/optional-key :-fullname) s/Str
     (s/optional-key :email) s/Str
     (s/optional-key :phone) (s/maybe s/Str)
     (s/optional-key :passwd) (s/maybe s/Str)
@@ -24,6 +25,9 @@
           (s/optional-key :lastname) s/Str
           (s/optional-key :var-symbol) s/Int}))
 
+(def UserChild
+  {:id s/Int :user-id s/Int :child-id s/Int :created s/Inst})
+
 (def AppDb
   {:current-page s/Keyword
    (s/optional-key :auth-user) User
@@ -32,6 +36,7 @@
                                              :edit? s/Bool}}
    (s/optional-key :user) {(s/maybe s/Int) (s/maybe User)}
    (s/optional-key :child) {(s/maybe s/Int) (s/maybe Child)}
+   (s/optional-key :user-child) {s/Int UserChild}
    (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
                           (s/optional-key :info) (s/maybe s/Str)}})
 

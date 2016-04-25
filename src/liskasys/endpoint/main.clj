@@ -23,11 +23,16 @@
           (case msg-id
             :user/auth {}
 
-            :user/select (jdbc-common/select db :user {})
+            :user/select (map #(assoc % :-fullname (str (:lastname %) " " (:firstname %)))
+                              (jdbc-common/select db :user {}))
             :user/save (jdbc-common/save! db :user ?data)
             :user/delete (jdbc-common/delete! db :user ?data)
 
             :child/select (jdbc-common/select db :child {})
             :child/save (jdbc-common/save! db :child ?data)
             :child/delete (jdbc-common/delete! db :child ?data)
+
+            :user-child/select (jdbc-common/select db :user-child {})
+            :user-child/save (jdbc-common/save! db :user-child ?data)
+            :user-child/delete (jdbc-common/delete! db :user-child ?data)
             (throw (Exception. (str "Unknown msg-id: " msg-id))))))))))

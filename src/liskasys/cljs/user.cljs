@@ -38,8 +38,8 @@
         [data-table
          :table-id :users
          :rows @users
-         :colls [["Jméno" :firstname]
-                 ["Příjmení" :lastname]
+         :colls [["Příjmení" :lastname]
+                 ["Jméno" :firstname]
                  ["Email" :email]
                  ["Telefon" :phone]
                  [[re-com/md-icon-button
