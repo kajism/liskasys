@@ -1,19 +1,20 @@
 (ns liskasys.cljs.child
   (:require [clj-brnolib.cljs.comp.buttons :as buttons]
             [clj-brnolib.cljs.comp.data-table :refer [data-table]]
+            [clj-brnolib.cljs.comp.input-text :refer [input-text]]
             [clj-brnolib.cljs.util :as util]
+            [clj-brnolib.time :as time]
             [clj-brnolib.validation :as validation]
             [cljs.pprint :refer [pprint]]
+            [clojure.string :as str]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [secretary.core :as secretary]
-            [taoensso.timbre :as timbre]
             [reagent.core :as reagent]
-            [clojure.string :as str]
-            [clj-brnolib.cljs.comp.input-text :refer [input-text]]))
+            [secretary.core :as secretary]
+            [taoensso.timbre :as timbre]))
 
 (re-frame/register-handler
  ::save
@@ -71,7 +72,10 @@
                          (not (:var-symbol %))
                          (assoc :var-symbol "Vyplňte správně celočíselný variabilní symbol")
                          true
-                         timbre/spy)]
+                         timbre/spy)
+        att-validation-fn #(cond-> {}
+                             (not (:valid-from %))
+                             (assoc :valid-from "Zvolte začátek platnosti docházky"))]
     (fn []
       (if-not (and @users @user-childs)
         [re-com/throbber]
@@ -85,7 +89,10 @@
               sorted-users (->> (apply dissoc @users (map :user-id child-users))
                                 vals
                                 (util/sort-by-locale :-fullname))
-              child-attendances [{}]
+              child-attendances (->> @attendances
+                                     vals
+                                     (filter #(= (:id item) (:child-id %)))
+                                     (sort-by :valid-from))
               week-days (array-map 1 "pondělí" 2 "úterý" 3 "středa" 4  "čtvrtek" 5 "pátek")]
           [re-com/v-box :gap "5px"
            :children
@@ -113,7 +120,7 @@
                       ^{:key (:id child-user)}
                       [:td
                        [re-com/label :label (:-fullname child-user)]
-                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :user-child (:id child-user)])]]))]
+                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :user-child (:id child-user)]) :below-center]]))]
                   [:tr
                    [:td
                     [re-com/single-dropdown
@@ -127,73 +134,62 @@
                      :filter-box? true
                      :width "250px"]]]]]
                 [:h3 "Docházka"]
-                [:table
+                [re-com/button :label "Nová"
+                 :on-click #(re-frame/dispatch [:entity-new :attendance {:child-id (:id item)}])]
+                [:table.table.tree-table.table-hover.table-striped
                  [:thead
                   [:tr
-                   [:td "Platná od - do"]
                    (doall
                     (for [[day-no day-label] week-days]
                       ^{:key day-no}
-                      [:td day-label]))]]
+                      [:td day-label]))
+                   [:td "Platná od - do"]]]
                  [:tbody
                   (doall
                    (for [att child-attendances]
                      ^{:key (str "a" (:id att))}
                      [:tr
-                      [:td
-                       [re-com/v-box :gap "5px"
-                        :children
-                        [[re-com/datepicker-dropdown
-                          :model (:valid-from att)
-                          :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-from %])]
-                         [re-com/datepicker-dropdown
-                          :model (:valid-to att)
-                          :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-to %])]]]]
                       (doall
                        (for [[day-no day-label] week-days]
                          ^{:key day-no}
                          [:td
                           [re-com/v-box
-                          :children
+                           :children
                            [[re-com/radio-button
-                             :model nil
-                             :value 0
+                             :model (get-in att [:days day-no :type])
+                             :value nil
                              :label "-"
-                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-type (fn [v] (assoc v day-no %))])]
+                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :days (fn [v] (assoc v day-no {:type nil
+                                                                                                                                 :lunch? false}))])]
                             [re-com/radio-button
-                             :model nil
+                             :model (get-in att [:days day-no :type])
                              :value 2
                              :label "půldenní"
-                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-type (fn [v] (assoc v day-no %))])]
+                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :days (fn [v] (assoc-in v [day-no :type] 2))])]
                             [re-com/radio-button
-                             :model nil
+                             :model (get-in att [:days day-no :type])
                              :value 1
                              :label "celodenní"
-                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-type (fn [v] (assoc v day-no %))])]
+                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :days (fn [v] (assoc v day-no {:type 1
+                                                                                                                                 :lunch? true}))])]
                             [re-com/checkbox
-                            :label "oběd?"
-                            :model false
-                            :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-lunch? (fn [v] (assoc v day-no %))])]]
-                          ;; [re-com/h-box
-                          ;;  :children
-                          ;;  [[re-com/single-dropdown
-                          ;;    :model 0
-                          ;;    :choices [{:id 0 :label "-"}
-                          ;;              {:id 1 :label "celá"}
-                          ;;              {:id 2 :label "dopo"}]
-                          ;;    :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-type (fn [v] (assoc v day-no %))])
-                          ;;    :width "60px"]
-                          ;;   [re-com/checkbox
-                          ;;    :model false
-                          ;;    :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :-lunch? (fn [v] (assoc v day-no %))])]]]
-                           ]]))
+                             :label "oběd?"
+                             :model (get-in att [:days day-no :lunch?])
+                             :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :days (fn [v] (assoc-in v [day-no :lunch?] %))])]]]]))
+                      [:td
+                       [re-com/v-box :gap "5px"
+                        :children
+                        [[re-com/datepicker-dropdown
+                          :model (time/from-date (:valid-from att))
+                          :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-from (time/to-date %)])
+                          :format "dd.MM.yyyy"]
+                         [re-com/datepicker-dropdown
+                          :model (time/from-date (:valid-to att))
+                          :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-to (time/to-date %)])
+                          :format "dd.MM.yyyy"]]]]
                       [:td
                        [re-com/button :label "Uložit" :class "btn-success"
-                        :on-click #(re-frame/dispatch [:entity-save :attendance])]
-                       #_[re-com/md-icon-button
-                        :md-icon-name "zmdi-save"
-                        :tooltip "Uložit"
-                        :on-click #(re-frame/dispatch [:entity-save :attendance])]]]))]]]])
+                        :on-click #(re-frame/dispatch [:entity-save :attendance att-validation-fn (:id att)])]]]))]]]])
             [:pre (with-out-str (pprint item))]]])))))
 
 (secretary/defroute "/children" []
@@ -205,4 +201,3 @@
   (re-frame/dispatch [:set-current-page :child]))
 (pages/add-page :child #'page-child)
 (common/add-kw-url :child "child")
-

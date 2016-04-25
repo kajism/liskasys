@@ -55,3 +55,6 @@
   (load "local"))
 
 (reloaded.repl/set-init! new-system)
+
+(defn db-spec []
+  (-> system :db :spec))

@@ -29,8 +29,8 @@
          (response/response
           (case action
             "select" (jdbc-common/select db table-kw {})
-            "save!" (jdbc-common/save! db table-kw ?data)
-            "delete!" (jdbc-common/delete! db table-kw ?data)
+            "save" (jdbc-common/save! db table-kw ?data)
+            "delete" (jdbc-common/delete! db table-kw ?data)
             (case msg-id
               :user/auth {}
               (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))

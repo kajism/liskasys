@@ -4,7 +4,7 @@
 (def CommonAttrs
   {(s/optional-key :created) s/Inst
    (s/optional-key :modified) s/Inst
-   (s/optional-key :-errors) {s/Keyword s/Str}})
+   (s/optional-key :-errors) (s/maybe {s/Keyword  s/Str})})
 
 (def User
   (merge
@@ -35,8 +35,10 @@
    CommonAttrs
    {(s/optional-key :id) s/Int
     (s/optional-key :valid-from) s/Inst
-    (s/optional-key :valid-to) s/Inst
-    :child-id s/Int}))
+    (s/optional-key :valid-to) (s/maybe s/Inst)
+    :child-id s/Int
+    (s/optional-key :days) {s/Int {:type (s/maybe s/Int)
+                                   (s/optional-key :lunch?) s/Bool}}}))
 
 (def AppDb
   {:current-page s/Keyword
