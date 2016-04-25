@@ -1,18 +1,28 @@
 (ns liskasys.cljc.schema
   (:require [schema.core :as s]))
 
-(def User
-  {(s/optional-key :id) s/Int
-   (s/optional-key :firstname) s/Str
-   (s/optional-key :lastname) s/Str
-   (s/optional-key :email) s/Str
-   (s/optional-key :phone) (s/maybe s/Str)
-   (s/optional-key :passwd) (s/maybe s/Str)
-   (s/optional-key :roles) s/Any
-   (s/optional-key :failed-logins) (s/maybe s/Int)
-   (s/optional-key :created) s/Inst
+(def CommonAttrs
+  {(s/optional-key :created) s/Inst
    (s/optional-key :modified) s/Inst
    (s/optional-key :-errors) {s/Keyword s/Str}})
+
+(def User
+  (merge CommonAttrs
+   {(s/optional-key :id) s/Int
+    (s/optional-key :firstname) s/Str
+    (s/optional-key :lastname) s/Str
+    (s/optional-key :email) s/Str
+    (s/optional-key :phone) (s/maybe s/Str)
+    (s/optional-key :passwd) (s/maybe s/Str)
+    (s/optional-key :roles) s/Any
+    (s/optional-key :failed-logins) (s/maybe s/Int)}))
+
+(def Child
+  (merge CommonAttrs
+         {(s/optional-key :id) s/Int
+          (s/optional-key :firstname) s/Str
+          (s/optional-key :lastname) s/Str
+          (s/optional-key :var-symbol) s/Int}))
 
 (def AppDb
   {:current-page s/Keyword
@@ -21,6 +31,7 @@
    (s/optional-key :entity-edit) {s/Keyword {:id (s/maybe s/Int)
                                              :edit? s/Bool}}
    (s/optional-key :user) {(s/maybe s/Int) (s/maybe User)}
+   (s/optional-key :child) {(s/maybe s/Int) (s/maybe Child)}
    (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
                           (s/optional-key :info) (s/maybe s/Str)}})
 

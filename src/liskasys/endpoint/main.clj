@@ -22,7 +22,12 @@
          (response/response
           (case msg-id
             :user/auth {}
+
             :user/select (jdbc-common/select db :user {})
             :user/save (jdbc-common/save! db :user ?data)
             :user/delete (jdbc-common/delete! db :user ?data)
+
+            :child/select (jdbc-common/select db :child {})
+            :child/save (jdbc-common/save! db :child ?data)
+            :child/delete (jdbc-common/delete! db :child ?data)
             (throw (Exception. (str "Unknown msg-id: " msg-id))))))))))

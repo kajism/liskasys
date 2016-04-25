@@ -6,6 +6,7 @@
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
             liskasys.cljs.user
+            liskasys.cljs.child
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
