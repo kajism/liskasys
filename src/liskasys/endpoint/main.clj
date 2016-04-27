@@ -1,25 +1,26 @@
 (ns liskasys.endpoint.main
-  (:require [clj-brnolib.jdbc-common :as jdbc-common]
+  (:require [clj-brnolib.hiccup :as hiccup]
+            [clj-brnolib.jdbc-common :as jdbc-common]
             [clojure.pprint :refer [pprint]]
             [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
             liskasys.db
-            [liskasys.endpoint.hiccup :as hiccup]
-            [ring.util.response
-             :as
-             response
-             :refer
-             [content-type resource-response]]
+            [liskasys.endpoint.main-hiccup :as main-hiccup]
+            [ring.util.response :as response :refer [content-type resource-response]]
             [taoensso.timbre :as timbre]))
 
 (defn main-endpoint [{{db :spec} :db}]
   (routes
    (context "" []
-     (GET "/" []
-       (hiccup/cljs-landing-page)))
+     (GET "/" {:keys [params]}
+       (main-hiccup/cancellation-form params))
+     (POST "/" {:keys [params]}
+       (main-hiccup/cancellation-form params)))
 
-   (context "/api" {{user :user} :session}
-     (POST "/" [req-msg]
+   (context "/sprava" {{user :user} :session}
+     (GET "/" []
+       (hiccup/cljs-landing-page "Načítám LiškaSys ..."))
+     (POST "/api" [req-msg]
        (timbre/debug req-msg)
        (let [[msg-id ?data] req-msg
              table-kw (keyword (namespace msg-id))

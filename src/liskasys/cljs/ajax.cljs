@@ -10,7 +10,7 @@
   ([request-msg file response-msg]
    (server-call request-msg file response-msg nil))
   ([request-msg file response-msg rollback-db]
-   (ajax/POST "/api"
+   (ajax/POST "/sprava/api"
        (merge
         {:headers {;;"Accept" "application/transit+json"
                    "x-csrf-token" (some->
