@@ -80,7 +80,7 @@
       [:span.icon-bar]
       [:span.icon-bar]]
      [:a {:href "#"}
-      [:img {:src "img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
+      [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
     [:div#masyst-navbar.collapse.navbar-collapse
      [:ul.nav.navbar-nav
       [:li
@@ -90,6 +90,8 @@
      [:ul.nav.navbar-nav.navbar-right
       [:li
        [:a {:href "#/users"} "Uživatelé"]]
+      [:li
+       [:a {:href "#/price-list"} "Ceník"]]
       #_[:li
        [:a
         {:href "/logout"} "Odhlásit"]]]]]])

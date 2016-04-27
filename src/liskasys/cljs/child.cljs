@@ -5,6 +5,7 @@
             [clj-brnolib.cljs.util :as util]
             [clj-brnolib.time :as time]
             [clj-brnolib.validation :as validation]
+            [cljs-time.core :as cljs-time]
             [cljs.pprint :refer [pprint]]
             [clojure.string :as str]
             [liskasys.cljs.ajax :refer [server-call]]
@@ -179,20 +180,22 @@
                       [:td
                        [re-com/v-box :gap "5px"
                         :children
-                        [[re-com/datepicker-dropdown
-                          :model (time/from-date (:valid-from att))
-                          :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-from (time/to-date %)])
-                          :format "dd.MM.yyyy"
-                          :show-today? true]
-                         [re-com/datepicker-dropdown
-                          :model (time/from-date (:valid-to att))
-                          :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-to (time/to-date %)])
-                          :format "dd.MM.yyyy"
-                          :show-today? true]]]]
+                        [[:div (when (get-in att [:-errors :valid-from]) {:style {:background-color "#f57c00"}})
+                          [re-com/datepicker-dropdown
+                                :model (time/from-date (:valid-from att))
+                                :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-from (time/to-date %)])
+                                :format "dd.MM.yyyy"
+                                :show-today? true
+                           :selectable-fn (fn [date] (#{1 2 3 4 5} (cljs-time/day-of-week date)))]]
+                         [:div
+                          [re-com/datepicker-dropdown
+                           :model (time/from-date (:valid-to att))
+                           :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-to (time/to-date %)])
+                           :format "dd.MM.yyyy"
+                           :show-today? true]]]]]
                       [:td
                        [re-com/button :label "Uložit" :class "btn-success"
-                        :on-click #(re-frame/dispatch [:entity-save :attendance att-validation-fn (:id att)])]]]))]]]])
-            [:pre (with-out-str (pprint item))]]])))))
+                        :on-click #(re-frame/dispatch [:entity-save :attendance att-validation-fn (:id att)])]]]))]]]])]])))))
 
 (secretary/defroute "/children" []
   (re-frame/dispatch [:set-current-page :children]))

@@ -85,8 +85,7 @@
                      :on-change #(re-frame/dispatch [:entity-change :cancellation (:id item) :date (time/to-date %)])
                      :format "dd.MM.yyyy"
                      :show-today? true]]]]]
-            [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :cancellation validation-fn])]
-            [:pre (with-out-str (pprint item))]]])))))
+            [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :cancellation validation-fn])]]])))))
 
 (secretary/defroute "/cancellations" []
   (re-frame/dispatch [:set-current-page :cancellations]))

@@ -19,7 +19,7 @@
 
    (context "/sprava" {{user :user} :session}
      (GET "/" []
-       (hiccup/cljs-landing-page "Načítám LiškaSys ..."))
+       (hiccup/cljs-landing-page main-hiccup/system-title))
      (POST "/api" [req-msg]
        (timbre/debug req-msg)
        (let [[msg-id ?data] req-msg

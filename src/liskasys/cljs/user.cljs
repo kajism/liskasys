@@ -67,8 +67,9 @@
           [input-text item :user :firstname]
           [re-com/label :label "Email"]
           [input-text item :user :email]
-          [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :user validation-fn])]
-          [:pre (with-out-str (pprint item))]]]))))
+          [re-com/label :label "Telefon"]
+          [input-text item :user :phone]
+          [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :user validation-fn])]]]))))
 
 (secretary/defroute "/users" []
   (re-frame/dispatch [:set-current-page :users]))

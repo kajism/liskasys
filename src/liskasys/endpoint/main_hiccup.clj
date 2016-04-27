@@ -5,9 +5,11 @@
             [clojure.pprint :refer [pprint]])
   (:import java.util.Date))
 
+(def system-title "LiškaSys")
+
 (defn cancellation-form [{:keys [user-email var-symbol from to] :as params}]
   (hiccup/hiccup-response
-   (hiccup/hiccup-frame
+   (hiccup/hiccup-frame system-title
     (let [from (or (time/from-format from time/ddMMyyyy)
                    (time/to-date (clj-time/plus (clj-time/now) (clj-time/days 1))))
           to (time/from-format to time/ddMMyyyy)]
