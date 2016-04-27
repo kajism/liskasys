@@ -14,20 +14,6 @@
             [clojure.string :as str]
             [clj-brnolib.cljs.comp.input-text :refer [input-text]]))
 
-(re-frame/register-handler
- ::save
- common/debug-mw
- (fn [db [_ reply]]
-   (timbre/debug "test reply" reply)
-   db))
-
-(re-frame/register-handler
- ::saved
- common/debug-mw
- (fn [db [_ reply]]
-   (timbre/debug "saved" reply)
-   db))
-
 (defn page-users []
   (let [users (re-frame/subscribe [:entities :user])]
     (fn []

@@ -5,8 +5,9 @@
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
-            liskasys.cljs.user
+            liskasys.cljs.cancellation
             liskasys.cljs.child
+            liskasys.cljs.user
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
@@ -85,9 +86,11 @@
       [:li
        [:a {:href "#/children"} "Děti"]]
       [:li
-       [:a {:href "#/users"} "Uživatelé"]]]
+       [:a {:href "#/cancellations"} "Omluvenky"]]]
      [:ul.nav.navbar-nav.navbar-right
       [:li
+       [:a {:href "#/users"} "Uživatelé"]]
+      #_[:li
        [:a
         {:href "/logout"} "Odhlásit"]]]]]])
 

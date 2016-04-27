@@ -2,15 +2,15 @@
   (:require [schema.core :as s]))
 
 (def CommonAttrs
-  {(s/optional-key :created) s/Inst
+  {(s/optional-key :id) s/Int
+   (s/optional-key :created) s/Inst
    (s/optional-key :modified) s/Inst
    (s/optional-key :-errors) (s/maybe {s/Keyword  s/Str})})
 
 (def User
   (merge
    CommonAttrs
-   {(s/optional-key :id) s/Int
-    (s/optional-key :firstname) s/Str
+   {(s/optional-key :firstname) s/Str
     (s/optional-key :lastname) s/Str
     (s/optional-key :-fullname) s/Str
     (s/optional-key :email) s/Str
@@ -22,9 +22,9 @@
 (def Child
   (merge
    CommonAttrs
-   {(s/optional-key :id) s/Int
-    (s/optional-key :firstname) s/Str
+   {(s/optional-key :firstname) s/Str
     (s/optional-key :lastname) s/Str
+    (s/optional-key :-fullname) s/Str
     (s/optional-key :var-symbol) s/Int}))
 
 (def UserChild
@@ -33,12 +33,22 @@
 (def Attendance
   (merge
    CommonAttrs
-   {(s/optional-key :id) s/Int
-    (s/optional-key :valid-from) s/Inst
+   {(s/optional-key :valid-from) s/Inst
     (s/optional-key :valid-to) (s/maybe s/Inst)
     :child-id s/Int
     (s/optional-key :days) {s/Int {:type (s/maybe s/Int)
                                    (s/optional-key :lunch?) s/Bool}}}))
+
+(def Cancellation
+  (merge
+   CommonAttrs
+   {(s/optional-key :date) s/Inst
+    (s/optional-key :child-id) s/Int
+    (s/optional-key :-child-fullname) s/Str
+    (s/optional-key :attendance-day-id) s/Int
+    (s/optional-key :user-id) s/Int
+    (s/optional-key :-user-fullname) s/Str
+    (s/optional-key :lunch-cancelled?) s/Bool}))
 
 (def AppDb
   {:current-page s/Keyword
@@ -46,10 +56,11 @@
    (s/optional-key :table-states) s/Any
    (s/optional-key :entity-edit) {s/Keyword {:id (s/maybe s/Int)
                                              :edit? s/Bool}}
+   (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
+                          (s/optional-key :info) (s/maybe s/Str)}
    (s/optional-key :user) {(s/maybe s/Int) (s/maybe User)}
    (s/optional-key :child) {(s/maybe s/Int) (s/maybe Child)}
    (s/optional-key :user-child) {s/Int UserChild}
    (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
-   (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
-                          (s/optional-key :info) (s/maybe s/Str)}})
+   (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}})
 
