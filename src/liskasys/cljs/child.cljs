@@ -182,11 +182,13 @@
                         [[re-com/datepicker-dropdown
                           :model (time/from-date (:valid-from att))
                           :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-from (time/to-date %)])
-                          :format "dd.MM.yyyy"]
+                          :format "dd.MM.yyyy"
+                          :show-today? true]
                          [re-com/datepicker-dropdown
                           :model (time/from-date (:valid-to att))
                           :on-change #(re-frame/dispatch [:entity-change :attendance (:id att) :valid-to (time/to-date %)])
-                          :format "dd.MM.yyyy"]]]]
+                          :format "dd.MM.yyyy"
+                          :show-today? true]]]]
                       [:td
                        [re-com/button :label "Uložit" :class "btn-success"
                         :on-click #(re-frame/dispatch [:entity-save :attendance att-validation-fn (:id att)])]]]))]]]])

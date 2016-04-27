@@ -28,7 +28,7 @@
          :colls [["Datum" :date]
                  ["Dítě" :-child-fullname]
                  ["Včetně oběda?" :lunch-cancelled?]
-                 ["Kdy a kdo" #(str (time/to-format (:date %) time/ddMMyyyyHHmm) ", " (:-user-fullname %))]
+                 ["Kdy a kdo" #(str (time/to-format (:created %) time/ddMMyyyyHHmm) ", " (:-user-fullname %))]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -83,7 +83,8 @@
                [:td [re-com/datepicker-dropdown
                      :model (time/from-date (:date item))
                      :on-change #(re-frame/dispatch [:entity-change :cancellation (:id item) :date (time/to-date %)])
-                     :format "dd.MM.yyyy"]]]]]
+                     :format "dd.MM.yyyy"
+                     :show-today? true]]]]]
             [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :cancellation validation-fn])]
             [:pre (with-out-str (pprint item))]]])))))
 
