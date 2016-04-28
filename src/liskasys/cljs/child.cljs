@@ -32,39 +32,44 @@
    db))
 
 (defn page-children []
-  (let [children (re-frame/subscribe [:entities :child])]
+  (let [children (re-frame/subscribe [:entities :child])
+        lunch-types (re-frame/subscribe [:entities :lunch-type])]
     (fn []
-      [re-com/v-box
-       :children
-       [[:h3 "Děti"]
-        [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/child/e")]
-        [data-table
-         :table-id :children
-         :rows @children
-         :colls [["Příjmení" :lastname]
-                 ["Jméno" :firstname]
-                 ["Variabilní symbol" :var-symbol]
-                 [[re-com/md-icon-button
-                   :md-icon-name "zmdi-refresh"
-                   :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :child])]
-                  (fn [row]
-                    [re-com/h-box
-                     :gap "5px"
-                     :children
-                     [[re-com/hyperlink-href
-                       :href (str "#/child/" (:id row) "e")
-                       :label [re-com/md-icon-button
-                               :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :child (:id row)])]]])
-                  :none]]]]])))
+      (if-not (and @children @lunch-types)
+        [re-com/throbber]
+        [re-com/v-box
+         :children
+         [[:h3 "Děti"]
+          [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/child/e")]
+          [data-table
+           :table-id :children
+           :rows @children
+           :colls [["Příjmení" :lastname]
+                   ["Jméno" :firstname]
+                   ["Variabilní symbol" :var-symbol]
+                   ["Dieta" #(:label (get @lunch-types (:lunch-type-id %)))]
+                   [[re-com/md-icon-button
+                     :md-icon-name "zmdi-refresh"
+                     :tooltip "Přenačíst ze serveru"
+                     :on-click #(re-frame/dispatch [:entities-load :child])]
+                    (fn [row]
+                      [re-com/h-box
+                       :gap "5px"
+                       :children
+                       [[re-com/hyperlink-href
+                         :href (str "#/child/" (:id row) "e")
+                         :label [re-com/md-icon-button
+                                 :md-icon-name "zmdi-edit"
+                                 :tooltip "Editovat"]]
+                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :child (:id row)])]]])
+                    :none]]]]]))))
 
 (defn page-child []
   (let [child (re-frame/subscribe [:entity-edit :child])
         user-childs (re-frame/subscribe [:entities :user-child])
         users (re-frame/subscribe [:entities :user])
         attendances (re-frame/subscribe [:entities :attendance])
+        lunch-types (re-frame/subscribe [:entities :lunch-type])
         validation-fn #(cond-> {}
                          (str/blank? (:firstname %))
                          (assoc :firstname "Vyplňte správně jméno")
@@ -78,7 +83,7 @@
                              (not (:valid-from %))
                              (assoc :valid-from "Zvolte začátek platnosti docházky"))]
     (fn []
-      (if-not (and @users @user-childs)
+      (if-not (and @users @user-childs @attendances @lunch-types)
         [re-com/throbber]
         (let [item @child
               errors (:-errors item)
@@ -102,13 +107,27 @@
              [:tbody
               [:tr
                [:td [re-com/label :label "Příjmení"]]
-               [:td [re-com/label :label "Jméno"]]
-               [:td [re-com/label :label "Variabilní symbol"]]]
+               [:td [re-com/label :label "Jméno"]]]
               [:tr
                [:td [input-text item :child :lastname]]
-               [:td [input-text item :child :firstname]]
-               [:td [input-text item :child :var-symbol util/parse-int]]]]]
-            [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :child validation-fn])]
+               [:td [input-text item :child :firstname]]]
+              [:tr
+               [:td [re-com/label :label "Variabilní symbol"]]
+               [:td [re-com/label :label "Dieta"]]]
+              [:tr
+               [:td [input-text item :child :var-symbol util/parse-int]]
+               [:td [re-com/single-dropdown
+                     :model (:lunch-type-id item)
+                     :on-change #(re-frame/dispatch [:entity-change :child (:id item) :lunch-type-id %])
+                     :choices (conj (util/sort-by-locale :label (vals @lunch-types)) {:id nil :label "běžná"})
+                     :placeholder "běžná"
+                     :width "250px"]]]]]
+            [re-com/h-box :align :center :gap "5px"
+             :children
+             [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :child validation-fn])]
+              "nebo"
+              [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/child/e")]
+              [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/children")]]]
             (when (:id item)
               [re-com/v-box
                :children

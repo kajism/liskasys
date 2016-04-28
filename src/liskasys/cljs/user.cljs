@@ -69,7 +69,12 @@
           [input-text item :user :email]
           [re-com/label :label "Telefon"]
           [input-text item :user :phone]
-          [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :user validation-fn])]]]))))
+          [re-com/h-box :align :center :gap "5px"
+           :children
+           [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :user validation-fn])]
+            "nebo"
+            [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/user/e")]
+            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/users")]]]]]))))
 
 (secretary/defroute "/users" []
   (re-frame/dispatch [:set-current-page :users]))

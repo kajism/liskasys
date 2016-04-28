@@ -7,6 +7,11 @@
    (s/optional-key :modified) s/Inst
    (s/optional-key :-errors) (s/maybe {s/Keyword  s/Str})})
 
+(def Label
+  {(s/optional-key :id) s/Int
+   (s/optional-key :label) s/Str
+   (s/optional-key :-errors) (s/maybe {s/Keyword  s/Str})})
+
 (def User
   (merge
    CommonAttrs
@@ -25,7 +30,8 @@
    {(s/optional-key :firstname) s/Str
     (s/optional-key :lastname) s/Str
     (s/optional-key :-fullname) s/Str
-    (s/optional-key :var-symbol) s/Int}))
+    (s/optional-key :var-symbol) s/Int
+    (s/optional-key :lunch-type-id) (s/maybe s/Int)}))
 
 (def UserChild
   {:id s/Int :user-id s/Int :child-id s/Int :created s/Inst})
@@ -62,5 +68,6 @@
    (s/optional-key :child) {(s/maybe s/Int) (s/maybe Child)}
    (s/optional-key :user-child) {s/Int UserChild}
    (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
-   (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}})
+   (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}
+   (s/optional-key :lunch-type) {(s/maybe s/Int) Label}})
 

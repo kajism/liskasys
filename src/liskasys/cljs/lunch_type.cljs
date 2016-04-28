@@ -19,8 +19,8 @@
     (fn []
       [re-com/v-box
        :children
-       [[:h3 "Druhy obědů"]
-        [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/lunch-type/e")]
+       [[:h3 "Dieta"]
+        [re-com/hyperlink-href :label [re-com/button :label "Nová"] :href (str "#/lunch-type/e")]
         [data-table
          :table-id :lunch-types
          :rows @lunch-types
@@ -53,10 +53,15 @@
             errors (:-errors item)]
         [re-com/v-box :gap "5px"
          :children
-         [[:h3 "Druh oběda"]
+         [[:h3 "Diety"]
           [re-com/label :label "Název"]
           [input-text item :lunch-type :label]
-          [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :lunch-type validation-fn])]]]))))
+          [re-com/h-box :align :center :gap "5px"
+           :children
+           [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :lunch-type validation-fn])]
+            "nebo"
+            [re-com/hyperlink-href :label [re-com/button :label "Nová"] :href (str "#/lunch-type/e")]
+            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-types")]]]]]))))
 
 (secretary/defroute "/lunch-types" []
   (re-frame/dispatch [:set-current-page :lunch-types]))

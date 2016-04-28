@@ -98,7 +98,7 @@
         [:li
          [:a {:href "#/price-lists"} "Ceník"]]
         [:li
-         [:a {:href "#/lunch-types"} "Druhy obědů"]]]]
+         [:a {:href "#/lunch-types"} "Diety"]]]]
       #_[:li
        [:a
         {:href "/logout"} "Odhlásit"]]]]]])
@@ -116,7 +116,9 @@
       [:div
        [menu @user]
        [:div.container-fluid
-        [pages/page]]])))
+        [pages/page]
+        [:br]
+        [:br]]])))
 
 (defn main []
   (hook-browser-navigation!)

@@ -11,6 +11,10 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** TODO u ditete volba typ obeda - zluty normalni, vege zeleny, bez laktozy modry, bez obeda cerveny
 ** TODO pristup pro kucharku s poctem obedu (normalni, vege, bez laktozy ...)
 ** TODO aktualni den - seznam deti a obedu + barvy
+* bugs
+** TODO opravit zadavani datumu platnosti dochazky - nastavi o den mene
+** DONE prepnuti poctu radku na stranku datatable
+CLOSED: [2016-04-28 Thu 17:32]
 
 * TODOs
 ** TODO omluvenkovy formular vypsat dny dochazky na nasledujici 2 tydny a umoznit rusit
@@ -21,7 +25,7 @@ podpurny informacni system pro lesni materskou skolu Listicka
 *** pocet odhlasenych obedu
 ** TODO validace a ukládání omluvenkového formuláře
 
-** TODO opravit zadavani datumu platnosti dochazky - nastavi o den mene
+** TODO export dat do csv
 ** TODO přihlašování do admin části
 ** TODO počet obědů na následující den/dny
 ** TODO CRUD cenik
@@ -30,7 +34,8 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** TODO SSL
 ** TODO možnost změnit heslo
 ** TODO omezení počtu chybných přihlášení (+ reset)
-
+** TODO odchytávání DB constraint exceptions
+** TODO DB indexy
 * obědy a platby = první verze po domluvě s Dankou
 ** příhlášení email+variabilní symbol
 ** možnost zrušit oběd do 10:00 předchozího dne (do nastavení X hodin před polednem tj. 26 hodin)
