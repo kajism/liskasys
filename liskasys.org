@@ -4,16 +4,29 @@ podpurny informacni system pro lesni materskou skolu Listicka
 
 * dotazy Danka
 ** lidé - příjmeni jméno nebo jméno příjmení
-** jak funguje obědávání počtu obědů
+** jak funguje objednávání počtu obědů
 ** doména sys.listicka.org
 ** zadání/import dat - uživatelé, děti + docházka
+** sobotni akce
+
 
 * TODOs
+** TODO omluvenkovy formular vypsat dny dochazky na nasledujici 2 tydny a umoznit rusit
+*** radky s checkboxy pro jednotlive dny
+*** netreba zadavat datumy
+*** prihlasovani
+*** zobrazeni existujicich omluvenek (a zda byl odhlasen obed)
+*** pocet odhlasenych obedu
+** TODO validace a ukládání omluvenkového formuláře
+
+** TODO opravit zadavani datumu platnosti dochazky - nastavi o den mene
 ** TODO přihlašování do admin části
 ** TODO počet obědů na následující den/dny
-** TODO jednodušší zadání datumu v omluvenkovém formuláři
 ** TODO CRUD cenik
 ** TODO výpočet platby na příští období (ceník + odhlášené obědy)
+** TODO zálohování DB
+** TODO možnost změnit heslo
+** TODO omezení počtu chybných přihlášení (+ reset)
 
 * obědy a platby = první verze po domluvě s Dankou
 ** příhlášení email+variabilní symbol
