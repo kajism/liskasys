@@ -70,6 +70,7 @@ CREATE TABLE "cancellation" (
 "id" BIGINT IDENTITY,
 "child-id" BIGINT NOT NULL,
 "date" DATE NOT NULL,
+"substitution-date" DATE,
 "attendance-day-id" BIGINT NOT NULL,
 "lunch-cancelled?" BOOLEAN NOT NULL,
 "user-id" BIGINT NOT NULL,
@@ -81,18 +82,6 @@ ALTER TABLE "cancellation" ADD CONSTRAINT "fk-cancellation-to-child"
   FOREIGN KEY ("child-id") REFERENCES "child" ("id");
 ALTER TABLE "cancellation" ADD CONSTRAINT "fk-cancellation-to-attendance-day"
   FOREIGN KEY ("attendance-day-id") REFERENCES "attendance-day" ("id");
-
-CREATE TABLE "substitution" (
-"id" BIGINT IDENTITY,
-"cancellation-id" BIGINT NOT NULL,
-"date" DATE NOT NULL,
-"user-id" BIGINT NOT NULL,
-"created" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP());
-
-ALTER TABLE "substitution" ADD CONSTRAINT "fk-substitution-to-cancellation"
-  FOREIGN KEY ("cancellation-id") REFERENCES "cancellation" ("id");
-ALTER TABLE "substitution" ADD CONSTRAINT "fk-substitution-to-user"
-  FOREIGN KEY ("user-id") REFERENCES "user" ("id");
 
 CREATE TABLE "price-list" (
 "id" BIGINT IDENTITY,
