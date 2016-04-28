@@ -3,12 +3,14 @@ LISKASYST
 podpurny informacni system pro lesni materskou skolu Listicka
 
 * dotazy Danka
-** lidé - příjmeni jméno nebo jméno příjmení
-** jak funguje objednávání počtu obědů
-** doména sys.listicka.org
-** zadání/import dat - uživatelé, děti + docházka
-** sobotni akce
-
+** jak funguje objednávání počtu obědů => kucharka se podiva
+** doména sys.listicka.org => Vlahovič
+** zadání/import dat - uživatelé, děti + docházka => xls
+* připomínky Danka
+** TODO moznost zadat nahradu pro Danku - datum, dite, obed?
+** TODO u ditete volba typ obeda - zluty normalni, vege zeleny, bez laktozy modry, bez obeda cerveny
+** TODO pristup pro kucharku s poctem obedu (normalni, vege, bez laktozy ...)
+** TODO aktualni den - seznam deti a obedu + barvy
 
 * TODOs
 ** TODO omluvenkovy formular vypsat dny dochazky na nasledujici 2 tydny a umoznit rusit
@@ -25,6 +27,7 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** TODO CRUD cenik
 ** TODO výpočet platby na příští období (ceník + odhlášené obědy)
 ** TODO zálohování DB
+** TODO SSL
 ** TODO možnost změnit heslo
 ** TODO omezení počtu chybných přihlášení (+ reset)
 
@@ -32,7 +35,7 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** příhlášení email+variabilní symbol
 ** možnost zrušit oběd do 10:00 předchozího dne (do nastavení X hodin před polednem tj. 26 hodin)
 ** zobrazit platbu na následující období (vypočítat obědy - odhlášené)
-** kontakt na ITka: Milan Vlahovič 776700724
+** kontakt na ITka: Milan Vlahovič 776700724 flexa@flexa.cz
 ** přehodnocení technologií?
 *** embeded H2, bez modelování
 ** data
@@ -87,7 +90,7 @@ podpurny informacni system pro lesni materskou skolu Listicka
 
 ** open source
 ** cloud
-** datomic (+conformity?)
+** h2database
 ** mobile-first design
 ** cljs (chrome+safari)
 ** SSL
@@ -96,45 +99,6 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** multilanguage (cz+en)
 ** local storage for offline contacts / mobile app?
 
-
-* Data model
-
-:role/label
-:role/ident (:child :parent :assistant :admin ...)
-
-:person/firstname
-:person/lastname
-:person/nickname
-:person/email
-:person/roles
-:person/passwd
-:person/birthdate
-:person/phones
-:person/addresses
-
-:contact/label
-:contact/person
-
-:child/contacts
-:child/attendancesp
-:child/cancellation-dates
-
-:attendance/from
-:attendance/to
-:attendance/weekdays (:mo :tu :we :th :fr :sa :su) + :full :half :half+lunch => {:mo :half :we :half+lunch :fr :full}
-:attendance/confirmed?
-
-:price-list/from
-:price-list/to
-:price-list/lunch
-:price-list/half-day
-:price-list/one-day
-:price-list/two-days
-:price-list/three-days
-:price-list/four-days
-:price-list/five-days
-
-:settings/lunch-cancel-deadline (hours before noon)
 
 * Pages
 

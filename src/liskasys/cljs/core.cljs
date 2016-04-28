@@ -7,6 +7,7 @@
             [liskasys.cljs.pages :as pages]
             liskasys.cljs.cancellation
             liskasys.cljs.child
+            liskasys.cljs.lunch-type
             liskasys.cljs.user
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
@@ -88,10 +89,16 @@
       [:li
        [:a {:href "#/cancellations"} "Omluvenky"]]]
      [:ul.nav.navbar-nav.navbar-right
-      [:li
-       [:a {:href "#/users"} "Uživatelé"]]
-      [:li
-       [:a {:href "#/price-list"} "Ceník"]]
+      [:li.dropdown
+       [:a.dropdown-toggle {:data-toggle "dropdown" :href "#"}
+        "Nastavení" [:span.caret]]
+       [:ul.dropdown-menu
+        [:li
+         [:a {:href "#/users"} "Uživatelé"]]
+        [:li
+         [:a {:href "#/price-lists"} "Ceník"]]
+        [:li
+         [:a {:href "#/lunch-types"} "Druhy obědů"]]]]
       #_[:li
        [:a
         {:href "/logout"} "Odhlásit"]]]]]])
