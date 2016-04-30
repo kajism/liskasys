@@ -11,13 +11,26 @@
 
 (defn main-endpoint [{{db :spec} :db}]
   (routes
-   (context "" []
+   (context "" {{user :user} :session}
      (GET "/" {:keys [params]}
        (main-hiccup/cancellation-form params))
      (POST "/" {:keys [params]}
-       (main-hiccup/cancellation-form params)))
+       (main-hiccup/cancellation-form params))
 
-   (context "/sprava" {{user :user} :session}
+     (GET "/login" [] (hiccup/login-page main-hiccup/system-title))
+     (POST "/login" [user-name pwd :as req]
+       (try
+         (when-let [user (jdbc-common/select db :user {:email user-name})]
+           ;;TODO check pwd
+           (-> (response/redirect "/" :see-other)
+               (assoc-in [:session :user] user)))
+         (catch Exception e
+           (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
+     (GET "/logout" []
+       (-> (response/redirect "/" :see-other)
+           (assoc :session {}))))
+
+   (context "/admin.app" {{user :user} :session}
      (GET "/" []
        (hiccup/cljs-landing-page main-hiccup/system-title))
      (POST "/api" [req-msg]

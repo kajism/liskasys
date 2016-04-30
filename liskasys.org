@@ -17,6 +17,7 @@ podpurny informacni system pro lesni materskou skolu Listicka
 CLOSED: [2016-04-28 Thu 17:32]
 
 * TODOs
+** TODO přihlašování
 ** TODO omluvenkovy formular vypsat dny dochazky na nasledujici 2 tydny a umoznit rusit
 *** radky s checkboxy pro jednotlive dny
 *** netreba zadavat datumy
@@ -24,18 +25,16 @@ CLOSED: [2016-04-28 Thu 17:32]
 *** zobrazeni existujicich omluvenek (a zda byl odhlasen obed)
 *** pocet odhlasenych obedu
 ** TODO validace a ukládání omluvenkového formuláře
-
-** TODO export dat do csv
-** TODO přihlašování do admin části
 ** TODO počet obědů na následující den/dny
-** TODO CRUD cenik
-** TODO výpočet platby na příští období (ceník + odhlášené obědy)
-** TODO zálohování DB
-** TODO SSL
+** TODO DB indexy
+** TODO odchytávání DB constraint exceptions
 ** TODO možnost změnit heslo
 ** TODO omezení počtu chybných přihlášení (+ reset)
-** TODO odchytávání DB constraint exceptions
-** TODO DB indexy
+** TODO zálohování DB
+** TODO SSL
+** TODO CRUD cenik
+** TODO výpočet platby na příští období (ceník + odhlášené obědy)
+** TODO export dat do csv
 * obědy a platby = první verze po domluvě s Dankou
 ** příhlášení email+variabilní symbol
 ** možnost zrušit oběd do 10:00 předchozího dne (do nastavení X hodin před polednem tj. 26 hodin)
