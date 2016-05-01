@@ -33,7 +33,9 @@
    (context "" {{user :user} :session}
      (GET "/" {:keys [params]}
        (timbre/debug "GET /")
-       (main-hiccup/cancellation-page db-spec user params))
+       (if-not (or (:-children-count user) ((:-roles user) "admin"))
+         (response/redirect "/obedy")
+         (main-hiccup/cancellation-page db-spec user params)))
 
      (GET "/obedy" {:keys [params]}
        (timbre/debug "GET /obedy")
@@ -72,7 +74,8 @@
                              (select-keys [:id :-fullname])
                              (assoc :-roles (->> (str/split (str (:roles user)) #",")
                                                  (map str/trim)
-                                                 set))))))
+                                                 set))
+                             (assoc :-children-count (count (jdbc-common/select db-spec :user-child {:user-id (:id user)})))))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 

@@ -1,11 +1,13 @@
 (ns liskasys.endpoint.main-hiccup
   (:require [clj-brnolib.hiccup :as hiccup]
+            [clj-brnolib.jdbc-common :as jdbc-common]
             [clj-brnolib.time :as time]
             [clj-time.core :as clj-time]
             [clojure.pprint :refer [pprint]]
             [liskasys.db :as db]
             [taoensso.timbre :as timbre])
-  (:import java.util.Date))
+  (:import [java.util Date Locale]
+           [java.text Collator]))
 
 (def system-title "LiškaSys")
 
@@ -25,8 +27,9 @@
          [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
        [:div#liskasys-navbar.collapse.navbar-collapse
         [:ul.nav.navbar-nav
-         [:li
-          [:a {:href "/"} "Omluvenky"]]
+         (when (:-children-count user)
+           [:li
+            [:a {:href "/"} "Omluvenky"]])
          (when (or ((:-roles user) "admin")
                    ((:-roles user) "obedy"))
            [:li
@@ -85,9 +88,58 @@
                 (pprint user)
                 (pprint params))]])))
 
+(def cs-collator (Collator/getInstance (Locale. "CS")))
+
+(defn- list-of-kids
+  [user atts]
+  (when ((:-roles user) "admin")
+    (for [name (->> atts
+                    (map :-fullname)
+                    (sort cs-collator))]
+      [:div name])))
+
 (defn lunches [db-spec user params]
   (liskasys-frame
    user
-   (let [_ 1]
+   (let [days (iterate (fn [date]
+                         (clj-time/plus date (clj-time/days 1)))
+                       (clj-time/today))
+         work-days (keep (fn [date]
+                           (when (<= (clj-time/day-of-week date) 5)
+                             date))
+                         days)
+         lunch-types (jdbc-common/select db-spec :lunch-type {})]
      [:div.container
-      [:h3 "Obědy"]])))
+      [:h3 "Obědy"]
+      [:table.table.table-striped
+       [:thead
+        [:tr
+         [:th "Den / Dieta:"]
+         [:th "&Sigma; obědů"]
+         [:th {:style "background-color: LemonChiffon"} "běžná"]
+         (for [lunch-type lunch-types]
+           [:th {:style (str "background-color: " (:color lunch-type))}
+            (:label lunch-type)])
+         [:th {:style "background-color: Tomato"} "bez obědu"]
+         [:th "&Sigma; dětí"]]]
+       [:tbody
+        (for [date (->> work-days
+                        (take 2))
+              :let [day-of-week (clj-time/day-of-week date)
+                    atts (db/select-attendance-day db-spec (time/to-date date) day-of-week)
+                    atts-with-lunch (filter #(:lunch? %) atts)
+                    atts-by-lunch-type (group-by (comp :lunch-type-id) atts-with-lunch)]]
+          [:tr
+           [:td (get time/week-days day-of-week) " " (-> date time/to-date (time/to-format time/dMyyyy))]
+           [:td (count atts-with-lunch)]
+           [:td
+            (count (atts-by-lunch-type nil))
+            (list-of-kids user (atts-by-lunch-type nil))]
+           (for [lunch-type lunch-types]
+             [:td
+              (count (atts-by-lunch-type (:id lunch-type)))
+              (list-of-kids user (atts-by-lunch-type (:id lunch-type)))])
+           [:td
+            (- (count atts) (count atts-with-lunch))
+            (list-of-kids user (remove #(:lunch? %) atts))]
+           [:td (count atts)]])]]])))

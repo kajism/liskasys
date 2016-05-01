@@ -81,7 +81,7 @@
    (jdbc/query db-spec [(jdbc-common/esc
                          "SELECT * FROM :attendance-day AS ad"
                          " LEFT JOIN :attendance AS att ON (ad.:attendance-id = att.:id)"
-                         " WHERE att.:child-id=?"
+                         " WHERE att.:child-id = ?"
                          "  AND (att.:valid-from IS NULL OR att.:valid-from <= ?)"
                          "  AND (att.:valid-to IS NULL OR att.:valid-to >= ?)")
                         child-id date date]
@@ -89,8 +89,19 @@
    (map (juxt :day-of-week identity))
    (into {})))
 
-(defn select-attendance-day [db-spec child-id date day-of-week]
-  (get (select-attendance-days db-spec child-id date) day-of-week))
+(defn select-attendance-day
+  ([db-spec date day-of-week]
+   (map assoc-fullname
+        (jdbc/query db-spec [(jdbc-common/esc
+                              "SELECT ad.:lunch?, ad.:full-day?, ch.:firstname, ch.:lastname, ch.:lunch-type-id FROM :attendance-day AS ad"
+                              " LEFT JOIN :attendance AS att ON (ad.:attendance-id = att.:id)"
+                              " LEFT JOIN :child AS ch ON (att.:child-id = ch.:id)"
+                              " WHERE ad.:day-of-week = ?"
+                              "  AND (att.:valid-from IS NULL OR att.:valid-from <= ?)"
+                              "  AND (att.:valid-to IS NULL OR att.:valid-to >= ?)")
+                             day-of-week date date])))
+  ([db-spec child-id date day-of-week]
+   (get (select-attendance-days db-spec child-id date) day-of-week)))
 
 (def lunch-storno-limit-utc-hour 8)
 
@@ -127,4 +138,3 @@
                              " FROM :child AS ch"
                              " LEFT JOIN :user-child AS uch ON (ch.:id = uch.:child-id)"
                              " WHERE uch.:user-id = ?") user-id])))
-
