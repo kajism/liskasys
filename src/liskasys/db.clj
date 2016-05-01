@@ -42,7 +42,7 @@
         (jdbc-common/save! db-spec :attendance-day {:attendance-id (:id ent)
                                                     :day-of-week day
                                                     :full-day? (= (:type day-spec) 1)
-                                                    :lunch? (:lunch? day-spec)})))
+                                                    :lunch? (boolean (:lunch? day-spec))})))
     (first (jdbc-common/select db-spec table-kw {:id (:id ent)}))))
 
 (defmethod jdbc-common/select :cancellation

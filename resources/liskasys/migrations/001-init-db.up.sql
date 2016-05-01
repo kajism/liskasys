@@ -60,7 +60,7 @@ CREATE TABLE "attendance-day" (
 "attendance-id" BIGINT NOT NULL,
 "day-of-week" TINYINT NOT NULL, -- 1 = Monday ... 5 = Friday
 "full-day?" BOOLEAN NOT NULL,
-"lunch?" BOOLEAN NOT NULL);
+"lunch?" BOOLEAN NOT NULL DEFAULT false);
 
 ALTER TABLE "attendance-day" ADD CONSTRAINT "fk-attendance-day-to-attendance"
   FOREIGN KEY ("attendance-id") REFERENCES "attendance" ("id")
