@@ -4,7 +4,8 @@
             [clojure.pprint :refer [pprint]]
             [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
-            liskasys.db
+            [crypto.password.scrypt :as scrypt]
+            [liskasys.db :as db]
             [liskasys.endpoint.main-hiccup :as main-hiccup]
             [ring.util.response :as response :refer [content-type resource-response]]
             [taoensso.timbre :as timbre]
@@ -20,24 +21,24 @@
                               (time/from-format % time/ddMMyyyy)))
            set))))
 
-(defn main-endpoint [{{db :spec} :db}]
+(defn main-endpoint [{{db-spec :spec} :db}]
   (routes
    (context "" {{user :user} :session}
      (GET "/" {:keys [params]}
        (timbre/debug "GET /")
-       (main-hiccup/cancellation-form db user params))
+       (main-hiccup/cancellation-form db-spec user params))
      (POST "/" {:keys [params]}
        (timbre/debug "POST /")
        (let [cancel-dates (make-date-sets (:cancel-dates params))
              already-cancelled-dates (make-date-sets (:already-cancelled-dates params))]
          (doseq [cancel-date cancel-dates
                  :when (not (contains? already-cancelled-dates cancel-date))]
-           (jdbc-common/save! db :cancellation {:child-id (:child-id params)
+           (jdbc-common/save! db-spec :cancellation {:child-id (:child-id params)
                                                 :user-id (:id user)
                                                 :date cancel-date}))
          (doseq [cancelled-date already-cancelled-dates
                  :when (not (contains? cancel-dates cancelled-date))]
-           (jdbc-common/delete! db :cancellation {:child-id (:child-id params)
+           (jdbc-common/delete! db-spec :cancellation {:child-id (:child-id params)
                                                   :date cancelled-date}))
          (response/redirect "")
          #_(main-hiccup/cancellation-form db user params)))
@@ -48,8 +49,13 @@
      (POST "/login" [user-name pwd :as req]
        (timbre/debug "POST /login")
        (try
-         (when-let [user (first (jdbc-common/select db :user {:email user-name}))]
-           ;;TODO check pwd
+         (let [user (first (jdbc-common/select db-spec :user {:email user-name}))]
+           (when-not (and user (if (:passwd user)
+                                 (scrypt/check pwd (:passwd user))
+                                 (->> (db/select-children-by-user-id db-spec (:id user))
+                                      (filter #(= pwd (str (:var-symbol %))))
+                                      not-empty)))
+             (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (-> (response/redirect "/" :see-other)
                (assoc-in [:session :user] (select-keys user [:id :-fullname]))))
          (catch Exception e
@@ -72,9 +78,9 @@
              (throw (Exception. "Not authorized")))
          (response/response
           (case action
-            "select" (jdbc-common/select db table-kw {})
-            "save" (jdbc-common/save! db table-kw ?data)
-            "delete" (jdbc-common/delete! db table-kw {:id ?data})
+            "select" (jdbc-common/select db-spec table-kw {})
+            "save" (jdbc-common/save! db-spec table-kw ?data)
+            "delete" (jdbc-common/delete! db-spec table-kw {:id ?data})
             (case msg-id
               :user/auth {}
               (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))
