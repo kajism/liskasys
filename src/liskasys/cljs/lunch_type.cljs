@@ -25,6 +25,7 @@
          :table-id :lunch-types
          :rows @lunch-types
          :colls [["Název" :label]
+                 ["Barva" :color]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -56,6 +57,8 @@
          [[:h3 "Diety"]
           [re-com/label :label "Název"]
           [input-text item :lunch-type :label]
+          [re-com/label :label "Barva"]
+          [input-text item :lunch-type :color]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :lunch-type validation-fn])]
