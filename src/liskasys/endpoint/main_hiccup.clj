@@ -27,7 +27,7 @@
          [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
        [:div#liskasys-navbar.collapse.navbar-collapse
         [:ul.nav.navbar-nav
-         (when (:-children-count user)
+         (when (pos? (:-children-count user))
            [:li
             [:a {:href "/"} "Omluvenky"]])
          (when (or ((:-roles user) "admin")

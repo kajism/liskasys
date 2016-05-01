@@ -33,7 +33,7 @@
    (context "" {{user :user} :session}
      (GET "/" {:keys [params]}
        (timbre/debug "GET /")
-       (if-not (or (:-children-count user) ((:-roles user) "admin"))
+       (if-not (or (pos? (:-children-count user)) ((:-roles user) "admin"))
          (response/redirect "/obedy")
          (main-hiccup/cancellation-page db-spec user params)))
 

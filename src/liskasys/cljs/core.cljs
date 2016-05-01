@@ -105,7 +105,7 @@
 
 (defn page-main []
   [:div
-   [:h3 "LISKASYS"]])
+   [:h3 "LiškaSys"]])
 
 (pages/add-page :main #'page-main)
 
