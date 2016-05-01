@@ -49,7 +49,7 @@
                 (when (:lunch-cancelled? cancellation)
                   " včetně oběda")]]])]]]
         #_(anti-forgery/anti-forgery-field)
-        [:button.btn.btn-success {:type "submit"} "Uložit"]]
+        [:button.btn.btn-danger {:type "submit"} "Uložit"]]
        #_[:pre (with-out-str
                (pprint user)
                (pprint params))]]))))

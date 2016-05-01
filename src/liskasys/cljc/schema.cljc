@@ -54,6 +54,7 @@
     (s/optional-key :attendance-day-id) s/Int
     (s/optional-key :user-id) s/Int
     (s/optional-key :-user-fullname) s/Str
+    (s/optional-key :substitution-date) (s/maybe s/Inst)
     (s/optional-key :lunch-cancelled?) s/Bool}))
 
 (def AppDb
