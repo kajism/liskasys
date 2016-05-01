@@ -28,7 +28,7 @@
          :colls [["Datum" :date]
                  ["Dítě" :-child-fullname]
                  ["Včetně oběda?" :lunch-cancelled?]
-                 ["Kdy a kdo" #(str (time/to-format (:created %) time/ddMMyyyyHHmm) ", " (:-user-fullname %))]
+                 ["Zadáno" #(str (time/to-format (:created %) time/ddMMyyyyHHmm) ", " (:-user-fullname %))]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -37,7 +37,7 @@
                     [re-com/h-box
                      :gap "5px"
                      :children
-                     [[re-com/hyperlink-href
+                     [#_[re-com/hyperlink-href
                        :href (str "#/cancellation/" (:id row) "e")
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
