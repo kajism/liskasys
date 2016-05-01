@@ -3,9 +3,8 @@
             [clj-brnolib.jdbc-common :as jdbc-common]
             [clj-brnolib.time :as time]
             [clj-time.core :as clj-time]
-            [clojure.pprint :refer [pprint]]
             [clojure.set :as set]
-            [compojure.coercions :refer [as-int]]
+            [clojure.string :as str]
             [compojure.core :refer :all]
             [crypto.password.scrypt :as scrypt]
             [liskasys.db :as db]
@@ -21,6 +20,13 @@
            (map #(truss/have! (fn [d] (.before yesterday d))
                               (time/from-format % time/ddMMyyyy)))
            set))))
+
+(defn- check-password [db-spec user pwd]
+  (if (:passwd user)
+    (scrypt/check pwd (:passwd user))
+    (->> (db/select-children-by-user-id db-spec (:id user))
+         (filter #(= pwd (str (:var-symbol %))))
+         not-empty)))
 
 (defn main-endpoint [{{db-spec :spec} :db}]
   (routes
@@ -51,11 +57,7 @@
        (timbre/debug "POST /login")
        (try
          (let [user (first (jdbc-common/select db-spec :user {:email user-name}))]
-           (when-not (and user (if (:passwd user)
-                                 (scrypt/check pwd (:passwd user))
-                                 (->> (db/select-children-by-user-id db-spec (:id user))
-                                      (filter #(= pwd (str (:var-symbol %))))
-                                      not-empty)))
+           (when-not (and user (check-password db-spec user pwd))
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (-> (response/redirect "/" :see-other)
                (assoc-in [:session :user] (select-keys user [:id :-fullname :roles]))))
@@ -65,7 +67,26 @@
      (GET "/logout" []
        (timbre/debug "GET /logout")
        (-> (response/redirect "/" :see-other)
-           (assoc :session {}))))
+           (assoc :session {})))
+
+     (GET "/passwd" []
+       (timbre/debug "GET /passwd")
+       (hiccup/passwd-page main-hiccup/system-title))
+
+     (POST "/passwd" [old-pwd new-pwd new-pwd2]
+       (timbre/debug "POST /passwd")
+       (try
+         (let [user (first (jdbc-common/select db-spec :user {:id (:id user)}))]
+           (when-not (check-password db-spec user old-pwd)
+             (throw (Exception. "Chybně zadané původní heslo.")))
+           (when-not (= new-pwd new-pwd2)
+             (throw (Exception. "Zadaná hesla se neshodují.")))
+           (when (or (str/blank? new-pwd) (< (count (str/trim new-pwd)) 6))
+             (throw (Exception. "Nové heslo je příliš krátké.")))
+           (jdbc-common/save! db-spec :user {:id (:id user) :passwd (scrypt/encrypt new-pwd)})
+           (-> (response/redirect "/" :see-other)))
+         (catch Exception e
+           (hiccup/passwd-page main-hiccup/system-title (.getMessage (timbre/spy e)))))))
 
    (context "/admin.app" {{user :user} :session}
      (GET "/" []

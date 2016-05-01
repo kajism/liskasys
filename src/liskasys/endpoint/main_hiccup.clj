@@ -22,7 +22,9 @@
                :role "form"}
         [:div.form-group
          [:label "Uživatel"]
-         [:div (:-fullname user) " " [:a {:href "/logout"} "odhlásit se"]]]
+         [:div (:-fullname user)
+          " / " [:a {:href "/passwd"} "změnit heslo"]
+          " / " [:a {:href "/logout"} "odhlásit se"]]]
         [:div.form-group
          [:label {:for "child"} "Dítě"]
          [:select#child.form-control {:name "child-id"}
@@ -53,3 +55,4 @@
        #_[:pre (with-out-str
                (pprint user)
                (pprint params))]]))))
+
