@@ -9,11 +9,13 @@
             [duct.component.ragtime :refer [ragtime]]
             [duct.middleware.not-found :refer [wrap-not-found]]
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
+            [environ.core :refer [env]]
             [liskasys.endpoint.main :refer [main-endpoint]]
             [meta-merge.core :refer [meta-merge]]
             [ring.component.jetty :refer [jetty-server]]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.middleware.format :refer [wrap-restful-format]]
+            [ring.middleware.session.cookie :as cookie]
             [ring.middleware.webjars :refer [wrap-webjars]]
             [ring.util.response :as response]))
 
@@ -27,8 +29,10 @@
                       [wrap-route-aliases :aliases]]
          :api-routes-pattern #"/api"
          :not-found  (io/resource "liskasys/errors/404.html")
-         :defaults   (meta-merge site-defaults {:static {:resources "liskasys/public"}
-                                                :security {:anti-forgery false}})
+         :defaults   (meta-merge site-defaults (cond-> {:static {:resources "liskasys/public"}
+                                                        :security {:anti-forgery false}}
+                                                 (:dev env)
+                                                 (assoc :session {:store (cookie/cookie-store {:key "StursovaListicka"})})))
          :aliases    {}}
    :ragtime {:resource-path "liskasys/migrations"}})
 

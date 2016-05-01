@@ -4,7 +4,10 @@
             [clj-brnolib.tools :as tools]
             clj-time.coerce
             [clj-time.core :as clj-time]
-            [clojure.java.jdbc :as jdbc]))
+            [clojure.java.jdbc :as jdbc]
+            [taoensso.truss :as truss]
+            [taoensso.timbre :as timbre])
+  (:import java.util.Date))
 
 (defn assoc-fullname [person]
   (assoc person :-fullname (str (:lastname person) " " (:firstname person))))
@@ -33,8 +36,7 @@
   [db-spec table-kw ent]
   (let [days (:days ent)
         ent (jdbc-common/save!-default db-spec table-kw (dissoc ent :days))]
-    (jdbc/delete! db-spec (jdbc-common/esc :attendance-day)
-                  ["\"attendance-id\" = ?" (:id ent)])
+    (jdbc-common/delete! db-spec :attendance-day {:attendance-id (:id ent)})
     (doseq [[day day-spec] days]
       (when (:type day-spec)
         (jdbc-common/save! db-spec :attendance-day {:attendance-id (:id ent)
@@ -45,13 +47,15 @@
 
 (defmethod jdbc-common/select :cancellation
   [db-spec table-kw where-m]
+  (timbre/debug "Selecting cancellations where" where-m)
   (->>
    (jdbc/query db-spec (into [(jdbc-common/esc
                                (str "SELECT c.*, u.:lastname :uln, u.:firstname :ufn, ch.:lastname chln, ch.:firstname chfn"
                                     " FROM :cancellation AS c"
                                     " LEFT JOIN :user AS u ON (c.:user-id = u.:id)"
                                     " LEFT JOIN :child AS ch ON (c.:child-id = ch.:id)"
-                                    (jdbc-common/where where-m)))]
+                                    (when-let [w (jdbc-common/where "c" where-m)]
+                                      (str " WHERE " w))))]
                              (flatten (vals where-m))))
    (map (fn [row]
           (-> row
@@ -73,24 +77,53 @@
 
 (def lunch-storno-limit-hour 10)
 
-(defn- select-attendance-day [db-spec child-id date day-of-week]
+(defn select-attendance-days [db-spec child-id date]
+  (timbre/debug "Selecting attendance days for child-id" child-id " at " date)
   (->>
    (jdbc/query db-spec [(str "SELECT * FROM " (jdbc-common/esc :attendance-day) " AS ad"
                              " LEFT JOIN " (jdbc-common/esc :attendance) " AS att ON (ad.\"attendance-id\" = att.\"id\")"
                              " WHERE att.\"child-id\"=?"
                              "  AND (att.\"valid-from\" IS NULL OR att.\"valid-from\" < ?)"
                              "  AND (att.\"valid-to\" IS NULL OR att.\"valid-to\" > ?)")
-                        child-id date date]);; TODO (esc ":att.id ...")
-   (tools/ffilter #(= day-of-week (:day-of-week %))))) ;;TODO put this into SELECT
+                        child-id date date];; TODO (esc ":att.id ...")
+               )
+   (map (juxt :day-of-week identity))
+   (into {})))
+
+(defn select-attendance-day [db-spec child-id date day-of-week]
+  (get (select-attendance-days db-spec child-id date) day-of-week))
+
+(defn select-next-attendance-weeks [db-spec child-id weeks]
+  (timbre/debug "Selecting next attendance weeks for child-id" child-id)
+  (let [today (clj-time/today)]
+    (->> (range 14)
+         (keep
+          #(let [clj-date (clj-time/plus today (clj-time/days %))
+                 date (time/to-date clj-date)
+                 att (select-attendance-day db-spec child-id
+                                            date
+                                            (clj-time/day-of-week clj-date))
+                 cancellation (first (jdbc-common/select db-spec :cancellation {:child-id child-id :date date}))]
+             (when att
+               [date (assoc att :cancellation cancellation)])))
+         (into {}))))
 
 (defmethod jdbc-common/save! :cancellation
   [db-spec table-kw ent]
-  (let [user-id (:id (first (jdbc-common/select db-spec :user {}))) ;;TODO logged in user
-        date (time/from-date (:date ent))
+  {:pre [(truss/have? number? (:user-id ent))]}
+  (let [date (time/from-date (:date ent))
         day-of-week (clj-time/day-of-week date)
         att-day (select-attendance-day db-spec (:child-id ent) (:date ent) day-of-week)]
     (jdbc-common/save!-default db-spec table-kw (merge ent
-                                                       {:attendance-day-id (:id att-day)
+                                                       {:attendance-day-id (truss/have! number? (:id att-day))
                                                         :lunch-cancelled? (and (:lunch? att-day)
-                                                                               (can-cancel-lunch? date lunch-storno-limit-hour))
-                                                        :user-id user-id}))))
+                                                                               (can-cancel-lunch? date lunch-storno-limit-hour))}))))
+
+(defn select-children-by-user-id [db-spec user-id]
+  (map assoc-fullname
+       (jdbc/query db-spec [(jdbc-common/esc
+                             "SELECT ch.*"
+                             " FROM :child AS ch"
+                             " LEFT JOIN :user-child AS uch ON (ch.:id = uch.:child-id)"
+                             " WHERE uch.:user-id = ?") user-id])))
+

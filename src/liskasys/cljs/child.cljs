@@ -98,8 +98,7 @@
               child-attendances (->> @attendances
                                      vals
                                      (filter #(= (:id item) (:child-id %)))
-                                     (sort-by :valid-from))
-              week-days (array-map 1 "pondělí" 2 "úterý" 3 "středa" 4  "čtvrtek" 5 "pátek")]
+                                     (sort-by :valid-from))]
           [re-com/v-box :gap "5px"
            :children
            [[:h3 "Dítě"]
@@ -160,7 +159,7 @@
                  [:thead
                   [:tr
                    (doall
-                    (for [[day-no day-label] week-days]
+                    (for [[day-no day-label] time/week-days]
                       ^{:key day-no}
                       [:td day-label]))
                    [:td "Platná od - do"]]]
@@ -170,7 +169,7 @@
                      ^{:key (str "a" (:id att))}
                      [:tr
                       (doall
-                       (for [[day-no day-label] week-days]
+                       (for [[day-no day-label] time/week-days]
                          ^{:key day-no}
                          [:td
                           [re-com/v-box
