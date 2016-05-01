@@ -7,9 +7,10 @@
    (s/optional-key :modified) s/Inst
    (s/optional-key :-errors) (s/maybe {s/Keyword  s/Str})})
 
-(def Label
+(def LunchType
   {(s/optional-key :id) s/Int
    (s/optional-key :label) s/Str
+   (s/optional-key :color) s/Str
    (s/optional-key :-errors) (s/maybe {s/Keyword  s/Str})})
 
 (def User
@@ -70,5 +71,5 @@
    (s/optional-key :user-child) {s/Int UserChild}
    (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
    (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}
-   (s/optional-key :lunch-type) {(s/maybe s/Int) Label}})
+   (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}})
 

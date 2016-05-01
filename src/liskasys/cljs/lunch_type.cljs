@@ -46,7 +46,9 @@
   (let [lunch-type (re-frame/subscribe [:entity-edit :lunch-type])
         validation-fn #(cond-> {}
                          (str/blank? (:label %))
-                         (assoc :firstname "Vyplňte název")
+                         (assoc :label "Vyplňte název")
+                         (str/blank? (:color %))
+                         (assoc :color "Vyplňte barvu")
                          true
                          timbre/spy)]
     (fn []
