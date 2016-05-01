@@ -115,7 +115,9 @@
     (jdbc-common/save!-default db-spec table-kw (merge ent
                                                        {:attendance-day-id (truss/have! number? (:id att-day))
                                                         :lunch-cancelled? (and (:lunch? att-day)
-                                                                               (can-cancel-lunch? clj-date lunch-storno-limit-utc-hour))}))))
+                                                                               (if (some? (:lunch-cancelled? ent))
+                                                                                 (:lunch-cancelled? ent)
+                                                                                 (can-cancel-lunch? clj-date lunch-storno-limit-utc-hour)))}))))
 
 (defn select-next-attendance-weeks [db-spec child-id weeks]
   (timbre/debug "Selecting next attendance weeks for child-id" child-id)

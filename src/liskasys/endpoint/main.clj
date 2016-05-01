@@ -37,13 +37,6 @@
          (response/redirect "/obedy")
          (main-hiccup/cancellation-page db-spec user params)))
 
-     (GET "/obedy" {:keys [params]}
-       (timbre/debug "GET /obedy")
-       (if-not (or ((:-roles user) "admin")
-                   ((:-roles user) "obedy"))
-         (response/redirect "/")
-         (main-hiccup/lunches db-spec user params)))
-
      (POST "/" {:keys [params]}
        (timbre/debug "POST /")
        (let [cancel-dates (make-date-sets (:cancel-dates params))
@@ -58,6 +51,13 @@
          (response/redirect "")
          #_(main-hiccup/cancellation-form db user params)))
 
+     (GET "/obedy" {:keys [params]}
+       (timbre/debug "GET /obedy")
+       (if-not (or ((:-roles user) "admin")
+                   ((:-roles user) "obedy"))
+         (response/redirect "/")
+         (main-hiccup/lunches db-spec user params)))
+
      (GET "/login" []
        (timbre/debug "GET /login")
        (hiccup/login-page main-hiccup/system-title))
@@ -68,6 +68,7 @@
          (let [user (first (jdbc-common/select db-spec :user {:email user-name}))]
            (when-not (and user (check-password db-spec user pwd))
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
+           (timbre/info "User" user-name "just logged in.")
            (-> (response/redirect "/" :see-other)
                (assoc-in [:session :user]
                          (-> user
@@ -122,7 +123,9 @@
          (response/response
           (case action
             "select" (jdbc-common/select db-spec table-kw {})
-            "save" (jdbc-common/save! db-spec table-kw ?data)
+            "save" (jdbc-common/save! db-spec table-kw (cond-> ?data
+                                                         (= table-kw :cancellation)
+                                                         (assoc :user-id (:id user))))
             "delete" (jdbc-common/delete! db-spec table-kw {:id ?data})
             (case msg-id
               :user/auth {}

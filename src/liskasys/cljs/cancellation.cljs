@@ -37,7 +37,7 @@
                     [re-com/h-box
                      :gap "5px"
                      :children
-                     [#_[re-com/hyperlink-href
+                     [[re-com/hyperlink-href
                        :href (str "#/cancellation/" (:id row) "e")
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
@@ -66,13 +66,15 @@
           [re-com/v-box :gap "5px"
            :children
            [[:h3 "Omluvenka"]
-            [:table
+            [:table.table.table-striped
              [:tbody
               [:tr
-               [:td [re-com/label :label "Dítě"]]
-               [:td [re-com/label :label "Datum"]]]
+               [:th [re-com/label :label "Dítě"]]
+               [:th [re-com/label :label "Datum"]]
+               [:th [re-com/label :label "Včetně oběda?"]]]
               [:tr
-               [:td [re-com/single-dropdown
+               [:td (when (get-in item [:-errors :child-id]) {:style {:background-color "#f57c00"}})
+                [re-com/single-dropdown
                      :model (:child-id item)
                      :on-change #(re-frame/dispatch [:entity-change :cancellation (:id item) :child-id %])
                      :choices sorted-children
@@ -80,12 +82,21 @@
                      :placeholder "Vyberte dítě"
                      :filter-box? true
                      :width "250px"]]
-               [:td [re-com/datepicker-dropdown
+               [:td (when (get-in item [:-errors :date]) {:style {:background-color "#f57c00"}})
+                [re-com/datepicker-dropdown
                      :model (time/from-date (:date item))
                      :on-change #(re-frame/dispatch [:entity-change :cancellation (:id item) :date (time/to-date %)])
                      :format "dd.MM.yyyy"
-                     :show-today? true]]]]]
-            [re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :cancellation validation-fn])]]])))))
+                     :show-today? true]]
+               [:td [re-com/checkbox
+                     :model (boolean (:lunch-cancelled? item))
+                     :on-change #(re-frame/dispatch [:entity-change :cancellation (:id item) :lunch-cancelled? %])]]]]]
+            [re-com/h-box :align :center :gap "5px"
+             :children
+             [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :cancellation validation-fn])]
+              "nebo"
+              [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/cancellation/e")]
+              [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/cancellations")]]]]])))))
 
 (secretary/defroute "/cancellations" []
   (re-frame/dispatch [:set-current-page :cancellations]))
