@@ -7,9 +7,12 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** doména sys.listicka.org => Vlahovič
 ** zadání/import dat - uživatelé, děti + docházka => xls
 * připomínky Danka
-** TODO pristup pro kucharku s poctem obedu (normalni, vege, bez laktozy ...)
-** TODO barvy obedu - zluty normalni, vege zeleny, bez laktozy modry, bez obeda cerveny
-** TODO aktualni den - seznam deti a obedu + barvy
+** DONE pristup pro kucharku s poctem obedu (normalni, vege, bez laktozy ...)
+CLOSED: [2016-05-01 Sun 22:01]
+** DONE barvy obedu - zluty normalni, vege zeleny, bez laktozy modry, bez obeda cerveny
+CLOSED: [2016-05-01 Sun 22:02]
+** DONE aktualni den - seznam deti a obedu + barvy
+CLOSED: [2016-05-01 Sun 22:02]
 ** DONE u ditete volba typ obeda
 CLOSED: [2016-05-01 Sun 09:40]
 ** TODO moznost zadat nahradu pro Danku - datum, dite, obed?
@@ -29,7 +32,8 @@ CLOSED: [2016-05-01 Sun 10:31]
 CLOSED: [2016-05-01 Sun 18:03]
 ** DONE role - admin, jidlo
 CLOSED: [2016-05-01 Sun 15:13]
-** TODO počet obědů na následující den/dny
+** DONE počet obědů na následující den/dny
+CLOSED: [2016-05-01 Sun 22:02]
 ** DONE omluvenkovy formular vypsat dny dochazky na nasledujici 2 tydny a umoznit rusit
 CLOSED: [2016-05-01 Sun 09:42]
 *** radky s checkboxy pro jednotlive dny
