@@ -5,8 +5,8 @@
             clj-time.coerce
             [clj-time.core :as clj-time]
             [clojure.java.jdbc :as jdbc]
-            [taoensso.truss :as truss]
-            [taoensso.timbre :as timbre])
+            [taoensso.timbre :as timbre]
+            [taoensso.truss :as truss])
   (:import java.util.Date))
 
 (defn assoc-fullname [person]
@@ -63,10 +63,10 @@
               (assoc :-child-fullname (str (:chln row) " " (:chfn row)))
               (assoc :-user-fullname (str (:uln row) " " (:ufn row))))))))
 
-(defn- can-cancel-lunch? [date limit-hour]
+(defn- can-cancel-lunch? [clj-date limit-hour]
   (not
    (clj-time/before?
-    date
+    clj-date
     (-> (clj-time/now)
         clj-time.coerce/to-local-date
         (clj-time/plus (clj-time/days
@@ -75,17 +75,16 @@
                           2)))
         clj-time.coerce/to-date-time))))
 
-(def lunch-storno-limit-hour 10)
-
 (defn select-attendance-days [db-spec child-id date]
   (timbre/debug "Selecting attendance days for child-id" child-id " at " date)
   (->>
-   (jdbc/query db-spec [(str "SELECT * FROM " (jdbc-common/esc :attendance-day) " AS ad"
-                             " LEFT JOIN " (jdbc-common/esc :attendance) " AS att ON (ad.\"attendance-id\" = att.\"id\")"
-                             " WHERE att.\"child-id\"=?"
-                             "  AND (att.\"valid-from\" IS NULL OR att.\"valid-from\" < ?)"
-                             "  AND (att.\"valid-to\" IS NULL OR att.\"valid-to\" > ?)")
-                        child-id date date];; TODO (esc ":att.id ...")
+   (jdbc/query db-spec [(jdbc-common/esc
+                         "SELECT * FROM :attendance-day AS ad"
+                         " LEFT JOIN :attendance AS att ON (ad.:attendance-id = att.:id)"
+                         " WHERE att.:child-id=?"
+                         "  AND (att.:valid-from IS NULL OR att.:valid-from <= ?)"
+                         "  AND (att.:valid-to IS NULL OR att.:valid-to >= ?)")
+                        child-id date date]
                )
    (map (juxt :day-of-week identity))
    (into {})))
@@ -93,22 +92,24 @@
 (defn select-attendance-day [db-spec child-id date day-of-week]
   (get (select-attendance-days db-spec child-id date) day-of-week))
 
+(def lunch-storno-limit-utc-hour 8)
+
 (defmethod jdbc-common/save! :cancellation
   [db-spec table-kw ent]
   {:pre [(truss/have? number? (:user-id ent))]}
-  (let [date (time/from-date (:date ent))
-        day-of-week (clj-time/day-of-week date)
+  (let [clj-date (time/from-date (:date ent))
+        day-of-week (clj-time/day-of-week clj-date)
         att-day (select-attendance-day db-spec (:child-id ent) (:date ent) day-of-week)]
     (jdbc-common/save!-default db-spec table-kw (merge ent
                                                        {:attendance-day-id (truss/have! number? (:id att-day))
                                                         :lunch-cancelled? (and (:lunch? att-day)
-                                                                               (can-cancel-lunch? date lunch-storno-limit-hour))}))))
+                                                                               (can-cancel-lunch? clj-date lunch-storno-limit-utc-hour))}))))
 
 (defn select-next-attendance-weeks [db-spec child-id weeks]
   (timbre/debug "Selecting next attendance weeks for child-id" child-id)
   (let [today (clj-time/today)]
     (->> (range 14)
-         (keep
+         (mapcat
           #(let [clj-date (clj-time/plus today (clj-time/days %))
                  date (time/to-date clj-date)
                  att (select-attendance-day db-spec child-id
@@ -117,7 +118,7 @@
                  cancellation (first (jdbc-common/select db-spec :cancellation {:child-id child-id :date date}))]
              (when att
                [date (assoc att :cancellation cancellation)])))
-         (into {}))))
+         (apply array-map))))
 
 (defn select-children-by-user-id [db-spec user-id]
   (map assoc-fullname

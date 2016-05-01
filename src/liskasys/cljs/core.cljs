@@ -99,9 +99,9 @@
          [:a {:href "#/price-lists"} "Ceník"]]
         [:li
          [:a {:href "#/lunch-types"} "Diety"]]]]
-      #_[:li
+      [:li
        [:a
-        {:href "/logout"} "Odhlásit"]]]]]])
+        {:href "/logout"} "Odhlásit se"]]]]]])
 
 (defn page-main []
   [:div

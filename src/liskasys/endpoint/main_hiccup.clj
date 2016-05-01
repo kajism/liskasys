@@ -21,8 +21,8 @@
        [:form {:method "post"
                :role "form"}
         [:div.form-group
-         [:label {:for "user-fullname"} "Rodič"]
-         [:input#user-name.form-control {:name "user-fullname" :type "text" :value (:-fullname user) :disabled true}]]
+         [:label "Uživatel"]
+         [:div (:-fullname user) " " [:a {:href "/logout"} "odhlásit se"]]]
         [:div.form-group
          [:label {:for "child"} "Dítě"]
          [:select#child.form-control {:name "child-id"}
@@ -50,6 +50,6 @@
                   " včetně oběda")]]])]]]
         #_(anti-forgery/anti-forgery-field)
         [:button.btn.btn-success {:type "submit"} "Uložit"]]
-       [:pre (with-out-str
+       #_[:pre (with-out-str
                (pprint user)
                (pprint params))]]))))

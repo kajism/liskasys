@@ -13,11 +13,12 @@
             [clj-time.core :as clj-time]))
 
 (defn- make-date-sets [str-date-seq]
-  (let [yesterday (time/to-date (clj-time/yesterday))]
-    (->> (truss/have sequential? str-date-seq)
-         (map #(truss/have! (fn [d] (.before yesterday d))
-                            (time/from-format % time/ddMMyyyy)))
-         set)))
+  (when str-date-seq
+    (let [yesterday (time/to-date (clj-time/yesterday))]
+      (->> (truss/have sequential? str-date-seq)
+           (map #(truss/have! (fn [d] (.before yesterday d))
+                              (time/from-format % time/ddMMyyyy)))
+           set))))
 
 (defn main-endpoint [{{db :spec} :db}]
   (routes
@@ -38,7 +39,8 @@
                  :when (not (contains? cancel-dates cancelled-date))]
            (jdbc-common/delete! db :cancellation {:child-id (:child-id params)
                                                   :date cancelled-date}))
-         (main-hiccup/cancellation-form db user params)))
+         (response/redirect "")
+         #_(main-hiccup/cancellation-form db user params)))
 
      (GET "/login" []
        (timbre/debug "GET /login")
