@@ -111,7 +111,7 @@
        (timbre/debug "GET /admin.app/")
        (if-not ((:-roles user) "admin")
          (response/redirect "/")
-         (hiccup/cljs-landing-page main-hiccup/system-title)))
+         (hiccup/cljs-landing-page (str main-hiccup/system-title " Admin"))))
 
      (POST "/api" [req-msg]
        (timbre/debug "POST /admin.app/api request" req-msg)

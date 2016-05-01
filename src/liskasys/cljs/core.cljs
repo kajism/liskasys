@@ -89,6 +89,8 @@
       [:li
        [:a {:href "#/cancellations"} "Omluvenky"]]]
      [:ul.nav.navbar-nav.navbar-right
+      #_[:li
+       [:a {:target "_parent" :href "/obedy"} "Obědy"]]
       [:li.dropdown
        [:a.dropdown-toggle {:data-toggle "dropdown" :href "#"}
         "Nastavení" [:span.caret]]

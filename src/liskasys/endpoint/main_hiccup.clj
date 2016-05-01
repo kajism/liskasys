@@ -39,7 +39,7 @@
           [:a {:href ""} (:-fullname user)]]
          (when ((:-roles user) "admin")
            [:li
-            [:a {:href "/admin.app"} "Admin"]])
+            [:a {:target "admin" :href "/admin.app"} "Admin"]])
          [:li
           [:a {:href "/passwd"} "Změna hesla"]]
          [:li

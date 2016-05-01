@@ -43,7 +43,8 @@
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :cancellation (:id row)])]]])
-                  :none]]]]])))
+                  :none]]
+         :desc? true]]])))
 
 (defn page-cancellation []
   (let [cancellation (re-frame/subscribe [:entity-edit :cancellation])
