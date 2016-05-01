@@ -37,7 +37,10 @@
 
      (GET "/obedy" {:keys [params]}
        (timbre/debug "GET /obedy")
-       (main-hiccup/lunches db-spec user params))
+       (if-not (or ((:-roles user) "admin")
+                   ((:-roles user) "obedy"))
+         (response/redirect "/")
+         (main-hiccup/lunches db-spec user params)))
 
      (POST "/" {:keys [params]}
        (timbre/debug "POST /")
@@ -64,7 +67,12 @@
            (when-not (and user (check-password db-spec user pwd))
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (-> (response/redirect "/" :see-other)
-               (assoc-in [:session :user] (select-keys user [:id :-fullname :roles]))))
+               (assoc-in [:session :user]
+                         (-> user
+                             (select-keys [:id :-fullname])
+                             (assoc :-roles (->> (str/split (str (:roles user)) #",")
+                                                 (map str/trim)
+                                                 set))))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 
@@ -97,14 +105,16 @@
    (context "/admin.app" {{user :user} :session}
      (GET "/" []
        (timbre/debug "GET /admin.app/")
-       (hiccup/cljs-landing-page main-hiccup/system-title))
+       (if-not ((:-roles user) "admin")
+         (response/redirect "/")
+         (hiccup/cljs-landing-page main-hiccup/system-title)))
 
      (POST "/api" [req-msg]
        (timbre/debug "POST /admin.app/api request" req-msg)
        (let [[msg-id ?data] req-msg
              table-kw (keyword (namespace msg-id))
              action (name msg-id)]
-         #_(when-not (get-in user [:-rights msg-id])
+         (when-not ((:-roles user) "admin")
              (throw (Exception. "Not authorized")))
          (response/response
           (case action

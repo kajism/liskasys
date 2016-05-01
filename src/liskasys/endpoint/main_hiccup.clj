@@ -27,11 +27,16 @@
         [:ul.nav.navbar-nav
          [:li
           [:a {:href "/"} "Omluvenky"]]
-         [:li
-          [:a {:href "/obedy"} "Obědy"]]]
+         (when (or ((:-roles user) "admin")
+                   ((:-roles user) "obedy"))
+           [:li
+            [:a {:href "/obedy"} "Obědy"]])]
         [:ul.nav.navbar-nav.navbar-right
          [:li
           [:a {:href ""} (:-fullname user)]]
+         (when ((:-roles user) "admin")
+           [:li
+            [:a {:href "/admin.app"} "Admin"]])
          [:li
           [:a {:href "/passwd"} "Změna hesla"]]
          [:li
