@@ -15,9 +15,9 @@
     system-title
     (let [children (db/select-children-by-user-id db-spec (:id user))
           child-id (or child-id (:id (first children)))
-          attendance-days (timbre/spy (db/select-next-attendance-weeks db-spec child-id 2))]
+          attendance-days (db/select-next-attendance-weeks db-spec child-id 2)]
       [:div.container.login
-       [:h3 "Docházka bude (nebo již je) zrušena v označených dnech"]
+       [:h3 "Omluvenky"]
        [:form {:method "post"
                :role "form"}
         [:div.form-group
@@ -30,22 +30,24 @@
             [:option {:value (:id child)
                       :selected (= child-id (:id child))} (:-fullname child)])]]
         [:div.form-group
-         [:label {:for "from"} "Dny docházky"]
+         [:label {:for "from"} "Docházka bude (nebo již je) omluvena v označených dnech"]
          [:table.table.table-striped
           [:tbody
            (for [[date att] attendance-days
                  :let [date-str (time/to-format date time/ddMMyyyy)
-                       cancellation? (boolean (:cancellation att))]]
+                       cancellation (:cancellation att)]]
              [:tr
               [:td
                [:label
-                (when cancellation?
-                  [:input {:type "hidden" :name "already-cancelled-dates" :value date-str}])
-                [:input {:type "checkbox" :name "cancel-dates"
+                (when cancellation
+                  [:input {:type "hidden" :name "already-cancelled-dates[]" :value date-str}])
+                [:input {:type "checkbox" :name "cancel-dates[]"
                          :value (time/to-format date time/ddMMyyyy)
-                         :checked cancellation?}] " "
+                         :checked (boolean cancellation)}] " "
                 (get time/week-days (:day-of-week att)) " "
-                (time/to-format date time/dMyyyy)]]])]]]
+                (time/to-format date time/dMyyyy)
+                (when (:lunch-cancelled? cancellation)
+                  " včetně oběda")]]])]]]
         #_(anti-forgery/anti-forgery-field)
         [:button.btn.btn-success {:type "submit"} "Uložit"]]
        [:pre (with-out-str

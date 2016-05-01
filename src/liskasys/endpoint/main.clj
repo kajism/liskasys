@@ -8,7 +8,16 @@
             [liskasys.endpoint.main-hiccup :as main-hiccup]
             [ring.util.response :as response :refer [content-type resource-response]]
             [taoensso.timbre :as timbre]
-            [clj-brnolib.time :as time]))
+            [clj-brnolib.time :as time]
+            [taoensso.truss :as truss]
+            [clj-time.core :as clj-time]))
+
+(defn- make-date-sets [str-date-seq]
+  (let [yesterday (time/to-date (clj-time/yesterday))]
+    (->> (truss/have sequential? str-date-seq)
+         (map #(truss/have! (fn [d] (.before yesterday d))
+                            (time/from-format % time/ddMMyyyy)))
+         set)))
 
 (defn main-endpoint [{{db :spec} :db}]
   (routes
@@ -18,15 +27,14 @@
        (main-hiccup/cancellation-form db user params))
      (POST "/" {:keys [params]}
        (timbre/debug "POST /")
-       (let [cancel-dates (->> (:cancel-dates params)
-                               (map #(time/from-format % time/ddMMyyyy))
-                               set)]
-         (doseq [cancel-date cancel-dates]
+       (let [cancel-dates (make-date-sets (:cancel-dates params))
+             already-cancelled-dates (make-date-sets (:already-cancelled-dates params))]
+         (doseq [cancel-date cancel-dates
+                 :when (not (contains? already-cancelled-dates cancel-date))]
            (jdbc-common/save! db :cancellation {:child-id (:child-id params)
                                                 :user-id (:id user)
                                                 :date cancel-date}))
-         (doseq [cancelled-date (->> (:already-cancelled-dates params)
-                                     (map #(time/from-format % time/ddMMyyyy)))
+         (doseq [cancelled-date already-cancelled-dates
                  :when (not (contains? cancel-dates cancelled-date))]
            (jdbc-common/delete! db :cancellation {:child-id (:child-id params)
                                                   :date cancelled-date}))
