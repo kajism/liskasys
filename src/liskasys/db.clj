@@ -93,6 +93,17 @@
 (defn select-attendance-day [db-spec child-id date day-of-week]
   (get (select-attendance-days db-spec child-id date) day-of-week))
 
+(defmethod jdbc-common/save! :cancellation
+  [db-spec table-kw ent]
+  {:pre [(truss/have? number? (:user-id ent))]}
+  (let [date (time/from-date (:date ent))
+        day-of-week (clj-time/day-of-week date)
+        att-day (select-attendance-day db-spec (:child-id ent) (:date ent) day-of-week)]
+    (jdbc-common/save!-default db-spec table-kw (merge ent
+                                                       {:attendance-day-id (truss/have! number? (:id att-day))
+                                                        :lunch-cancelled? (and (:lunch? att-day)
+                                                                               (can-cancel-lunch? date lunch-storno-limit-hour))}))))
+
 (defn select-next-attendance-weeks [db-spec child-id weeks]
   (timbre/debug "Selecting next attendance weeks for child-id" child-id)
   (let [today (clj-time/today)]
@@ -107,17 +118,6 @@
              (when att
                [date (assoc att :cancellation cancellation)])))
          (into {}))))
-
-(defmethod jdbc-common/save! :cancellation
-  [db-spec table-kw ent]
-  {:pre [(truss/have? number? (:user-id ent))]}
-  (let [date (time/from-date (:date ent))
-        day-of-week (clj-time/day-of-week date)
-        att-day (select-attendance-day db-spec (:child-id ent) (:date ent) day-of-week)]
-    (jdbc-common/save!-default db-spec table-kw (merge ent
-                                                       {:attendance-day-id (truss/have! number? (:id att-day))
-                                                        :lunch-cancelled? (and (:lunch? att-day)
-                                                                               (can-cancel-lunch? date lunch-storno-limit-hour))}))))
 
 (defn select-children-by-user-id [db-spec user-id]
   (map assoc-fullname
