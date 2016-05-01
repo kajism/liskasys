@@ -45,6 +45,7 @@
    {:main {:jar true
            :source-paths ["src"]
            :compiler {:output-to "target/cljsbuild/liskasys/public/js/main.js"
+                      :closure-defines {:goog.DEBUG false}
                       :optimizations :advanced}}}}
   :aliases {"gen"   ["generate"]
             "setup" ["do" ["generate" "locals"]]}
