@@ -7,28 +7,36 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** doména sys.listicka.org => Vlahovič
 ** zadání/import dat - uživatelé, děti + docházka => xls
 * připomínky Danka
-** TODO moznost zadat nahradu pro Danku - datum, dite, obed?
-** TODO u ditete volba typ obeda - zluty normalni, vege zeleny, bez laktozy modry, bez obeda cerveny
 ** TODO pristup pro kucharku s poctem obedu (normalni, vege, bez laktozy ...)
+** TODO barvy obedu - zluty normalni, vege zeleny, bez laktozy modry, bez obeda cerveny
 ** TODO aktualni den - seznam deti a obedu + barvy
+** DONE u ditete volba typ obeda
+CLOSED: [2016-05-01 Sun 09:40]
+** TODO moznost zadat nahradu pro Danku - datum, dite, obed?
 * bugs
-** TODO opravit zadavani datumu platnosti dochazky - nastavi o den mene
+** DONE opravit zadavani datumu platnosti dochazky - nastavi o den mene
+CLOSED: [2016-05-01 Sun 09:41]
 ** DONE prepnuti poctu radku na stranku datatable
 CLOSED: [2016-04-28 Thu 17:32]
 
 * TODOs
 ** TODO přihlašování
-** TODO omluvenkovy formular vypsat dny dochazky na nasledujici 2 tydny a umoznit rusit
+*** DONE odhlášení
+CLOSED: [2016-05-01 Sun 10:31]
+*** když je heslo nil => variabilní symbol dítěte => změna hesla
+** TODO možnost změnit heslo
+** TODO počet obědů na následující den/dny
+** DONE omluvenkovy formular vypsat dny dochazky na nasledujici 2 tydny a umoznit rusit
+CLOSED: [2016-05-01 Sun 09:42]
 *** radky s checkboxy pro jednotlive dny
 *** netreba zadavat datumy
 *** prihlasovani
 *** zobrazeni existujicich omluvenek (a zda byl odhlasen obed)
 *** pocet odhlasenych obedu
-** TODO validace a ukládání omluvenkového formuláře
-** TODO počet obědů na následující den/dny
+** DONE validace a ukládání omluvenkového formuláře
+CLOSED: [2016-05-01 Sun 09:42]
 ** TODO DB indexy
 ** TODO odchytávání DB constraint exceptions
-** TODO možnost změnit heslo
 ** TODO omezení počtu chybných přihlášení (+ reset)
 ** TODO zálohování DB
 ** TODO SSL
