@@ -93,10 +93,11 @@
 (defn- list-of-kids
   [user atts]
   (when ((:-roles user) "admin")
-    (for [name (->> atts
-                    (map :-fullname)
-                    (sort cs-collator))]
-      [:div name])))
+    (for [att (->> atts
+                   (sort-by :-fullname cs-collator))]
+      (if (some? (:lunch-cancelled? att))
+        [:div [:strike (:-fullname att)]]
+        [:div (:-fullname att)]))))
 
 (defn lunches [db-spec user params]
   (liskasys-frame
@@ -108,7 +109,8 @@
                            (when (<= (clj-time/day-of-week date) 5)
                              date))
                          days)
-         lunch-types (jdbc-common/select db-spec :lunch-type {})]
+         lunch-types (jdbc-common/select db-spec :lunch-type {})
+         have-lunch?-fn #(and (:lunch? %) (not (:lunch-cancelled? %)))]
      [:div.container
       [:h3 "Obědy"]
       [:table.table.table-striped
@@ -127,7 +129,7 @@
                         (take 2))
               :let [day-of-week (clj-time/day-of-week date)
                     atts (db/select-attendance-day db-spec (time/to-date date) day-of-week)
-                    atts-with-lunch (filter #(:lunch? %) atts)
+                    atts-with-lunch (filter have-lunch?-fn atts)
                     atts-by-lunch-type (group-by (comp :lunch-type-id) atts-with-lunch)]]
           [:tr
            [:td (get time/week-days day-of-week) " " (-> date time/to-date (time/to-format time/dMyyyy))]
@@ -141,5 +143,5 @@
               (list-of-kids user (atts-by-lunch-type (:id lunch-type)))])
            [:td
             (- (count atts) (count atts-with-lunch))
-            (list-of-kids user (remove #(:lunch? %) atts))]
-           [:td (count atts)]])]]])))
+            (list-of-kids user (remove have-lunch?-fn atts))]
+           [:td (count (remove #(some? (:lunch-cancelled? %)) atts))]])]]])))

@@ -93,13 +93,14 @@
   ([db-spec date day-of-week]
    (map assoc-fullname
         (jdbc/query db-spec [(jdbc-common/esc
-                              "SELECT ad.:lunch?, ad.:full-day?, ch.:firstname, ch.:lastname, ch.:lunch-type-id FROM :attendance-day AS ad"
+                              "SELECT ad.:lunch?, ad.:full-day?, ch.:firstname, ch.:lastname, ch.:lunch-type-id, c.:lunch-cancelled? FROM :attendance-day AS ad"
                               " LEFT JOIN :attendance AS att ON (ad.:attendance-id = att.:id)"
                               " LEFT JOIN :child AS ch ON (att.:child-id = ch.:id)"
+                              " LEFT JOIN :cancellation AS c ON (att.:child-id = c.:child-id AND c.:date = ?)"
                               " WHERE ad.:day-of-week = ?"
                               "  AND (att.:valid-from IS NULL OR att.:valid-from <= ?)"
                               "  AND (att.:valid-to IS NULL OR att.:valid-to >= ?)")
-                             day-of-week date date])))
+                             date day-of-week date date])))
   ([db-spec child-id date day-of-week]
    (get (select-attendance-days db-spec child-id date) day-of-week)))
 
