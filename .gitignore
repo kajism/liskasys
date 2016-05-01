@@ -12,3 +12,4 @@ dev/local.clj
 *.db.trace.db
 *.db.mv.db
 figwheel_server.log
+/log

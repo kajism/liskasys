@@ -17,7 +17,10 @@
             [ring.middleware.format :refer [wrap-restful-format]]
             [ring.middleware.session.cookie :as cookie]
             [ring.middleware.webjars :refer [wrap-webjars]]
-            [ring.util.response :as response]))
+            [ring.util.response :as response]
+            [taoensso.timbre :as timbre]
+            [taoensso.timbre.appenders.3rd-party.rotor :refer [rotor-appender]]
+            [taoensso.timbre.appenders.core :refer [println-appender]]))
 
 (def base-config
   {:app {:middleware [wrap-restful-format
@@ -37,6 +40,13 @@
    :ragtime {:resource-path "liskasys/migrations"}})
 
 (defn new-system [config]
+  (timbre/set-config!
+   {:level     (if (:dev env) :debug :info)
+    :appenders {:println (println-appender)
+                :rotor (rotor-appender
+                        {:path "log/liskasys.log"
+                         :max-size (* 2 1024 1024)
+                         :backlog 10})}})
   (let [config (meta-merge base-config config)]
     (-> (component/system-map
          :app  (handler-component (:app config))
