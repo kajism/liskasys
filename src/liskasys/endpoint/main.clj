@@ -33,7 +33,11 @@
    (context "" {{user :user} :session}
      (GET "/" {:keys [params]}
        (timbre/debug "GET /")
-       (main-hiccup/cancellation-form db-spec user params))
+       (main-hiccup/cancellation-page db-spec user params))
+
+     (GET "/obedy" {:keys [params]}
+       (timbre/debug "GET /obedy")
+       (main-hiccup/lunches db-spec user params))
 
      (POST "/" {:keys [params]}
        (timbre/debug "POST /")
@@ -71,7 +75,8 @@
 
      (GET "/passwd" []
        (timbre/debug "GET /passwd")
-       (hiccup/passwd-page main-hiccup/system-title))
+       (main-hiccup/liskasys-frame user
+        (hiccup/passwd-form nil)))
 
      (POST "/passwd" [old-pwd new-pwd new-pwd2]
        (timbre/debug "POST /passwd")
@@ -86,7 +91,8 @@
            (jdbc-common/save! db-spec :user {:id (:id user) :passwd (scrypt/encrypt new-pwd)})
            (-> (response/redirect "/" :see-other)))
          (catch Exception e
-           (hiccup/passwd-page main-hiccup/system-title (.getMessage (timbre/spy e)))))))
+           (main-hiccup/liskasys-frame user
+            (hiccup/passwd-form (.getMessage (timbre/spy e))))))))
 
    (context "/admin.app" {{user :user} :session}
      (GET "/" []

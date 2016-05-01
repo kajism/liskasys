@@ -25,7 +25,8 @@ CLOSED: [2016-05-01 Sun 15:01]
 *** DONE odhlášení
 CLOSED: [2016-05-01 Sun 10:31]
 *** když je heslo nil => variabilní symbol dítěte => změna hesla
-** TODO možnost změnit heslo
+** DONE možnost změnit heslo
+CLOSED: [2016-05-01 Sun 18:03]
 ** DONE role - admin, jidlo
 CLOSED: [2016-05-01 Sun 15:13]
 ** TODO počet obědů na následující den/dny

@@ -76,13 +76,13 @@
   [:nav.navbar.navbar-default
    [:div.container-fluid
     [:div.navbar-header
-     [:button.navbar-toggle {:type "button" :data-toggle "collapse" :data-target "#masyst-navbar"}
+     [:button.navbar-toggle {:type "button" :data-toggle "collapse" :data-target "#liskasys-navbar"}
       [:span.icon-bar]
       [:span.icon-bar]
       [:span.icon-bar]]
      [:a {:href "#"}
       [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
-    [:div#masyst-navbar.collapse.navbar-collapse
+    [:div#liskasys-navbar.collapse.navbar-collapse
      [:ul.nav.navbar-nav
       [:li
        [:a {:href "#/children"} "Děti"]]
