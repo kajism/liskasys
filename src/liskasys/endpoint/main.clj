@@ -1,17 +1,18 @@
 (ns liskasys.endpoint.main
   (:require [clj-brnolib.hiccup :as hiccup]
             [clj-brnolib.jdbc-common :as jdbc-common]
+            [clj-brnolib.time :as time]
+            [clj-time.core :as clj-time]
             [clojure.pprint :refer [pprint]]
+            [clojure.set :as set]
             [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
             [crypto.password.scrypt :as scrypt]
             [liskasys.db :as db]
             [liskasys.endpoint.main-hiccup :as main-hiccup]
-            [ring.util.response :as response :refer [content-type resource-response]]
+            [ring.util.response :as response]
             [taoensso.timbre :as timbre]
-            [clj-brnolib.time :as time]
-            [taoensso.truss :as truss]
-            [clj-time.core :as clj-time]))
+            [taoensso.truss :as truss]))
 
 (defn- make-date-sets [str-date-seq]
   (when str-date-seq
@@ -27,25 +28,25 @@
      (GET "/" {:keys [params]}
        (timbre/debug "GET /")
        (main-hiccup/cancellation-form db-spec user params))
+
      (POST "/" {:keys [params]}
        (timbre/debug "POST /")
        (let [cancel-dates (make-date-sets (:cancel-dates params))
              already-cancelled-dates (make-date-sets (:already-cancelled-dates params))]
-         (doseq [cancel-date cancel-dates
-                 :when (not (contains? already-cancelled-dates cancel-date))]
+         (doseq [cancel-date (set/difference cancel-dates already-cancelled-dates)]
            (jdbc-common/save! db-spec :cancellation {:child-id (:child-id params)
-                                                :user-id (:id user)
-                                                :date cancel-date}))
-         (doseq [cancelled-date already-cancelled-dates
-                 :when (not (contains? cancel-dates cancelled-date))]
+                                                     :user-id (:id user)
+                                                     :date cancel-date}))
+         (doseq [unchecked-date (set/difference already-cancelled-dates cancel-dates)]
            (jdbc-common/delete! db-spec :cancellation {:child-id (:child-id params)
-                                                  :date cancelled-date}))
+                                                       :date unchecked-date}))
          (response/redirect "")
          #_(main-hiccup/cancellation-form db user params)))
 
      (GET "/login" []
        (timbre/debug "GET /login")
        (hiccup/login-page main-hiccup/system-title))
+
      (POST "/login" [user-name pwd :as req]
        (timbre/debug "POST /login")
        (try
@@ -60,6 +61,7 @@
                (assoc-in [:session :user] (select-keys user [:id :-fullname]))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
+
      (GET "/logout" []
        (timbre/debug "GET /logout")
        (-> (response/redirect "/" :see-other)
@@ -69,6 +71,7 @@
      (GET "/" []
        (timbre/debug "GET /admin.app/")
        (hiccup/cljs-landing-page main-hiccup/system-title))
+     
      (POST "/api" [req-msg]
        (timbre/debug "POST /admin.app/api request" req-msg)
        (let [[msg-id ?data] req-msg
