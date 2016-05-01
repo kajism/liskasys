@@ -20,11 +20,14 @@ CLOSED: [2016-05-01 Sun 09:41]
 CLOSED: [2016-04-28 Thu 17:32]
 
 * TODOs
-** TODO přihlašování
+** DONE přihlašování
+CLOSED: [2016-05-01 Sun 15:01]
 *** DONE odhlášení
 CLOSED: [2016-05-01 Sun 10:31]
 *** když je heslo nil => variabilní symbol dítěte => změna hesla
 ** TODO možnost změnit heslo
+** DONE role - admin, jidlo
+CLOSED: [2016-05-01 Sun 15:13]
 ** TODO počet obědů na následující den/dny
 ** DONE omluvenkovy formular vypsat dny dochazky na nasledujici 2 tydny a umoznit rusit
 CLOSED: [2016-05-01 Sun 09:42]

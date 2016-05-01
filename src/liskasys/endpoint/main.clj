@@ -37,9 +37,9 @@
            (jdbc-common/save! db-spec :cancellation {:child-id (:child-id params)
                                                      :user-id (:id user)
                                                      :date cancel-date}))
-         (doseq [unchecked-date (set/difference already-cancelled-dates cancel-dates)]
+         (doseq [uncancel-date (set/difference already-cancelled-dates cancel-dates)]
            (jdbc-common/delete! db-spec :cancellation {:child-id (:child-id params)
-                                                       :date unchecked-date}))
+                                                       :date uncancel-date}))
          (response/redirect "")
          #_(main-hiccup/cancellation-form db user params)))
 
@@ -58,7 +58,7 @@
                                       not-empty)))
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (-> (response/redirect "/" :see-other)
-               (assoc-in [:session :user] (select-keys user [:id :-fullname]))))
+               (assoc-in [:session :user] (select-keys user [:id :-fullname :roles]))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 
@@ -71,7 +71,7 @@
      (GET "/" []
        (timbre/debug "GET /admin.app/")
        (hiccup/cljs-landing-page main-hiccup/system-title))
-     
+
      (POST "/api" [req-msg]
        (timbre/debug "POST /admin.app/api request" req-msg)
        (let [[msg-id ?data] req-msg

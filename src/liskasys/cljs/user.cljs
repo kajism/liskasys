@@ -69,6 +69,11 @@
           [input-text item :user :email]
           [re-com/label :label "Telefon"]
           [input-text item :user :phone]
+          [re-com/label :label "Role"]
+          [re-com/h-box :align :center :gap "5px"
+           :children
+           [[input-text item :user :roles]
+            "admin, obedy"]]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :user validation-fn])]
