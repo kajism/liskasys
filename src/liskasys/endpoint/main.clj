@@ -62,13 +62,13 @@
        (timbre/debug "GET /login")
        (hiccup/login-page main-hiccup/system-title))
 
-     (POST "/login" [user-name pwd :as req]
+     (POST "/login" [username pwd :as req]
        (timbre/debug "POST /login")
        (try
-         (let [user (first (jdbc-common/select db-spec :user {:email user-name}))]
+         (let [user (first (jdbc-common/select db-spec :user {:email username}))]
            (when-not (and user (check-password db-spec user pwd))
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
-           (timbre/info "User" user-name "just logged in.")
+           (timbre/info "User" username "just logged in.")
            (-> (response/redirect "/" :see-other)
                (assoc-in [:session :user]
                          (-> user
@@ -122,7 +122,9 @@
              (throw (Exception. "Not authorized")))
          (response/response
           (case action
-            "select" (jdbc-common/select db-spec table-kw {})
+            "select" (cond->> (jdbc-common/select db-spec table-kw {})
+                       (= table-kw :user)
+                       (map #(dissoc % :passwd)))
             "save" (jdbc-common/save! db-spec table-kw (cond-> ?data
                                                          (= table-kw :cancellation)
                                                          (assoc :user-id (:id user))))
