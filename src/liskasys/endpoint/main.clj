@@ -2,6 +2,7 @@
   (:require [clj-brnolib.hiccup :as hiccup]
             [clj-brnolib.jdbc-common :as jdbc-common]
             [clj-brnolib.time :as time]
+            [clj-brnolib.validation :as validation]
             [clj-time.core :as clj-time]
             [clojure.set :as set]
             [clojure.string :as str]
@@ -78,7 +79,7 @@
                                                  set))
                              (assoc :-children-count (count (jdbc-common/select db-spec :user-child {:user-id (:id user)})))))))
          (catch Exception e
-           (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
+           (hiccup/login-page main-hiccup/system-title (.getMessage (timbre/spy e))))))
 
      (GET "/logout" []
        (timbre/debug "GET /logout")
@@ -87,24 +88,54 @@
 
      (GET "/passwd" []
        (timbre/debug "GET /passwd")
-       (main-hiccup/liskasys-frame user
+       (main-hiccup/liskasys-frame
+        user
         (hiccup/passwd-form nil)))
 
      (POST "/passwd" [old-pwd new-pwd new-pwd2]
        (timbre/debug "POST /passwd")
        (try
          (let [user (first (jdbc-common/select db-spec :user {:id (:id user)}))]
-           (when-not (check-password db-spec user old-pwd)
-             (throw (Exception. "Chybně zadané původní heslo.")))
            (when-not (= new-pwd new-pwd2)
              (throw (Exception. "Zadaná hesla se neshodují.")))
            (when (or (str/blank? new-pwd) (< (count (str/trim new-pwd)) 6))
              (throw (Exception. "Nové heslo je příliš krátké.")))
-           (jdbc-common/save! db-spec :user {:id (:id user) :passwd (scrypt/encrypt new-pwd)})
-           (-> (response/redirect "/" :see-other)))
+           (when-not (check-password db-spec user old-pwd)
+             (throw (Exception. "Chybně zadané původní heslo."))))
+         (jdbc-common/save! db-spec :user {:id (:id user) :passwd (scrypt/encrypt new-pwd)})
+         (main-hiccup/liskasys-frame
+          user
+          (hiccup/passwd-form {:type :success :msg "Heslo bylo změněno"}))
          (catch Exception e
-           (main-hiccup/liskasys-frame user
-            (hiccup/passwd-form (.getMessage (timbre/spy e))))))))
+           (main-hiccup/liskasys-frame
+            user
+            (hiccup/passwd-form {:type :danger :msg (.getMessage (timbre/spy e))})))))
+
+     (GET "/profile" []
+       (timbre/debug "GET /profile")
+       (main-hiccup/liskasys-frame
+        user
+        (hiccup/user-profile-form (first (jdbc-common/select db-spec :user {:id (:id user)})) nil)))
+
+     (POST "/profile" {{:keys [firstname lastname email phone] :as params} :params}
+       (timbre/debug "POST /profile")
+       (try
+         (when (str/blank? firstname)
+           (throw (Exception. "Vyplňte své jméno")))
+         (when (str/blank? lastname)
+           (throw (Exception. "Vyplňte své příjmení")))
+         (when-not (validation/valid-email? email)
+           (throw (Exception. "Vyplňte správně kontaktní emailovou adresu")))
+         (when-not (validation/valid-phone? phone)
+           (throw (Exception. "Vyplňte správně kontaktní telefonní číslo")))
+         (jdbc-common/save! db-spec :user {:id (:id user) :firstname firstname :lastname lastname :email email :phone phone})
+         (main-hiccup/liskasys-frame
+          user
+          (hiccup/user-profile-form params {:type :success :msg "Změny byly uloženy"}))
+         (catch Exception e
+           (main-hiccup/liskasys-frame
+            user
+            (hiccup/user-profile-form params {:type :danger :msg (.getMessage (timbre/spy e))}))))))
 
    (context "/admin.app" {{user :user} :session}
      (GET "/" []

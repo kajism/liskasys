@@ -36,7 +36,7 @@
             [:a {:href "/obedy"} "Obědy"]])]
         [:ul.nav.navbar-nav.navbar-right
          [:li
-          [:a {:href ""} (:-fullname user)]]
+          [:a {:href "/profile"} (:-fullname user)]]
          (when ((:-roles user) "admin")
            [:li
             [:a {:target "admin" :href "/admin.app"} "Admin"]])

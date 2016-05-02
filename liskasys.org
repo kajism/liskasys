@@ -43,7 +43,7 @@ CLOSED: [2016-05-01 Sun 09:42]
 *** pocet odhlasenych obedu
 ** DONE validace a ukládání omluvenkového formuláře
 CLOSED: [2016-05-01 Sun 09:42]
-** add some info timbre log messages
+** TODO logging middleware
 ** TODO jidelni listek
 ** TODO DB indexy
 ** TODO odchytávání DB constraint exceptions
