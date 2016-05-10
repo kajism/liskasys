@@ -44,6 +44,7 @@ CLOSED: [2016-05-01 Sun 09:42]
 ** DONE validace a ukládání omluvenkového formuláře
 CLOSED: [2016-05-01 Sun 09:42]
 ** TODO logging middleware
+** TODO server side validation without exception (hash-map like on the client
 ** TODO jidelni listek
 ** TODO DB indexy
 ** TODO odchytávání DB constraint exceptions

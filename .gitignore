@@ -13,3 +13,4 @@ dev/local.clj
 *.db.mv.db
 figwheel_server.log
 /log
+*.retry

@@ -33,7 +33,8 @@
          :api-routes-pattern #"/api"
          :not-found  (io/resource "liskasys/errors/404.html")
          :defaults   (meta-merge site-defaults (cond-> {:static {:resources "liskasys/public"}
-                                                        :security {:anti-forgery false}}
+                                                        :security {:anti-forgery false}
+                                                        :proxy true}
                                                  (:dev env)
                                                  (assoc :session {:store (cookie/cookie-store {:key "StursovaListicka"})})))
          :aliases    {}}
