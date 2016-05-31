@@ -2,6 +2,7 @@
   (:gen-class)
   (:require [clojure.java.io :as io]
             [com.stuartsierra.component :as component]
+            [duct.component.ragtime :as ragtime]
             [duct.middleware.errors :refer [wrap-hide-errors]]
             [duct.util.runtime :refer [add-shutdown-hook]]
             [meta-merge.core :refer [meta-merge]]
@@ -21,4 +22,7 @@
   (let [system (new-system config)]
     (println "Starting HTTP server on port" (-> system :http :port))
     (add-shutdown-hook ::stop-system #(component/stop system))
-    (component/start system)))
+    (-> system
+        component/start
+        :ragtime
+        ragtime/migrate)))
