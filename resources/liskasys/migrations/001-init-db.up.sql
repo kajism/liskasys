@@ -1,6 +1,6 @@
 CREATE TABLE "lunch-type" (
 "id" BIGINT IDENTITY,
-"label" VARCHAR(64) NOT NULL
+"label" VARCHAR(64) NOT NULL,
 "color" VARCHAR(32) NOT NULL);
 
 CREATE TABLE "user" (
