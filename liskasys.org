@@ -2,27 +2,14 @@ LISKASYST
 
 podpurny informacni system pro lesni materskou skolu Listicka
 
-* dotazy Danka
-** jak funguje objednávání počtu obědů => kucharka se podiva
-** doména sys.listicka.org => Vlahovič
-** zadání/import dat - uživatelé, děti + docházka => xls
-* připomínky Danka
-** DONE pristup pro kucharku s poctem obedu (normalni, vege, bez laktozy ...)
-CLOSED: [2016-05-01 Sun 22:01]
-** DONE barvy obedu - zluty normalni, vege zeleny, bez laktozy modry, bez obeda cerveny
-CLOSED: [2016-05-01 Sun 22:02]
-** DONE aktualni den - seznam deti a obedu + barvy
-CLOSED: [2016-05-01 Sun 22:02]
-** DONE u ditete volba typ obeda
-CLOSED: [2016-05-01 Sun 09:40]
-** TODO moznost zadat nahradu pro Danku - datum, dite, obed?
-* bugs
-** DONE opravit zadavani datumu platnosti dochazky - nastavi o den mene
-CLOSED: [2016-05-01 Sun 09:41]
-** DONE prepnuti poctu radku na stranku datatable
-CLOSED: [2016-04-28 Thu 17:32]
-
 * TODOs
+
+** zuzit admin stranku (smazat bootstrap fluid)
+** zobrazit dochazku na 4 tydny
+** jidelni listek
+** email s poctem obedu v 10 hodin uzivatelum s roli obedy
+** automaticka ragtime migrace
+** moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
 ** DONE přihlašování
 CLOSED: [2016-05-01 Sun 15:01]
 *** DONE odhlášení
@@ -54,6 +41,29 @@ CLOSED: [2016-05-01 Sun 09:42]
 ** TODO CRUD cenik
 ** TODO výpočet platby na příští období (ceník + odhlášené obědy)
 ** TODO export dat do csv
+
+* dotazy Danka
+** jak funguje objednávání počtu obědů => kucharka se podiva
+** doména sys.listicka.org => Vlahovič
+** zadání/import dat - uživatelé, děti + docházka => xls
+* připomínky Danka
+** DONE pristup pro kucharku s poctem obedu (normalni, vege, bez laktozy ...)
+CLOSED: [2016-05-01 Sun 22:01]
+** DONE barvy obedu - zluty normalni, vege zeleny, bez laktozy modry, bez obeda cerveny
+CLOSED: [2016-05-01 Sun 22:02]
+** DONE aktualni den - seznam deti a obedu + barvy
+CLOSED: [2016-05-01 Sun 22:02]
+** DONE u ditete volba typ obeda
+CLOSED: [2016-05-01 Sun 09:40]
+** TODO moznost zadat nahradu pro Danku - datum, dite, obed?
+* bugs
+** v produkci se neloguji DB chyby?? (ukladani jiz existujici omluvenky)
+** editace dochazky dítěte zobrazuje i so a ne
+** DONE opravit zadavani datumu platnosti dochazky - nastavi o den mene
+CLOSED: [2016-05-01 Sun 09:41]
+
+** DONE prepnuti poctu radku na stranku datatable
+CLOSED: [2016-04-28 Thu 17:32]
 * obědy a platby = první verze po domluvě s Dankou
 ** příhlášení email+variabilní symbol
 ** možnost zrušit oběd do 10:00 předchozího dne (do nastavení X hodin před polednem tj. 26 hodin)
