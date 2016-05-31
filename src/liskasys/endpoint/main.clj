@@ -4,15 +4,19 @@
             [clj-brnolib.time :as time]
             [clj-brnolib.validation :as validation]
             [clj-time.core :as clj-time]
+            [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as str]
+            [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
             [crypto.password.scrypt :as scrypt]
+            [environ.core :refer [env]]
             [liskasys.db :as db]
             [liskasys.endpoint.main-hiccup :as main-hiccup]
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]
-            [taoensso.truss :as truss]))
+            [taoensso.truss :as truss])
+  (:import java.io.StringReader))
 
 (defn- make-date-sets [str-date-seq]
   (when str-date-seq
@@ -29,17 +33,18 @@
          (filter #(= pwd (str (:var-symbol %))))
          not-empty)))
 
+(defn- upload-dir []
+  (or (:upload-dir env) "./uploads/"))
+
 (defn main-endpoint [{{db-spec :spec} :db}]
   (routes
    (context "" {{user :user} :session}
      (GET "/" {:keys [params]}
-       (timbre/debug "GET /")
        (if-not (or (pos? (:-children-count user)) ((:-roles user) "admin"))
          (response/redirect "/obedy")
          (main-hiccup/cancellation-page db-spec user params)))
 
      (POST "/" {:keys [params]}
-       (timbre/debug "POST /")
        (let [cancel-dates (make-date-sets (:cancel-dates params))
              already-cancelled-dates (make-date-sets (:already-cancelled-dates params))]
          (doseq [cancel-date (set/difference cancel-dates already-cancelled-dates)]
@@ -52,19 +57,36 @@
          (response/redirect "")
          #_(main-hiccup/cancellation-form db user params)))
 
+     (GET "/jidelni-listek" {:keys [params]}
+       (main-hiccup/lunch-menu db-spec user params))
+
+     (GET "/jidelni-listek/:id" [id :<< as-int]
+       (let [lunch-menu (first (jdbc-common/select db-spec :lunch-menu {:id id}))]
+         (-> (response/file-response (str (upload-dir) "lunch-menu/" (:id lunch-menu) ".dat") {:root "."})
+             (response/content-type (:content-type lunch-menu))
+             (response/header "Content-Disposition" (str "inline; filename=" (:orig-filename lunch-menu))))))
+
+     (POST "/jidelni-listek" [menu upload]
+       (let [id (jdbc-common/insert! db-spec :lunch-menu {:text menu
+                                                          :orig-filename (not-empty (:filename upload))
+                                                          :content-type (when (not-empty (:filename upload))
+                                                                          (:content-type upload))})
+             server-file (str (upload-dir) "lunch-menu/" id ".dat")]
+         (when (not-empty (:filename upload))
+           (io/make-parents server-file)
+           (io/copy (:tempfile upload) (io/file server-file))))
+       (response/redirect "/jidelni-listek"))
+
      (GET "/obedy" {:keys [params]}
-       (timbre/debug "GET /obedy")
        (if-not (or ((:-roles user) "admin")
                    ((:-roles user) "obedy"))
          (response/redirect "/")
          (main-hiccup/lunches db-spec user params)))
 
      (GET "/login" []
-       (timbre/debug "GET /login")
        (hiccup/login-page main-hiccup/system-title))
 
      (POST "/login" [username pwd :as req]
-       (timbre/debug "POST /login")
        (try
          (let [user (first (jdbc-common/select db-spec :user {:email username}))]
            (when-not (and user (check-password db-spec user pwd))
@@ -82,18 +104,15 @@
            (hiccup/login-page main-hiccup/system-title (.getMessage (timbre/spy e))))))
 
      (GET "/logout" []
-       (timbre/debug "GET /logout")
        (-> (response/redirect "/" :see-other)
            (assoc :session {})))
 
      (GET "/passwd" []
-       (timbre/debug "GET /passwd")
        (main-hiccup/liskasys-frame
         user
         (hiccup/passwd-form nil)))
 
      (POST "/passwd" [old-pwd new-pwd new-pwd2]
-       (timbre/debug "POST /passwd")
        (try
          (let [user (first (jdbc-common/select db-spec :user {:id (:id user)}))]
            (when-not (= new-pwd new-pwd2)
@@ -112,13 +131,11 @@
             (hiccup/passwd-form {:type :danger :msg (.getMessage (timbre/spy e))})))))
 
      (GET "/profile" []
-       (timbre/debug "GET /profile")
        (main-hiccup/liskasys-frame
         user
         (hiccup/user-profile-form (first (jdbc-common/select db-spec :user {:id (:id user)})) nil)))
 
      (POST "/profile" {{:keys [firstname lastname email phone] :as params} :params}
-       (timbre/debug "POST /profile")
        (try
          (when (str/blank? firstname)
            (throw (Exception. "Vyplňte své jméno")))
@@ -139,13 +156,11 @@
 
    (context "/admin.app" {{user :user} :session}
      (GET "/" []
-       (timbre/debug "GET /admin.app/")
        (if-not ((:-roles user) "admin")
          (response/redirect "/")
          (hiccup/cljs-landing-page (str main-hiccup/system-title " Admin"))))
 
      (POST "/api" [req-msg]
-       (timbre/debug "POST /admin.app/api request" req-msg)
        (let [[msg-id ?data] req-msg
              table-kw (keyword (namespace msg-id))
              action (name msg-id)]

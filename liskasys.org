@@ -6,9 +6,11 @@ podpurny informacni system pro lesni materskou skolu Listicka
 
 ** zuzit admin stranku (smazat bootstrap fluid)
 ** zobrazit dochazku na 4 tydny
-** jidelni listek
+** DONE jidelni listek
+CLOSED: [2016-05-31 Tue 13:34]
 ** email s poctem obedu v 10 hodin uzivatelum s roli obedy
-** automaticka ragtime migrace
+** DONE automaticka ragtime migrace
+CLOSED: [2016-05-31 Tue 09:43]
 ** moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
 ** DONE přihlašování
 CLOSED: [2016-05-01 Sun 15:01]

@@ -30,6 +30,8 @@
          (when (pos? (:-children-count user))
            [:li
             [:a {:href "/"} "Omluvenky"]])
+         [:li
+          [:a {:href "/jidelni-listek"} "Jídelní lístek"]]
          (when (or ((:-roles user) "admin")
                    ((:-roles user) "obedy"))
            [:li
@@ -145,3 +147,54 @@
             (- (count atts) (count atts-with-lunch))
             (list-of-kids user (remove have-lunch?-fn atts))]
            [:td (count (remove #(some? (:lunch-cancelled? %)) atts))]])]]])))
+
+(defn lunch-menu [db-spec user {:keys [history delete-id new?] :as params}]
+  (when delete-id
+    (jdbc-common/delete! db-spec :lunch-menu {:id delete-id}))
+  (liskasys-frame
+   user
+   (let [history (or (some-> history Integer.) 0)
+         [lunch-menu previous] (db/select-last-two-lunch-menus db-spec history)]
+     [:div.container
+      [:h3 "Jídelní lístek"]
+      (if new?
+        [:form {:method "post"
+                :role "form"
+                :enctype "multipart/form-data"}
+         [:div.form-group
+          [:textarea.form-control {:name "menu" :rows "30" :cols "50"}]]
+         [:div.form-group
+          [:input {:type "file" :name "upload"}]]
+         [:button.btn.btn-success {:type "submit"} "Uložit"]]
+        [:div
+         (when ((:-roles user) "admin")
+           [:div.row
+            [:div.col-md-6
+             [:a {:href "?new?=true"}
+              [:button.btn.btn-default "Nový"]]] " "
+            [:div.col-md-6.text-right
+             [:a {:href (str "?delete-id=" (:id lunch-menu) "&history=" history)}
+              [:button.btn.btn-danger "Smazat"]]]
+            [:br][:br]])
+         (when lunch-menu
+           [:div
+            (cond
+              (nil? (timbre/spy (:content-type lunch-menu)))
+              [:pre (:text lunch-menu)]
+              (= "image/" (subs (:content-type lunch-menu) 0 6))
+              [:div
+               [:img {:src (str "/jidelni-listek/" (:id lunch-menu))}]
+               [:br][:br]]
+              :else
+              [:div
+               [:a {:target "_blank" :href (str "/jidelni-listek/" (:id lunch-menu))} "Stáhnout"]
+               [:br][:br]])
+            [:div.row
+             [:div.col-md-6
+              (when previous
+                [:a {:href (str "?history=" (inc history))}
+                 [:button.btn.btn-default "Předchozí"]])]
+             [:div.col-md-6.text-right
+              (when (pos? history)
+                [:a {:href (str "?history=" (dec history))}
+                 [:button.btn.btn-default "Následující"]])]]])])])))

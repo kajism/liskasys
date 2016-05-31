@@ -6,8 +6,10 @@
             [clj-time.core :as clj-time]
             [clojure.java.jdbc :as jdbc]
             [taoensso.timbre :as timbre]
-            [taoensso.truss :as truss])
-  (:import java.util.Date))
+            [taoensso.truss :as truss]
+            [clojure.string :as str])
+  (:import java.io.BufferedReader
+           java.util.Date))
 
 (defn assoc-fullname [person]
   (assoc person :-fullname (str (:lastname person) " " (:firstname person))))
@@ -141,3 +143,26 @@
                              " FROM :child AS ch"
                              " LEFT JOIN :user-child AS uch ON (ch.:id = uch.:child-id)"
                              " WHERE uch.:user-id = ?") user-id])))
+
+(defn clob-to-string [clob]
+  "Turn an Oracle Clob into a String"
+  (with-open [rdr (java.io.BufferedReader. (.getCharacterStream clob))]
+    (str/join "\n" (line-seq rdr))))
+
+(defn select-last-two-lunch-menus [db-spec history]
+  (jdbc/query db-spec
+              [(jdbc-common/esc "SELECT * FROM :lunch-menu ORDER BY :id DESC LIMIT 2 OFFSET ?") history]
+              ;; :row-fn #(update % :text clob-to-string)
+              ;;:result-set-fn first
+              ))
+
+#_(extend-protocol clojure.java.jdbc/ISQLParameter
+  java.io.StringReader
+  (set-parameter [v ^java.sql.PreparedStatement stmt ^long i]
+    (timbre/spy
+     (.setCharacterStream stmt i v))))
+
+(extend-protocol clojure.java.jdbc/IResultSetReadColumn
+  java.sql.Clob
+  (result-set-read-column [v _ _]
+    (clob-to-string v)))
