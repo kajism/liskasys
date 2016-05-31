@@ -23,7 +23,8 @@
             [taoensso.timbre.appenders.core :refer [println-appender]]))
 
 (def base-config
-  {:app {:middleware [wrap-restful-format
+  {:app {:middleware [middleware/wrap-logging
+                      wrap-restful-format
                       [middleware/wrap-auth :api-routes-pattern]
                       [middleware/wrap-exceptions :api-routes-pattern]
                       [wrap-not-found :not-found]
