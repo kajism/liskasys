@@ -13,7 +13,6 @@
                  [environ "1.0.2"]
                  [meta-merge "0.1.1"]
                  [ring-jetty-component "0.3.1"]
-                 [ring-webjars "0.1.1"]
                  [org.slf4j/slf4j-nop "1.7.14"]
                  [duct/hikaricp-component "0.1.0"]
                  [com.h2database/h2 "1.4.191"]

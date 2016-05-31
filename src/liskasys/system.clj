@@ -16,7 +16,6 @@
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.middleware.format :refer [wrap-restful-format]]
             [ring.middleware.session.cookie :as cookie]
-            [ring.middleware.webjars :refer [wrap-webjars]]
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.3rd-party.rotor :refer [rotor-appender]]
@@ -28,7 +27,6 @@
                       [middleware/wrap-auth :api-routes-pattern]
                       [middleware/wrap-exceptions :api-routes-pattern]
                       [wrap-not-found :not-found]
-                      [wrap-webjars]
                       [wrap-defaults :defaults]
                       [wrap-route-aliases :aliases]]
          :api-routes-pattern #"/api"
