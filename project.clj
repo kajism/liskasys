@@ -1,16 +1,13 @@
 (defproject liskasys "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "Simple web information system for a forest kidergarten"
+  :url "http://listicka.org"
   :min-lein-version "2.0.0"
   :jvm-opts ["-Duser.timezone=UTC"]
   :dependencies [[cljs-ajax "0.5.2"]
                  [org.apache.httpcomponents/httpclient "4.5.1"]
-                 #_[com.andrewmcveigh/cljs-time "0.3.14"]
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.8.40"]
-                 #_[org.clojure/tools.nrepl "0.2.12"]
                  [clj-brnolib "0.1.0-SNAPSHOT"]
-                 [com.stuartsierra/component "0.3.1"]
                  [compojure "1.5.0"]
                  [duct "0.5.10"]
                  [environ "1.0.2"]
@@ -21,15 +18,8 @@
                  [duct/hikaricp-component "0.1.0"]
                  [com.h2database/h2 "1.4.191"]
                  [duct/ragtime-component "0.1.3"]
-                 #_[re-frame "0.7.0"]
-                 [re-com "0.8.0"]
                  [secretary "1.2.3"]
-                 #_[com.cognitect/transit-clj "0.8.285"]
-                 #_[com.cognitect/transit-cljs "0.8.237"]
                  [ring-middleware-format "0.7.0"]
-                 [crypto-password "0.2.0"]
-                 #_[com.taoensso/timbre "4.3.1"]
-                 #_[prismatic/schema "1.1.0"]
                  [crypto-password "0.2.0"]]
   :plugins [[lein-environ "1.0.2"]
             [lein-gen "0.2.2"]
@@ -68,7 +58,7 @@
                    :source-paths ["dev"]
                    :repl-options {:init-ns user
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
-                   :env {:dev true
+                   :env {:dev "true"
                          :port "3000"
                          :database-url "jdbc:h2:./liskasys-dev.db"}}
    :project/test  {}})
