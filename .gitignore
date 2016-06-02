@@ -15,3 +15,4 @@ dev/local.clj
 figwheel_server.log
 /log
 *.retry
+/db-dump*

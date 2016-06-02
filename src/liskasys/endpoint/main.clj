@@ -5,6 +5,7 @@
             [clj-brnolib.validation :as validation]
             [clj-time.core :as clj-time]
             [clojure.java.io :as io]
+            [clojure.java.jdbc :as jdbc]
             [clojure.set :as set]
             [clojure.string :as str]
             [compojure.coercions :refer [as-int]]
@@ -16,7 +17,8 @@
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]
             [taoensso.truss :as truss])
-  (:import java.io.StringReader))
+  (:import java.io.StringReader
+           java.util.Date))
 
 (defn- make-date-sets [str-date-seq]
   (when str-date-seq
@@ -177,4 +179,11 @@
             "delete" (jdbc-common/delete! db-spec table-kw {:id ?data})
             (case msg-id
               :user/auth {}
-              (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))
+              (throw (Exception. (str "Unknown msg-id: " msg-id))))))))
+
+     (GET "/save-sql-backup" []
+       (jdbc/query db-spec ["SCRIPT TO ?"
+                            (str "./db-dump/liskasys-db" (time/to-format (Date.) time/yyyyMMdd-HHmm) ".sql")])
+       (main-hiccup/liskasys-frame
+        user
+        [:div "Ok"])))))
