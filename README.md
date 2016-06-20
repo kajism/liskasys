@@ -1,6 +1,6 @@
 # liskasys
 
-FIXME: description
+This is a small Clojure web aplication with ClojureScript admin part using H2 SQL database in embeded mode. It is used in a kindergarten mainly for lunch cancellations, weekly lunch menu display and next two months payment calculation.
 
 ## Developing
 
