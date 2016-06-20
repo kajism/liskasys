@@ -11,7 +11,8 @@
             [duct.component.ragtime :as ragtime]
             [duct.component.figwheel :as figwheel]
             [liskasys.config :as config]
-            [liskasys.system :as system]))
+            [liskasys.system :as system]
+            [clojure.java.jdbc :as jdbc]))
 
 (def dev-config
   {:app {:middleware [wrap-stacktrace]}
@@ -58,3 +59,6 @@
 
 (defn db-spec []
   (-> system :db :spec))
+
+(defn restore-db [sql-file-path]
+  (jdbc/execute! (db-spec) [(str "RUNSCRIPT FROM '" sql-file-path "'")]))
