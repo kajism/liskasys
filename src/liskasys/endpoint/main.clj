@@ -85,6 +85,9 @@
          (response/redirect "/")
          (main-hiccup/lunches db-spec user params)))
 
+     (GET "/odhlasene-obedy" {:keys [params]}
+       (main-hiccup/cancelled-lunches db-spec user))
+
      (GET "/login" []
        (hiccup/login-page main-hiccup/system-title))
 

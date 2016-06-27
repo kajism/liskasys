@@ -2,12 +2,14 @@
   (:require [clj-brnolib.hiccup :as hiccup]
             [clj-brnolib.jdbc-common :as jdbc-common]
             [clj-brnolib.time :as time]
-            [clj-time.core :as clj-time]
+            [clj-time.coerce :as tc]
+            [clj-time.core :as t]
+            [clj-time.periodic :as tp]
             [clojure.pprint :refer [pprint]]
             [liskasys.db :as db]
             [taoensso.timbre :as timbre])
-  (:import [java.util Date Locale]
-           [java.text Collator]))
+  (:import java.text.Collator
+           [java.util Date Locale]))
 
 (def system-title "LiškaSys")
 
@@ -35,7 +37,9 @@
          (when (or ((:-roles user) "admin")
                    ((:-roles user) "obedy"))
            [:li
-            [:a {:href "/obedy"} "Obědy"]])]
+            [:a {:href "/obedy"} "Obědy"]])
+         [:li
+          [:a {:href "/odhlasene-obedy"} "Odhlášené obědy"]]]
         [:ul.nav.navbar-nav.navbar-right
          [:li
           [:a {:href "/profile"} (:-fullname user)]]
@@ -105,10 +109,10 @@
   (liskasys-frame
    user
    (let [days (iterate (fn [date]
-                         (clj-time/plus date (clj-time/days 1)))
-                       (clj-time/today))
+                         (t/plus date (t/days 1)))
+                       (t/today))
          work-days (keep (fn [date]
-                           (when (<= (clj-time/day-of-week date) 5)
+                           (when (<= (t/day-of-week date) 5)
                              date))
                          days)
          lunch-types (jdbc-common/select db-spec :lunch-type {})
@@ -129,7 +133,7 @@
        [:tbody
         (for [date (->> work-days
                         (take 2))
-              :let [day-of-week (clj-time/day-of-week date)
+              :let [day-of-week (t/day-of-week date)
                     atts (db/select-attendance-day db-spec (time/to-date date) day-of-week)
                     atts-with-lunch (filter have-lunch?-fn atts)
                     atts-by-lunch-type (group-by (comp :lunch-type-id) atts-with-lunch)]]
@@ -179,7 +183,7 @@
          (when lunch-menu
            [:div
             (cond
-              (nil? (timbre/spy (:content-type lunch-menu)))
+              (nil? (:content-type lunch-menu))
               [:pre (:text lunch-menu)]
               (= "image/" (subs (:content-type lunch-menu) 0 6))
               [:div
@@ -198,3 +202,39 @@
               (when (pos? history)
                 [:a {:href (str "?history=" (dec history))}
                  [:button.btn.btn-default "Následující"]])]]])])])))
+
+(defn cancelled-lunches [db-spec user]
+  (liskasys-frame
+   user
+   (let [children (->> (if ((:-roles user) "admin")
+                         (jdbc-common/select db-spec :child {})
+                         (db/select-children-by-user-id db-spec (:id user)))
+                       (sort-by :-fullname cs-collator))
+         start-month (t/date-midnight 2016 5 1)
+         last-month (-> (db/select-last-cancellation-date db-spec)
+                        tc/from-date
+                        t/first-day-of-the-month)
+         months (->> (tp/periodic-seq last-month (t/months -1))
+                     (take-while #(not (t/before? % start-month)))
+                     (take 4)
+                     (map (juxt t/year t/month))
+                     reverse)
+         cancellations (->> (jdbc-common/select db-spec :cancellation {})
+                            (group-by (fn [c]
+                                        (let [d (tc/from-date (:date c))]
+                                          [(:child-id c) (t/year d) (t/month d)]))))]
+     [:div.container
+      [:h3 "Odhlášené obědy"]
+      [:table.table.table-striped
+       [:thead
+        [:tr
+         [:th "Dítě / Měsíc:"]
+         (for [[y m] months]
+           [:th (str m "/" y)])
+         #_[:th "&Sigma; obědů"]]
+        [:tbody
+         (for [ch children]
+           [:tr
+            [:td (:-fullname ch)]
+            (for [[y m] months]
+              [:td (count (get cancellations [(:id ch) y m]))])])]]]])))

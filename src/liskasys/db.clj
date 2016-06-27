@@ -2,12 +2,13 @@
   (:require [clj-brnolib.jdbc-common :as jdbc-common]
             [clj-brnolib.time :as time]
             [clj-brnolib.tools :as tools]
-            clj-time.coerce
-            [clj-time.core :as clj-time]
+            [clj-time.coerce :as tc]
+            [clj-time.core :as t]
+            #_clj-time.jdbc
             [clojure.java.jdbc :as jdbc]
+            [clojure.string :as str]
             [taoensso.timbre :as timbre]
-            [taoensso.truss :as truss]
-            [clojure.string :as str])
+            [taoensso.truss :as truss])
   (:import java.io.BufferedReader
            java.util.Date))
 
@@ -67,15 +68,15 @@
 
 (defn- can-cancel-lunch? [clj-date limit-hour]
   (not
-   (clj-time/before?
+   (t/before?
     clj-date
-    (-> (clj-time/now)
-        clj-time.coerce/to-local-date
-        (clj-time/plus (clj-time/days
-                        (if (< (clj-time/hour (clj-time/time-now)) limit-hour)
+    (-> (t/now)
+        tc/to-local-date
+        (t/plus (t/days
+                        (if (< (t/hour (t/time-now)) limit-hour)
                           1
                           2)))
-        clj-time.coerce/to-date-time))))
+        tc/to-date-time))))
 
 (defn select-attendance-days [db-spec child-id date]
   (timbre/debug "Selecting attendance days for child-id" child-id " at " date)
@@ -112,7 +113,7 @@
   [db-spec table-kw ent]
   {:pre [(truss/have? number? (:user-id ent))]}
   (let [clj-date (time/from-date (:date ent))
-        day-of-week (clj-time/day-of-week clj-date)
+        day-of-week (t/day-of-week clj-date)
         att-day (select-attendance-day db-spec (:child-id ent) (:date ent) day-of-week)]
     (jdbc-common/save!-default db-spec table-kw (merge ent
                                                        {:attendance-day-id (truss/have! number? (:id att-day))
@@ -123,14 +124,14 @@
 
 (defn select-next-attendance-weeks [db-spec child-id weeks]
   (timbre/debug "Selecting next attendance weeks for child-id" child-id)
-  (let [today (clj-time/today)]
+  (let [today (t/today)]
     (->> (range 14)
          (mapcat
-          #(let [clj-date (clj-time/plus today (clj-time/days %))
+          #(let [clj-date (t/plus today (t/days %))
                  date (time/to-date clj-date)
                  att (select-attendance-day db-spec child-id
                                             date
-                                            (clj-time/day-of-week clj-date))
+                                            (t/day-of-week clj-date))
                  cancellation (first (jdbc-common/select db-spec :cancellation {:child-id child-id :date date}))]
              (when att
                [date (assoc att :cancellation cancellation)])))
@@ -166,3 +167,8 @@
   java.sql.Clob
   (result-set-read-column [v _ _]
     (clob-to-string v)))
+
+(defn select-last-cancellation-date [db-spec]
+  (-> (jdbc/query db-spec [(jdbc-common/esc "SELECT :date FROM :cancellation ORDER BY :date DESC LIMIT 1")])
+      first
+      :date))
