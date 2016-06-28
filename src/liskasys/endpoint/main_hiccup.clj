@@ -38,8 +38,9 @@
                    ((:-roles user) "obedy"))
            [:li
             [:a {:href "/obedy"} "Obědy"]])
-         [:li
-          [:a {:href "/odhlasene-obedy"} "Odhlášené obědy"]]]
+         (when ((:-roles user) "admin")
+           [:li
+            [:a {:href "/odhlasene-obedy"} "Odhlášené obědy"]])]
         [:ul.nav.navbar-nav.navbar-right
          [:li
           [:a {:href "/profile"} (:-fullname user)]]
