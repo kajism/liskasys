@@ -220,7 +220,7 @@
                      (take 4)
                      (map (juxt t/year t/month))
                      reverse)
-         cancellations (->> (jdbc-common/select db-spec :cancellation {})
+         cancellations (->> (jdbc-common/select db-spec :cancellation {:lunch-cancelled? true})
                             (group-by (fn [c]
                                         (let [d (tc/from-date (:date c))]
                                           [(:child-id c) (t/year d) (t/month d)]))))]
