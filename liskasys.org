@@ -10,12 +10,19 @@ CLOSED: [2016-05-01 Sun 09:41]
 
 ** DONE prepnuti poctu radku na stranku datatable
 CLOSED: [2016-04-28 Thu 17:32]
+* improvements
+** pouzivat clj-time format pro datum a cas (clj-time.jdbc, transit serializers)
+** clj-brnolib - odstranit jdbc common, time & datomic common
+** main_hiccup - oddelit hiccup od sql/datovych vypoctu (servisni vrstva?)
+** zobrazeni poctu zrusenych obedu pres sql dotaz (nyni naivni a nevykonne)
 * TODOs
-
+** TODO nrepl server
 ** TODO zálohování DB
 ** TODO email s poctem obedu v 10 hodin uzivatelum s roli obedy
+** TODO svatky a prazdniny
 ** TODO zobrazit dochazku na 4 tydny
 ** TODO moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
+** TODO zobrazit rodicum zrusene obedy
 ** TODO CRUD cenik
 ** TODO výpočet platby na příští období (ceník + odhlášené obědy)
 ** DONE jidelni listek
