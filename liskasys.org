@@ -2,16 +2,26 @@ LISKASYST
 
 podpurny informacni system pro lesni materskou skolu Listicka
 
+* bugs
+** TODO editace dochazky dítěte zobrazuje i so a ne
+** v produkci se neloguji DB chyby?? (ukladani jiz existujici omluvenky)
+** DONE opravit zadavani datumu platnosti dochazky - nastavi o den mene
+CLOSED: [2016-05-01 Sun 09:41]
+
+** DONE prepnuti poctu radku na stranku datatable
+CLOSED: [2016-04-28 Thu 17:32]
 * TODOs
 
-** zuzit admin stranku (smazat bootstrap fluid)
-** zobrazit dochazku na 4 tydny
+** TODO zálohování DB
+** TODO email s poctem obedu v 10 hodin uzivatelum s roli obedy
+** TODO zobrazit dochazku na 4 tydny
+** TODO moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
+** TODO CRUD cenik
+** TODO výpočet platby na příští období (ceník + odhlášené obědy)
 ** DONE jidelni listek
 CLOSED: [2016-05-31 Tue 13:34]
-** email s poctem obedu v 10 hodin uzivatelum s roli obedy
 ** DONE automaticka ragtime migrace
 CLOSED: [2016-05-31 Tue 09:43]
-** moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
 ** DONE přihlašování
 CLOSED: [2016-05-01 Sun 15:01]
 *** DONE odhlášení
@@ -32,22 +42,18 @@ CLOSED: [2016-05-01 Sun 09:42]
 *** pocet odhlasenych obedu
 ** DONE validace a ukládání omluvenkového formuláře
 CLOSED: [2016-05-01 Sun 09:42]
-** TODO logging middleware
+** DONE logging middleware
+CLOSED: [2016-08-11 Thu 14:44]
+** DONE SSL
+CLOSED: [2016-08-11 Thu 14:45]
 ** TODO server side validation without exception (hash-map like on the client
-** TODO jidelni listek
 ** TODO DB indexy
 ** TODO odchytávání DB constraint exceptions
 ** TODO omezení počtu chybných přihlášení (+ reset)
-** TODO zálohování DB
-** TODO SSL
-** TODO CRUD cenik
-** TODO výpočet platby na příští období (ceník + odhlášené obědy)
 ** TODO export dat do csv
 
 * dotazy Danka
-** jak funguje objednávání počtu obědů => kucharka se podiva
-** doména sys.listicka.org => Vlahovič
-** zadání/import dat - uživatelé, děti + docházka => xls
+
 * připomínky Danka
 ** DONE pristup pro kucharku s poctem obedu (normalni, vege, bez laktozy ...)
 CLOSED: [2016-05-01 Sun 22:01]
@@ -58,21 +64,11 @@ CLOSED: [2016-05-01 Sun 22:02]
 ** DONE u ditete volba typ obeda
 CLOSED: [2016-05-01 Sun 09:40]
 ** TODO moznost zadat nahradu pro Danku - datum, dite, obed?
-* bugs
-** v produkci se neloguji DB chyby?? (ukladani jiz existujici omluvenky)
-** editace dochazky dítěte zobrazuje i so a ne
-** DONE opravit zadavani datumu platnosti dochazky - nastavi o den mene
-CLOSED: [2016-05-01 Sun 09:41]
-
-** DONE prepnuti poctu radku na stranku datatable
-CLOSED: [2016-04-28 Thu 17:32]
 * obědy a platby = první verze po domluvě s Dankou
 ** příhlášení email+variabilní symbol
 ** možnost zrušit oběd do 10:00 předchozího dne (do nastavení X hodin před polednem tj. 26 hodin)
 ** zobrazit platbu na následující období (vypočítat obědy - odhlášené)
 ** kontakt na ITka: Milan Vlahovič 776700724 flexa@flexa.cz
-** přehodnocení technologií?
-*** embeded H2, bez modelování
 ** data
 *** user
 **** firstname
@@ -133,35 +129,3 @@ CLOSED: [2016-04-28 Thu 17:32]
 ** emails
 ** multilanguage (cz+en)
 ** local storage for offline contacts / mobile app?
-
-
-* Pages
-
-** login (email + password)
-** my info
-** for parents:
-*** my chilren
-**** attendance (this+next week)
-**** lunches
-*** my contacts
-*** my billing
-** for assistants
-*** children list / day (check-in?)
-*** find contacts
-** for admins
-*** lunch count / day
-*** billing / child
-*** edit everything...
-**** people by roles + all info & contacts
-**** attendance
-**** price list
-**** settings
-
-
-* First simplest version = admin part
-
-** create/read/update/delete data
-** cancel-attendance+lunch per child/day
-** display lunch count per day
-** display list of children per day
-** display billing info per child/month (minus previously cancelled lunches)
