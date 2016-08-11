@@ -40,6 +40,11 @@
    :ragtime {:resource-path "liskasys/migrations"}})
 
 (defn new-system [config]
+  (timbre/info "Installing default exception handler")
+  (Thread/setDefaultUncaughtExceptionHandler
+   (reify Thread$UncaughtExceptionHandler
+     (uncaughtException [_ thread ex]
+       (timbre/error ex "Uncaught exception on" (.getName thread)))))
   (timbre/set-config!
    {:level     (if (:dev env) :debug :info)
     :appenders {:println (println-appender)
