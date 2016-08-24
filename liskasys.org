@@ -3,18 +3,14 @@ LISKASYST
 podpurny informacni system pro lesni materskou skolu Listicka
 
 * bugs
-** TODO editace dochazky dítěte zobrazuje i so a ne
+** DONE editace dochazky dítěte zobrazuje i so a ne
+CLOSED: [2016-08-24 Wed 12:58]
 ** v produkci se neloguji DB chyby?? (ukladani jiz existujici omluvenky)
 ** DONE opravit zadavani datumu platnosti dochazky - nastavi o den mene
 CLOSED: [2016-05-01 Sun 09:41]
 
 ** DONE prepnuti poctu radku na stranku datatable
 CLOSED: [2016-04-28 Thu 17:32]
-* improvements
-** pouzivat clj-time format pro datum a cas (clj-time.jdbc, transit serializers)
-** clj-brnolib - odstranit jdbc common, time & datomic common
-** main_hiccup - oddelit hiccup od sql/datovych vypoctu (servisni vrstva?)
-** zobrazeni poctu zrusenych obedu pres sql dotaz (nyni naivni a nevykonne)
 * TODOs
 ** TODO nrepl server
 ** TODO zálohování DB
@@ -58,6 +54,11 @@ CLOSED: [2016-08-11 Thu 14:45]
 ** TODO odchytávání DB constraint exceptions
 ** TODO omezení počtu chybných přihlášení (+ reset)
 ** TODO export dat do csv
+* improvementsy
+** pouzivat clj-time format pro datum a cas (clj-time.jdbc, transit serializers)
+** clj-brnolib - odstranit jdbc common, time
+** main_hiccup - oddelit hiccup od sql/datovych vypoctu (servisni vrstva?)
+** zobrazeni poctu zrusenych obedu pres sql dotaz (nyni naivni a nevykonne)
 
 * dotazy Danka
 

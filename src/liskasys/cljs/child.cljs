@@ -159,7 +159,7 @@
                  [:thead
                   [:tr
                    (doall
-                    (for [[day-no day-label] time/week-days]
+                    (for [[day-no day-label] (take 5 time/week-days)]
                       ^{:key day-no}
                       [:td day-label]))
                    [:td "Platná od - do"]]]
@@ -169,7 +169,7 @@
                      ^{:key (str "a" (:id att))}
                      [:tr
                       (doall
-                       (for [[day-no day-label] time/week-days]
+                       (for [[day-no day-label] (take 5 time/week-days)]
                          ^{:key day-no}
                          [:td
                           [re-com/v-box
