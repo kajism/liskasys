@@ -11,7 +11,7 @@
             [duct.middleware.not-found :refer [wrap-not-found]]
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
             [environ.core :refer [env]]
-            [liskasys.component.h2-periodic-dump :refer [h2-periodic-dump]]
+            [liskasys.component.scheduler :refer [scheduler]]
             [liskasys.endpoint.main :refer [main-endpoint]]
             [meta-merge.core :refer [meta-merge]]
             [ring.component.jetty :refer [jetty-server]]
@@ -62,12 +62,12 @@
          :app  (handler-component (:app config))
          :http (jetty-server (:http config))
          :db   (hikaricp (:db config))
-         :db-dump (h2-periodic-dump (:db config))
+         :scheduler (scheduler)
          :ragtime (ragtime (:ragtime config))
          :main (endpoint-component main-endpoint))
         (component/system-using
          {:http [:app]
           :app  [:main]
           :ragtime [:db]
-          :db-dump [:db]
+          :scheduler [:db]
           :main [:db]}))))
