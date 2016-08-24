@@ -1,5 +1,6 @@
 (ns liskasys.system
-  (:require [clj-brnolib.middleware :as middleware]
+  (:require [clj-brnolib.component.nrepl-server :refer [nrepl-server]]
+            [clj-brnolib.middleware :as middleware]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
             [com.stuartsierra.component :as component]
@@ -54,6 +55,7 @@
                          :backlog 10})}})
   (let [config (meta-merge base-config config)]
     (-> (component/system-map
+         :nrepl (nrepl-server (:nrepl-port config))
          :app  (handler-component (:app config))
          :http (jetty-server (:http config))
          :db   (hikaricp (:db config))
