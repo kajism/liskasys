@@ -11,6 +11,7 @@
             [duct.middleware.not-found :refer [wrap-not-found]]
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
             [environ.core :refer [env]]
+            [liskasys.component.h2-periodic-dump :refer [h2-periodic-dump]]
             [liskasys.endpoint.main :refer [main-endpoint]]
             [meta-merge.core :refer [meta-merge]]
             [ring.component.jetty :refer [jetty-server]]
@@ -41,11 +42,6 @@
    :ragtime {:resource-path "liskasys/migrations"}})
 
 (defn new-system [config]
-  (timbre/info "Installing default exception handler")
-  (Thread/setDefaultUncaughtExceptionHandler
-   (reify Thread$UncaughtExceptionHandler
-     (uncaughtException [_ thread ex]
-       (timbre/error ex "Uncaught exception on" (.getName thread)))))
   (timbre/set-config!
    {:level     (if (:dev env) :debug :info)
     :appenders {:println (println-appender)
@@ -53,16 +49,25 @@
                         {:path "log/liskasys.log"
                          :max-size (* 2 1024 1024)
                          :backlog 10})}})
+
+  (timbre/info "Installing default exception handler")
+  (Thread/setDefaultUncaughtExceptionHandler
+   (reify Thread$UncaughtExceptionHandler
+     (uncaughtException [_ thread ex]
+       (timbre/error ex "Uncaught exception on" (.getName thread)))))
+
   (let [config (meta-merge base-config config)]
     (-> (component/system-map
          :nrepl (nrepl-server (:nrepl-port config))
          :app  (handler-component (:app config))
          :http (jetty-server (:http config))
          :db   (hikaricp (:db config))
+         :db-dump (h2-periodic-dump (:db config))
          :ragtime (ragtime (:ragtime config))
          :main (endpoint-component main-endpoint))
         (component/system-using
          {:http [:app]
           :app  [:main]
           :ragtime [:db]
+          :db-dump [:db]
           :main [:db]}))))

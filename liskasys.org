@@ -12,8 +12,10 @@ CLOSED: [2016-05-01 Sun 09:41]
 ** DONE prepnuti poctu radku na stranku datatable
 CLOSED: [2016-04-28 Thu 17:32]
 * TODOs
-** TODO nrepl server
-** TODO zálohování DB
+** DONE nrepl server
+CLOSED: [2016-08-24 Wed 13:05]
+** DONE zálohování DB
+CLOSED: [2016-08-24 Wed 14:13]
 ** TODO email s poctem obedu v 10 hodin uzivatelum s roli obedy
 ** TODO plna a mobilni verze (detekce + moznost kdykoliv prepnout)
 ** TODO zobrazit dochazku na 4 tydny
