@@ -12,6 +12,10 @@ CLOSED: [2016-05-01 Sun 09:41]
 ** DONE prepnuti poctu radku na stranku datatable
 CLOSED: [2016-04-28 Thu 17:32]
 * TODOs
+** TODO filtr na strance Deti - default vypnuto zobrazeni deti bez platne dochazky (nyni nebo v budoucnu)
+** TODO datepickery nahradit textovym polem s validaci formatu
+** TODO zobrazit nastavenou dochazku v seznamu dětí
+** promyslet editaci dochazky deti na dalsi platebni obdobi => vypocet platby => oznacit zda zaplaceno
 ** DONE nrepl server
 CLOSED: [2016-08-24 Wed 13:05]
 ** DONE zálohování DB

@@ -187,6 +187,7 @@
      (GET "/save-sql-backup" []
        (jdbc/query db-spec ["SCRIPT TO ?"
                             (str "./db-dump/liskasys-db" (time/to-format (Date.) time/yyyyMMdd-HHmm) ".sql")])
+       ;; restore: (jdbc/execute! (user/db-spec) ["RUNSCRIPT FROM './liskasys-db.sql' "])
        (main-hiccup/liskasys-frame
         user
         [:div "Ok"])))))
