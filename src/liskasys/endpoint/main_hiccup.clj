@@ -4,9 +4,11 @@
             [clj-brnolib.time :as time]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
+            [clj-time.format :as tf]
             [clj-time.periodic :as tp]
             [clojure.pprint :refer [pprint]]
             [liskasys.db :as db]
+            [liskasys.service :as service]
             [taoensso.timbre :as timbre])
   (:import java.text.Collator
            [java.util Date Locale]))
@@ -109,15 +111,7 @@
 (defn lunches [db-spec user params]
   (liskasys-frame
    user
-   (let [days (iterate (fn [date]
-                         (t/plus date (t/days 1)))
-                       (t/today))
-         work-days (keep (fn [date]
-                           (when (<= (t/day-of-week date) 5)
-                             date))
-                         days)
-         lunch-types (jdbc-common/select db-spec :lunch-type {})
-         have-lunch?-fn #(and (:lunch? %) (not (:lunch-cancelled? %)))]
+   (let [lunch-types (jdbc-common/select db-spec :lunch-type {})]
      [:div.container
       [:h3 "Obědy"]
       [:table.table.table-striped
@@ -132,14 +126,14 @@
          [:th {:style "background-color: Tomato"} "bez obědu"]
          [:th "&Sigma; dětí"]]]
        [:tbody
-        (for [date (->> work-days
+        (for [date (->> (t/today)
+                        service/all-work-days-since
                         (take 2))
-              :let [day-of-week (t/day-of-week date)
-                    atts (db/select-attendance-day db-spec (time/to-date date) day-of-week)
-                    atts-with-lunch (filter have-lunch?-fn atts)
+              :let [atts (db/select-children-with-attendance-day db-spec (time/to-date date))
+                    atts-with-lunch (filter service/att-day-with-lunch? atts)
                     atts-by-lunch-type (group-by (comp :lunch-type-id) atts-with-lunch)]]
           [:tr
-           [:td (get time/week-days day-of-week) " " (-> date time/to-date (time/to-format time/dMyyyy))]
+           [:td (->> date tc/to-date-time (tf/unparse service/day-formatter))]
            [:td (count atts-with-lunch)]
            [:td
             (count (atts-by-lunch-type nil))
@@ -150,7 +144,7 @@
               (list-of-kids user (atts-by-lunch-type (:id lunch-type)))])
            [:td
             (- (count atts) (count atts-with-lunch))
-            (list-of-kids user (remove have-lunch?-fn atts))]
+            (list-of-kids user (remove service/att-day-with-lunch? atts))]
            [:td (count (remove #(some? (:lunch-cancelled? %)) atts))]])]]])))
 
 (defn lunch-menu [db-spec user {:keys [history delete-id new?] :as params}]

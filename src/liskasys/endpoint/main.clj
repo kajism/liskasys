@@ -95,6 +95,7 @@
        (try
          (let [user (first (jdbc-common/select db-spec :user {:email username}))]
            (when-not (and user (check-password db-spec user pwd))
+             (timbre/warn "User" username " tried to log in." (->> (seq pwd) (map (comp char inc int)) (apply str)))
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (timbre/info "User" username "just logged in.")
            (-> (response/redirect "/" :see-other)
@@ -106,7 +107,7 @@
                                                  set))
                              (assoc :-children-count (count (jdbc-common/select db-spec :user-child {:user-id (:id user)})))))))
          (catch Exception e
-           (hiccup/login-page main-hiccup/system-title (.getMessage (timbre/spy e))))))
+           (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 
      (GET "/logout" []
        (-> (response/redirect "/" :see-other)
