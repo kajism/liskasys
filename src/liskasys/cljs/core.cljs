@@ -5,6 +5,7 @@
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
+            liskasys.cljs.bank-holiday
             liskasys.cljs.cancellation
             liskasys.cljs.child
             liskasys.cljs.lunch-type
@@ -100,7 +101,9 @@
         [:li
          [:a {:href "#/price-lists"} "Ceník"]]
         [:li
-         [:a {:href "#/lunch-types"} "Diety"]]]]
+         [:a {:href "#/lunch-types"} "Diety"]]
+        [:li
+         [:a {:href "#/bank-holidays"} "Státní svátky"]]]]
       [:li
        [:a
         {:href "/logout"} "Odhlásit se"]]]]]])

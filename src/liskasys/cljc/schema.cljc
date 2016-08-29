@@ -58,6 +58,15 @@
     (s/optional-key :substitution-date) (s/maybe s/Inst)
     (s/optional-key :lunch-cancelled?) s/Bool}))
 
+(def BankHoliday
+  (merge CommonAttrs
+         {(s/optional-key :label) s/Str
+          (s/optional-key :day) (s/maybe s/Int)
+          (s/optional-key :month) (s/maybe s/Int)
+          (s/optional-key :easter-delta) (s/maybe s/Int)
+          (s/optional-key :valid-from-year) s/Int
+          (s/optional-key :valid-to-year) (s/maybe s/Int)}))
+
 (def AppDb
   {:current-page s/Keyword
    (s/optional-key :auth-user) User
@@ -71,5 +80,6 @@
    (s/optional-key :user-child) {s/Int UserChild}
    (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
    (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}
-   (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}})
+   (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}
+   (s/optional-key :bank-holiday) {(s/maybe s/Int) BankHoliday}})
 

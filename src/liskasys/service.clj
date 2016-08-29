@@ -34,8 +34,15 @@
          (map (fn [[k v]] [(get lunch-types k) (count v)]))
          (sort-by first cz-collator ))))
 
+(defn close-lunch-order [db-spec date total]
+  (let [lunch-order (first (jdbc-common/select db-spec :lunch-order {:date date}))]
+    (jdbc-common/save! db-spec :lunch-order (assoc lunch-order
+                                                   :date date
+                                                   :total total))))
+
 (defn send-lunch-order [db-spec date]
   (let [lunch-counts (not-empty (select-lunch-counts-by-diet-label db-spec date))
+        total (apply + (map second lunch-counts))
         subject (str "Objednávka obědů pro Lištičku na " (->> date
                                                               tc/to-date-time
                                                               (tf/unparse day-formatter)))
@@ -50,7 +57,8 @@
                                           (for [[t c] lunch-counts]
                                             (str t ": " c "\n")))
                                    "-------------------------------------------------\n"
-                                   "CELKEM: " (apply + (map second lunch-counts)))}]}]
+                                   "CELKEM: " total)}]}]
+    (close-lunch-order db-spec date total)
     (if-not lunch-counts
       (timbre/info "No lunches for " date ". Sending skipped.")
       (do

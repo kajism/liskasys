@@ -1,7 +1,5 @@
 (ns liskasys.component.scheduler
-  (:require [clj-time.coerce :as tc]
-            [clj-time.core :as t]
-            [com.stuartsierra.component :as component]
+  (:require [com.stuartsierra.component :as component]
             [liskasys.db :as db]
             [liskasys.service :as service]
             [taoensso.timbre :as timbre]
@@ -11,10 +9,11 @@
 (twarc/defjob h2-dump-to-file-job [scheduler db-spec file]
   (db/h2-dump-to-file db-spec file))
 
+(twarc/defjob close-lunch-order-job [scheduler db-spec]
+  (service/close-lunch-order db-spec (db/tomorrow) 0))
+
 (twarc/defjob send-lunch-order-job [scheduler db-spec]
-  (service/send-lunch-order db-spec (-> (t/today)
-                                        (t/plus (t/days 1))
-                                        tc/to-date)))
+  (service/send-lunch-order db-spec (db/tomorrow)))
 
 (defrecord Scheduler [db twarc-scheduler quartz-props]
   component/Lifecycle
@@ -27,9 +26,14 @@
                            [(:spec db) "./uploads/liskasys-db.sql"]
                            :trigger {:cron {:expression "0 24 3 * * ?" ;; at 03:24AM
                                             :misfire-handling :fire-and-process}})
+      (close-lunch-order-job sched
+                             [(:spec db)]
+                             :trigger {:cron {:expression "0 1 10 * * ?" ;; at 10:01 AM
+                                              :misfire-handling :fire-and-process
+                                              :time-zone (TimeZone/getTimeZone "Europe/Prague")}})
       (send-lunch-order-job sched
                             [(:spec db)]
-                            :trigger {:cron {:expression "0 0 10 * * ?" ;; at 10:00 AM
+                            :trigger {:cron {:expression "0 2 10 * * ?" ;; at 10:02 AM
                                              :misfire-handling :fire-and-process
                                              :time-zone (TimeZone/getTimeZone "Europe/Prague")}})
       (assoc component :twarc-scheduler sched)))

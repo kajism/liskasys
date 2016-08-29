@@ -1,16 +1,18 @@
 (ns liskasys.db
   (:require [clj-brnolib.jdbc-common :as jdbc-common]
             [clj-brnolib.time :as time]
-            [clj-brnolib.tools :as tools]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
-            #_clj-time.jdbc
             [clojure.java.jdbc :as jdbc]
             [clojure.string :as str]
             [taoensso.timbre :as timbre]
             [taoensso.truss :as truss])
-  (:import java.io.BufferedReader
-           java.util.Date))
+  (:import java.io.BufferedReader))
+
+(defn tomorrow []
+  (-> (t/today)
+      (t/plus (t/days 1))
+      tc/to-date))
 
 (defn assoc-fullname [person]
   (assoc person :-fullname (str (:lastname person) " " (:firstname person))))
@@ -94,19 +96,10 @@
                                "  AND (att.:valid-to IS NULL OR att.:valid-to >= ?)")
                               date day-of-week date date]))))
 
-(def lunch-storno-limit-utc-hour 8) ;;TODO daylight savings!!
-
-(defn- can-cancel-lunch? [date limit-hour]
-  (not
-   (t/before?
-    (tc/to-date-time date)
-    (-> (t/now)
-        tc/to-local-date
-        (t/plus (t/days
-                 (if (< (t/hour (t/time-now)) limit-hour)
-                   1
-                   2)))
-        tc/to-date-time))))
+(defn can-cancel-lunch? [db-spec date]
+  (-> (jdbc-common/select db-spec :lunch-order {:date date})
+      first
+      nil?))
 
 (defmethod jdbc-common/save! :cancellation
   [db-spec table-kw ent]
@@ -117,20 +110,19 @@
                                                         :lunch-cancelled? (and (:lunch? att-day)
                                                                                (if (some? (:lunch-cancelled? ent))
                                                                                  (:lunch-cancelled? ent)
-                                                                                 (can-cancel-lunch? (:date ent) lunch-storno-limit-utc-hour)))}))))
+                                                                                 (can-cancel-lunch? db-spec (:date ent))))}))))
 
 (defn select-next-attendance-weeks [db-spec child-id weeks]
   (timbre/debug "Selecting next attendance weeks for child-id" child-id)
-  (let [today (t/today)]
-    (->> (range 14)
-         (mapcat
-          #(let [clj-date (t/plus today (t/days %))
-                 date (time/to-date clj-date)
-                 att (select-child-attendance-day db-spec child-id date)
-                 cancellation (first (jdbc-common/select db-spec :cancellation {:child-id child-id :date date}))]
-             (when att
-               [date (assoc att :cancellation cancellation)])))
-         (apply array-map))))
+  (->> (range 14)
+       (mapcat
+        #(let [clj-date (t/plus (-> (tomorrow) tc/to-local-date) (t/days %))
+               date (time/to-date clj-date)
+               att (select-child-attendance-day db-spec child-id date)
+               cancellation (first (jdbc-common/select db-spec :cancellation {:child-id child-id :date date}))]
+           (when att
+             [date (assoc att :cancellation cancellation)])))
+       (apply array-map)))
 
 (defn select-children-by-user-id [db-spec user-id]
   (map assoc-fullname
