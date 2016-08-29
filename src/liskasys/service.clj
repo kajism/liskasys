@@ -65,6 +65,6 @@
         (timbre/info "Sending " (:subject msg) "to" (:to msg))
         (timbre/debug msg)
         (let [result (postal/send-message msg)]
-          (if (:error result)
-            (timbre/error "Failed to send email" result)
-            (timbre/info "Lunch order has been sent" result)))))))
+          (if (zero? (:code result))
+            (timbre/info "Lunch order has been sent" result)
+            (timbre/error "Failed to send email" result)))))))
