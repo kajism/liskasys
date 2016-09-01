@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS "person" (
 "lunch-type-id" BIGINT,
 "lunch-pattern" CHAR(7) NOT NULL DEFAULT '0000000',
 "free-lunches?" BOOLEAN NOT NULL DEFAULT FALSE,
-"email" VARCHAR(128) NOT NULL,
+"email" VARCHAR(128),
 "phone" VARCHAR(20),
 "passwd" VARCHAR(128),
 "roles" VARCHAR(256),

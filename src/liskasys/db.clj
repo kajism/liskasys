@@ -25,6 +25,10 @@
   [db-spec table-kw where-m]
   (map assoc-fullname (jdbc-common/select-default db-spec table-kw where-m)))
 
+(defmethod jdbc-common/select :person
+  [db-spec table-kw where-m]
+  (map assoc-fullname (jdbc-common/select-default db-spec table-kw where-m)))
+
 (defmethod jdbc-common/select :attendance
   [db-spec table-kw where-m]
   (let [att-id->days (->> (jdbc-common/select-default db-spec :attendance-day {})
@@ -163,6 +167,8 @@
 (defn select-users-with-role [db-spec role]
   (jdbc/query db-spec ["SELECT \"email\" FROM \"user\" WHERE \"roles\" LIKE ?" (str "%" role "%")] ))
 
+;; restore: (jdbc/execute! (user/db-spec) ["RUNSCRIPT FROM './liskasys-db.sql' "])
 (defn h2-dump-to-file [db-spec file]
   (timbre/info "Dumping DB to " file)
   (jdbc/query db-spec ["SCRIPT TO ?" file]))
+

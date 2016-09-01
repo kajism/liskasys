@@ -9,6 +9,7 @@
             liskasys.cljs.cancellation
             liskasys.cljs.child
             liskasys.cljs.lunch-type
+            liskasys.cljs.person
             liskasys.cljs.user
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
@@ -85,6 +86,8 @@
       [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
     [:div#liskasys-navbar.collapse.navbar-collapse
      [:ul.nav.navbar-nav
+      [:li
+       [:a {:href "#/persons"} "Lidé"]]
       [:li
        [:a {:href "#/children"} "Děti"]]
       [:li

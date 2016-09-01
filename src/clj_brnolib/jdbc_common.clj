@@ -54,6 +54,7 @@
       first))
 
 (defn insert! [db-spec table-kw row]
+  (timbre/info "Inserting" table-kw "row" row)
   (->
    (jdbc/insert! db-spec
                  (esc table-kw)
@@ -61,6 +62,7 @@
    h2-inserted-id))
 
 (defn update! [db-spec table-kw row]
+  (timbre/info "Updating" table-kw "row" row)
   (jdbc/update! db-spec
                 (esc table-kw)
                 (esc row)
@@ -71,7 +73,6 @@
                   table-kw))
 
 (defn save!-default [db-spec table-kw row]
-  (timbre/info "Saving" table-kw "row" row)
   (let [id (if (:id row)
              (update! db-spec table-kw row)
              (insert! db-spec table-kw row))]
