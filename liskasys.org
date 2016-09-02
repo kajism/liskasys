@@ -3,8 +3,26 @@ LISKASYST
 podpurny informacni system pro lesni materskou skolu Listicka
 
 * TODOs
-
-** promyslet novou koncepci / DB schema dle aktualnich pozadavku
+** new schema
+*** DONE migrate attendance days + lunches to patterns
+CLOSED: [2016-09-02 Fri 16:59]
+*** DONE deactivate users with zero patterns
+CLOSED: [2016-09-02 Fri 16:59]
+*** active person filter
+*** billing period CRUD
+*** price list CRUD
+*** vacations CRUD
+*** generate person bills for period
+*** generate daily plans for confirmed bills
+*** migrate cancellations to daily plans
+*** rewrite all code to use the new schema
+**** cancellations
+**** lunch orders
+**** lunch and cancellations views
+*** GUI for patterns editing
+*** deprecate old DB tables and GUIs
+** DONE promyslet novou koncepci / DB schema dle aktualnich pozadavku
+CLOSED: [2016-09-02 Fri 15:18]
 *** vse navazano na platebni obdobi
 **** cenik dochazky a obedu
 **** dochazka ditete

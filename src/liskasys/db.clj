@@ -29,6 +29,10 @@
   [db-spec table-kw where-m]
   (map assoc-fullname (jdbc-common/select-default db-spec table-kw where-m)))
 
+(defmethod jdbc-common/save! :person
+  [db-spec table-kw row]
+  (jdbc-common/save!-default db-spec table-kw (dissoc row :-fullname)))
+
 (defmethod jdbc-common/select :attendance
   [db-spec table-kw where-m]
   (let [att-id->days (->> (jdbc-common/select-default db-spec :attendance-day {})

@@ -39,8 +39,10 @@
                  ["Jméno" :firstname]
                  ["Variabilní symbol" :var-symbol]
                  ["Dieta" #(:label (get @lunch-types (:lunch-type-id %)))]
+                 ["Rozvrh obědů" #(when (not= (:lunch-pattern %) "0000000") (:lunch-pattern %))]
+                 ["Rozvrh docházky" #(when (not= (:att-pattern %) "0000000") (:att-pattern %))]
                  ["Email" :email]
-                 ["Telefon" :phone]
+                 ["Mobilní telefon" :phone]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -114,7 +116,7 @@
               [re-com/v-box
                :children
                [[re-com/label :label "Rozvrh docházky"]
-                [input-text item :person :lunch-pattern]
+                [input-text item :person :att-pattern]
                 (when (:id item)
                   [re-com/v-box
                    :children
