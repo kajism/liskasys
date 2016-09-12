@@ -14,6 +14,7 @@
             [environ.core :refer [env]]
             [liskasys.db :as db]
             [liskasys.endpoint.main-hiccup :as main-hiccup]
+            [liskasys.service :as service]
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]
             [taoensso.truss :as truss])
@@ -46,7 +47,7 @@
          (response/redirect "/obedy")
          (let [parents-children (db/select-children-by-user-id db-spec (:id user))
                selected-child-id (or (:child-id params) (:id (first parents-children)))
-               child-att-days (db/select-next-attendance-weeks db-spec selected-child-id 2)]
+               child-att-days (service/find-next-attendance-weeks db-spec selected-child-id 2)]
            (main-hiccup/liskasys-frame
             user
             (main-hiccup/cancellation-page parents-children selected-child-id child-att-days)))))

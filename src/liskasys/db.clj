@@ -112,60 +112,18 @@
                                                                                  (:lunch-cancelled? ent)
                                                                                  (can-cancel-lunch? db-spec (:date ent))))}))))
 
-;; Source: https://gist.github.com/werand/2387286
-(defn- easter-sunday-for-year [year]
-  (let [golden-year (+ 1 (mod year 19))
-        div (fn div [& more] (Math/floor (apply / more)))
-        century (+ (div year 100) 1)
-        skipped-leap-years (- (div (* 3 century) 4) 12)
-        correction (- (div (+ (* 8 century) 5) 25) 5)
-        d (- (div (* 5 year) 4) skipped-leap-years 10)
-        epac (let [h (mod (- (+ (* 11 golden-year) 20 correction)
-                             skipped-leap-years) 30)]
-               (if (or (and (= h 25) (> golden-year 11)) (= h 24))
-                 (inc h) h))
-        m (let [t (- 44 epac)]
-            (if (< t 21) (+ 30 t) t))
-        n (- (+ m 7) (mod (+ d m) 7))
-        day (if (> n 31) (- n 31) n)
-        month (if (> n 31) 4 3)]
-    (t/local-date year (int month) (int day))))
-
-(defn- easter-monday-for-year [year]
-  (t/plus (easter-sunday-for-year year) (t/days 1)))
-
-(def easter-monday-for-year-memo (memoize easter-monday-for-year))
-
-(defn- valid-in-year? [bank-holiday year]
-  (and (or (nil? (:valid-from-year bank-holiday)) (>= year (:valid-from-year bank-holiday)))
-       (or (nil? (:valid-to-year bank-holiday)) (<= year (:valid-to-year bank-holiday)))))
-
-(defn- bank-holiday? [clj-date bank-holidays]
-  (let [y (t/year clj-date)]
-    (seq (filter (fn [bh]
-                   (and (valid-in-year? bh y)
-                        (or (and (= (t/day clj-date) (:day bh))
-                                 (= (t/month clj-date) (:month bh)))
-                            (and (some? (:easter-delta bh))
-                                 (t/equal? clj-date
-                                           (t/plus (easter-monday-for-year-memo y)
-                                                   (t/days (:easter-delta bh))))))))
-                 bank-holidays))))
-
 (defn select-next-attendance-weeks [db-spec child-id weeks]
   (timbre/debug "Selecting next attendance weeks for child-id" child-id)
-  (let [start-clj-date (-> (tomorrow) tc/to-local-date)
-        bank-holidays (jdbc-common/select db-spec :bank-holiday {})]
+  (let [start-clj-date (-> (tomorrow) tc/to-local-date)]
     (->> (range 14)
-         (mapcat
+         (keep
           #(let [clj-date (t/plus start-clj-date (t/days %))
                  date (time/to-date clj-date)
                  att (select-child-attendance-day db-spec child-id date)]
-             (when (and att (not (bank-holiday? clj-date bank-holidays)))
+             (when att
                [date (assoc att :cancellation
                             (first
-                             (jdbc-common/select db-spec :cancellation {:child-id child-id :date date})))])))
-         (apply array-map))))
+                             (jdbc-common/select db-spec :cancellation {:child-id child-id :date date})))]))))))
 
 (defn select-children-by-user-id [db-spec user-id]
   (map assoc-fullname
