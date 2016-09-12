@@ -15,7 +15,7 @@
 
 (def system-title "LiškaSys")
 
-(defn liskasys-frame [user body]
+(defn liskasys-frame [{children-count :-children-count roles :-roles :as user} body-hiccup]
   (hiccup/hiccup-response
    (hiccup/hiccup-frame
     system-title
@@ -31,22 +31,22 @@
          [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
        [:div#liskasys-navbar.collapse.navbar-collapse
         [:ul.nav.navbar-nav
-         (when (pos? (:-children-count user))
+         (when (pos? children-count)
            [:li
             [:a {:href "/"} "Omluvenky"]])
          [:li
           [:a {:href "/jidelni-listek"} "Jídelní lístek"]]
-         (when (or ((:-roles user) "admin")
-                   ((:-roles user) "obedy"))
+         (when (or (roles "admin")
+                   (roles "obedy"))
            [:li
             [:a {:href "/obedy"} "Obědy"]])
-         (when ((:-roles user) "admin")
+         (when (roles "admin")
            [:li
             [:a {:href "/odhlasene-obedy"} "Odhlášené obědy"]])]
         [:ul.nav.navbar-nav.navbar-right
          [:li
           [:a {:href "/profile"} (:-fullname user)]]
-         (when ((:-roles user) "admin")
+         (when (roles "admin")
            [:li
             [:a {:target "admin" :href "/admin.app"} "Admin"]])
          [:li
@@ -54,48 +54,40 @@
          [:li
           [:a
            {:href "/logout"} "Odhlásit se"]]]]]]
-     body])))
+     body-hiccup])))
 
-(defn cancellation-page [db-spec user {:keys [child-id] :as params}]
-  (liskasys-frame
-   user
-   (let [children (db/select-children-by-user-id db-spec (:id user))
-         child-id (or child-id (:id (first children)))
-         attendance-days (db/select-next-attendance-weeks db-spec child-id 2)]
-     [:div.container
-      [:h3 "Omluvenky"]
-      [:form {:method "post"
-              :role "form"}
-       [:div.form-group
-        [:label {:for "child"} "Dítě"]
-        [:select#child.form-control {:name "child-id"}
-         (for [child children]
-           [:option {:value (:id child)
-                     :selected (= child-id (:id child))} (:-fullname child)])]]
-       [:div.form-group
-        [:label {:for "from"} "Docházka bude (nebo již je) omluvena v označených dnech"]
-        [:table.table.table-striped
-         [:tbody
-          (for [[date att] attendance-days
-                :let [date-str (time/to-format date time/ddMMyyyy)
-                      cancellation (:cancellation att)]]
-            [:tr
-             [:td
-              [:label
-               (when cancellation
-                 [:input {:type "hidden" :name "already-cancelled-dates[]" :value date-str}])
-               [:input {:type "checkbox" :name "cancel-dates[]"
-                        :value (time/to-format date time/ddMMyyyy)
-                        :checked (boolean cancellation)}] " "
-               (get time/week-days (:day-of-week att)) " "
-               (time/to-format date time/dMyyyy)
-               (when (:lunch-cancelled? cancellation)
-                 " včetně oběda")]]])]]]
-       #_(anti-forgery/anti-forgery-field)
-       [:button.btn.btn-danger {:type "submit"} "Uložit"]]
-      #_[:pre (with-out-str
-                (pprint user)
-                (pprint params))]])))
+(defn cancellation-page [users-children selected-child-id child-att-days]
+  [:div.container
+    [:h3 "Omluvenky"]
+    [:form {:method "post"
+            :role "form"}
+     [:div.form-group
+      [:label {:for "child"} "Dítě"]
+      [:select#child.form-control {:name "child-id"}
+       (for [child users-children]
+         [:option {:value (:id child)
+                   :selected (= selected-child-id (:id child))} (:-fullname child)])]]
+     [:div.form-group
+      [:label {:for "from"} "Docházka bude (nebo již je) omluvena v označených dnech"]
+      [:table.table.table-striped
+       [:tbody
+        (for [[date att] child-att-days
+              :let [date-str (time/to-format date time/ddMMyyyy)
+                    cancellation (:cancellation att)]]
+          [:tr
+           [:td
+            [:label
+             (when cancellation
+               [:input {:type "hidden" :name "already-cancelled-dates[]" :value date-str}])
+             [:input {:type "checkbox" :name "cancel-dates[]"
+                      :value (time/to-format date time/ddMMyyyy)
+                      :checked (boolean cancellation)}] " "
+             (get time/week-days (:day-of-week att)) " "
+             (time/to-format date time/dMyyyy)
+             (when (:lunch-cancelled? cancellation)
+               " včetně oběda")]]])]]]
+     #_(anti-forgery/anti-forgery-field)
+     [:button.btn.btn-danger {:type "submit"} "Uložit"]]])
 
 (def cs-collator (Collator/getInstance (Locale. "CS")))
 

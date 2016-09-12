@@ -14,6 +14,7 @@
             [environ.core :refer [env]]
             [liskasys.db :as db]
             [liskasys.endpoint.main-hiccup :as main-hiccup]
+            [liskasys.service :as service]
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]
             [taoensso.truss :as truss])
@@ -40,11 +41,16 @@
 
 (defn main-endpoint [{{db-spec :spec} :db}]
   (routes
-   (context "" {{user :user} :session}
+   (context "" {{{children-count :-children-count roles :-roles :as user} :user} :session}
      (GET "/" {:keys [params]}
-       (if-not (or (pos? (:-children-count user)) ((:-roles user) "admin"))
+       (if-not (or (pos? children-count) (roles "admin"))
          (response/redirect "/obedy")
-         (main-hiccup/cancellation-page db-spec user params)))
+         (let [parents-children (db/select-children-by-user-id db-spec (:id user))
+               selected-child-id (or (:child-id params) (:id (first parents-children)))
+               child-att-days (service/find-next-attendance-weeks db-spec selected-child-id 2)]
+           (main-hiccup/liskasys-frame
+            user
+            (main-hiccup/cancellation-page parents-children selected-child-id child-att-days)))))
 
      (POST "/" {:keys [params]}
        (let [cancel-dates (make-date-sets (:cancel-dates params))

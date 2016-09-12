@@ -122,15 +122,16 @@
 
 (defn select-next-attendance-weeks [db-spec child-id weeks]
   (timbre/debug "Selecting next attendance weeks for child-id" child-id)
-  (->> (range 14)
-       (mapcat
-        #(let [clj-date (t/plus (-> (tomorrow) tc/to-local-date) (t/days %))
-               date (time/to-date clj-date)
-               att (select-child-attendance-day db-spec child-id date)
-               cancellation (first (jdbc-common/select db-spec :cancellation {:child-id child-id :date date}))]
-           (when att
-             [date (assoc att :cancellation cancellation)])))
-       (apply array-map)))
+  (let [start-clj-date (-> (tomorrow) tc/to-local-date)]
+    (->> (range 14)
+         (keep
+          #(let [clj-date (t/plus start-clj-date (t/days %))
+                 date (time/to-date clj-date)
+                 att (select-child-attendance-day db-spec child-id date)]
+             (when att
+               [date (assoc att :cancellation
+                            (first
+                             (jdbc-common/select db-spec :cancellation {:child-id child-id :date date})))]))))))
 
 (defn select-children-by-user-id [db-spec user-id]
   (map assoc-fullname
@@ -171,7 +172,7 @@
 (defn select-users-with-role [db-spec role]
   (jdbc/query db-spec ["SELECT \"email\" FROM \"user\" WHERE \"roles\" LIKE ?" (str "%" role "%")] ))
 
-;; restore: (jdbc/execute! (user/db-spec) ["RUNSCRIPT FROM './liskasys-db.sql' "])
+;; restore: (jdbc/execute! (user/db-spec) ["RUNSCRIPT FROM './uploads/liskasys-db.sql' "])
 (defn h2-dump-to-file [db-spec file]
   (timbre/info "Dumping DB to " file)
   (jdbc/query db-spec ["SCRIPT TO ?" file]))
