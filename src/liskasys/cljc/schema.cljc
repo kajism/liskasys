@@ -67,6 +67,23 @@
           (s/optional-key :valid-from-year) s/Int
           (s/optional-key :valid-to-year) (s/maybe s/Int)}))
 
+(def BillingPeriod
+  (merge CommonAttrs
+         {(s/optional-key :from-yyyymm) (s/maybe s/Int)
+          (s/optional-key :to-yyyymm) (s/maybe s/Int)}))
+
+(def PriceList
+  (merge CommonAttrs
+         {(s/optional-key :days-1) (s/maybe s/Int)
+          (s/optional-key :days-2) (s/maybe s/Int)
+          (s/optional-key :days-3) (s/maybe s/Int)
+          (s/optional-key :days-4) (s/maybe s/Int)
+          (s/optional-key :days-5) (s/maybe s/Int)
+          (s/optional-key :half-day) (s/maybe s/Int)
+          (s/optional-key :lunch) (s/maybe s/Int)
+          (s/optional-key :valid-from) s/Inst
+          (s/optional-key :valid-to) (s/maybe s/Inst)}))
+
 (def AppDb
   {:current-page s/Keyword
    (s/optional-key :auth-user) User
@@ -81,5 +98,7 @@
    (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
    (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}
    (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}
-   (s/optional-key :bank-holiday) {(s/maybe s/Int) BankHoliday}})
+   (s/optional-key :bank-holiday) {(s/maybe s/Int) BankHoliday}
+   (s/optional-key :billing-period) {(s/maybe s/Int) BillingPeriod}
+   (s/optional-key :price-list) {(s/maybe s/Int) PriceList}})
 

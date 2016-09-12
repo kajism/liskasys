@@ -11,6 +11,7 @@
             liskasys.cljs.child
             liskasys.cljs.lunch-type
             liskasys.cljs.person
+            liskasys.cljs.price-list
             liskasys.cljs.user
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
@@ -96,7 +97,7 @@
        [:a.dropdown-toggle {:data-toggle "dropdown" :href "#"}
         "Nastavení" [:span.caret]]
        [:ul.dropdown-menu
-        [:li [:a {:href "#/price-list"} "Ceník"]]
+        [:li [:a {:href "#/price-lists"} "Ceníky"]]
         [:li [:a {:href "#/lunch-types"} "Diety"]]
         [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
         [:li [:a {:href "#/users"} "--Uživatelé--"]]

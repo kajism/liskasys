@@ -2,17 +2,11 @@
   (:require [clj-brnolib.cljs.comp.buttons :as buttons]
             [clj-brnolib.cljs.comp.data-table :refer [data-table]]
             [clj-brnolib.cljs.util :as util]
-            [clj-brnolib.validation :as validation]
-            [cljs.pprint :refer [pprint]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [secretary.core :as secretary]
-            [taoensso.timbre :as timbre]
-            [reagent.core :as reagent]
-            [clojure.string :as str]
-            [clj-brnolib.cljs.comp.input-text :refer [input-text]]))
+            [secretary.core :as secretary]))
 
 (defn page-bank-holidays []
   (let [bank-holidays (re-frame/subscribe [:entities :bank-holiday])]

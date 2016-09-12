@@ -35,12 +35,18 @@ ALTER TABLE "parent-child" ADD CONSTRAINT "fk-child-to-person"
 ALTER TABLE "parent-child" ADD CONSTRAINT "parent-child-unique"
   UNIQUE ("parent-id", "child-id");
 
-CREATE TABLE IF NOT EXISTS "price-list" (
+DROP TABLE IF EXISTS "price-list";
+CREATE TABLE "price-list" (
 "id" BIGINT IDENTITY,
-"label" VARCHAR(100) NOT NULL,
-"system-code" CHAR(1) NOT NULL,
-"price-cents" INT NOT NULL
-);
+"days-1" INT NOT NULL,
+"days-2" INT NOT NULL,
+"days-3" INT NOT NULL,
+"days-4" INT NOT NULL,
+"days-5" INT NOT NULL,
+"half-day" INT NOT NULL,
+"lunch" INT NOT NULL,
+"valid-from" DATE NOT NULL,
+"valid-to" DATE);
 
 CREATE TABLE IF NOT EXISTS "billing-period" (
 "id" BIGINT IDENTITY,

@@ -4,4 +4,3 @@ DROP TABLE IF EXISTS "person";
 DROP TABLE IF EXISTS "billing-period";
 DROP TABLE IF EXISTS "person-bill";
 DROP TABLE IF EXISTS "daily-plan";
-
