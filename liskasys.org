@@ -8,10 +8,8 @@ podpurny informacni system pro lesni materskou skolu Listicka
 CLOSED: [2016-09-02 Fri 16:59]
 *** DONE deactivate users with zero patterns
 CLOSED: [2016-09-02 Fri 16:59]
-*** active person filter
-*** billing period CRUD
-*** price list CRUD
-*** vacations CRUD
+*** TODO billing period CRUD
+*** TODO price list CRUD
 *** generate person bills for period
 *** generate daily plans for confirmed bills
 *** migrate cancellations to daily plans
@@ -19,8 +17,27 @@ CLOSED: [2016-09-02 Fri 16:59]
 **** cancellations
 **** lunch orders
 **** lunch and cancellations views
+*** active person filter
 *** GUI for patterns editing
 *** deprecate old DB tables and GUIs
+** TODO filtr na strance Deti - default vypnuto zobrazeni deti bez platne dochazky (nyni nebo v budoucnu)
+** TODO zobrazit nastavenou dochazku v seznamu dětí
+** TODO moznost nastavit odber obedu i bez dochazky (nektere deti, ale i dospeli)
+** TODO Frantisek a Anicka maji obedy (budou platit) i dochazku (nebudou platit)
+** TODO lektori maji obedy zdarma
+** TODO nahrady
+*** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
+*** schvalovaci email Dance
+*** vyrovnani obedu
+** TODO form validation?!?!?
+** TODO odchytávání DB constraint exceptions => rozumna hlaska uživateli
+** TODO DB indexes
+** TODO datepickery nahradit textovym polem s validaci formatu
+** TODO plna a mobilni verze (detekce + moznost kdykoliv prepnout) - material or semantic UI???
+*** TODO zobrazit dochazku na 4 tydny
+*** TODO moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
+*** TODO zobrazit rodicum zrusene obedy
+** TODO prazdniny (27.12. - 31.12. + 1.7. - 31.8.) a "reditelske volno" (jednorazove)
 ** DONE promyslet novou koncepci / DB schema dle aktualnich pozadavku
 CLOSED: [2016-09-02 Fri 15:18]
 *** vse navazano na platebni obdobi
@@ -41,29 +58,10 @@ CLOSED: [2016-09-02 Fri 15:18]
 *** moznost upravit kazdy jednotlivy den obdobi => vyrovnani s fondy plateb, fond dochazky (zrusene dochazky)
 *** sloucit deti & uzivatele => lide
 *** konverze stavajicich dat
-** TODO svatky, prazdniny (28. zari!!!!) a "reditelske volno" (jednorazove)
-** TODO moznost nastavit odber obedu i bez dochazky (nektere deti, ale i dospeli)
-** TODO Frantisek a Anicka maji obedy (budou platit) i dochazku (nebudou platit)
-** TODO lektori maji obedy zdarma
-** TODO nahrady
-*** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
-*** schvalovaci email Dance
-*** vyrovnani obedu
 ** DONE email s poctem obedu v 10 hodin uzivatelum s roli obedy
 CLOSED: [2016-08-27 Sat 21:57]
-** DONE svatky a prazdniny (28. zari!!!!)
+** DONE svatky (28. zari!!!!)
 CLOSED: [2016-09-12 Mon 13:02]
-** TODO odchytávání DB constraint exceptions => rozumna hlaska uživateli
-** TODO zobrazit nastavenou dochazku v seznamu dětí
-** TODO filtr na strance Deti - default vypnuto zobrazeni deti bez platne dochazky (nyni nebo v budoucnu)
-** TODO datepickery nahradit textovym polem s validaci formatu
-** TODO plna a mobilni verze (detekce + moznost kdykoliv prepnout) - material or semantic UI???
-*** TODO zobrazit dochazku na 4 tydny
-*** TODO moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
-*** TODO zobrazit rodicum zrusene obedy
-** TODO CRUD cenik
-** TODO výpočet platby na příští období (ceník - odhlášené obědy + obedy na nove obdobi)
-** TODO DB indexy
 ** DONE email s poctem obedu v 10 hodin uzivatelum s roli obedy
 CLOSED: [2016-08-27 Sat 21:57]
 ** DONE nrepl server

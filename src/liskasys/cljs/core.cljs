@@ -6,6 +6,7 @@
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
             liskasys.cljs.bank-holiday
+            liskasys.cljs.billing-period
             liskasys.cljs.cancellation
             liskasys.cljs.child
             liskasys.cljs.lunch-type
@@ -86,12 +87,8 @@
       [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
     [:div#liskasys-navbar.collapse.navbar-collapse
      [:ul.nav.navbar-nav
-      [:li
-       [:a {:href "#/persons"} "Lidé"]]
-      [:li
-       [:a {:href "#/children"} "Děti"]]
-      [:li
-       [:a {:href "#/cancellations"} "Omluvenky"]]]
+      [:li [:a {:href "#/persons"} "Lidé"]]
+      [:li [:a {:href "#/billing-periods"} "Platební období"]]]
      [:ul.nav.navbar-nav.navbar-right
       #_[:li
        [:a {:target "_parent" :href "/obedy"} "Obědy"]]
@@ -99,14 +96,12 @@
        [:a.dropdown-toggle {:data-toggle "dropdown" :href "#"}
         "Nastavení" [:span.caret]]
        [:ul.dropdown-menu
-        [:li
-         [:a {:href "#/users"} "Uživatelé"]]
-        [:li
-         [:a {:href "#/price-lists"} "Ceník"]]
-        [:li
-         [:a {:href "#/lunch-types"} "Diety"]]
-        [:li
-         [:a {:href "#/bank-holidays"} "Státní svátky"]]]]
+        [:li [:a {:href "#/price-list"} "Ceník"]]
+        [:li [:a {:href "#/lunch-types"} "Diety"]]
+        [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
+        [:li [:a {:href "#/users"} "--Uživatelé--"]]
+        [:li [:a {:href "#/children"} "--Děti--"]]
+        [:li [:a {:href "#/cancellations"} "--Omluvenky--"]]]]
       [:li
        [:a
         {:href "/logout"} "Odhlásit se"]]]]]])

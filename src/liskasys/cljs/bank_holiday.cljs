@@ -19,7 +19,7 @@
     (fn []
       [re-com/v-box
        :children
-       [[:h3 "Státní svátek"]
+       [[:h3 "Státní svátky"]
         [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/bank-holiday/e")]
         [data-table
          :table-id :bank-holidays
@@ -45,18 +45,12 @@
                   :csv-export]]]]])))
 
 (defn page-bank-holiday []
-  (let [bank-holiday (re-frame/subscribe [:entity-edit :bank-holiday])
-        validation-fn #(cond-> {}
-                         (str/blank? (:label %))
-                         (assoc :label "Vyplňte název")
-                         true
-                         timbre/spy)]
+  (let [bank-holiday (re-frame/subscribe [:entity-edit :bank-holiday])]
     (fn []
-      (let [item @bank-holiday
-            errors (:-errors item)]
+      (let [item @bank-holiday]
         [re-com/v-box :gap "5px"
          :children
-         [[:h3 "Státní svátky"]
+         [[:h3 "Státní svátek"]
           [re-com/label :label "Název"]
           [re-com/input-text
            :model (str (:label item))
@@ -94,7 +88,7 @@
            :width "60px"]
           [re-com/h-box :align :center :gap "5px"
            :children
-           [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :bank-holiday validation-fn])]
+           [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :bank-holiday])]
             "nebo"
             [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/bank-holiday/e")]
             [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/bank-holidays")]]]]]))))
