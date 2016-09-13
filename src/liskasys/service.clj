@@ -127,8 +127,8 @@
        (sort-by :valid-from)
        last))
 
-(defn- calculate-att-price [price-list days-per-week half-days-count]
-  (+ (get price-list (keyword (str "days-" days-per-week)) 0)
+(defn- calculate-att-price [price-list months-count days-per-week half-days-count]
+  (+ (* months-count (get price-list (keyword (str "days-" days-per-week)) 0))
      (* half-days-count (:half-day price-list))))
 
 (defn- day-numbers-from-pattern [pattern match-char]
@@ -180,11 +180,19 @@
                   lunch-count (->> daily-plans
                                    (filter :lunch?)
                                    count)
-                  half-days-count (->> daily-plans
-                                       (filter #(-> % :child-att (= 2)))
-                                       count)
-                  days-per-week (count (day-numbers-from-pattern (:att-pattern person) \1))
-                  att-price (calculate-att-price price-list days-per-week half-days-count)]]
+                  att-price (if (:free-att? person)
+                              0
+                              (calculate-att-price price-list
+                                                   (- (:to-yyyymm billing-period)
+                                                      (:from-yyyymm billing-period)
+                                                      -1)
+                                                   (count (day-numbers-from-pattern (:att-pattern person) \1))
+                                                   (->> daily-plans
+                                                        (filter #(-> % :child-att (= 2)))
+                                                        count)))
+                  lunch-price (if (:free-lunches? person)
+                                0
+                                (:lunch price-list))]]
       (jdbc-common/insert! db-spec :person-bill (-> person
                                                     (select-keys [:id :var-symbol :att-pattern :lunch-pattern])
                                                     (s/rename-keys {:id :person-id})
@@ -192,7 +200,7 @@
                                                             :paid? false
                                                             :total-lunches lunch-count
                                                             :att-price-cents att-price
-                                                            :total-cents (+ att-price (* lunch-count (:lunch price-list)))}))))))
+                                                            :total-cents (+ att-price (* lunch-count lunch-price))}))))))
 
 (defn re-generate-person-bills [db-spec period-id]
   (jdbc/with-db-transaction [tx db-spec]
