@@ -2,6 +2,7 @@
   (:require [clj-brnolib.jdbc-common :as jdbc-common]
             [clojure.java.jdbc :as jdbc]
             [clojure.pprint :refer [pprint]]
+            [liskasys.db :as db]
             [taoensso.timbre :as timbre]))
 
 (defn- users->persons [db-spec]
@@ -71,8 +72,7 @@
 
 (defn- deactivate-zero-pattern-kids+parents [db-spec]
   (doseq [child (jdbc-common/select db-spec :person {:child? true :active? true})
-          :when (and (= (:lunch-pattern child) "0000000")
-                     (= (:att-pattern child) "0000000"))]
+          :when (db/zero-patterns? child)]
     (jdbc-common/save! db-spec :person (assoc child :active? false)))
   (let [parent->child-ids (->> (jdbc-common/select db-spec :parent-child {})
                                (group-by :parent-id))
@@ -80,8 +80,7 @@
                           (map (juxt :id identity))
                           (into {}))]
     (doseq [adult (jdbc-common/select db-spec :person {:child? false :active? true})
-            :when (and (= (:lunch-pattern adult) "0000000")
-                       (= (:att-pattern adult) "0000000")
+            :when (and (db/zero-patterns? adult)
                        (->> adult
                             :id
                             parent->child-ids

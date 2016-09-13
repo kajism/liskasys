@@ -16,7 +16,7 @@
  common/debug-mw
  (fn [db [_]]
    (assoc-in db [:price-list nil] (-> (get-in db [:price-list (get-in db [:entity-edit :price-list :id])])
-                                      (dissoc :id :valid-from :valid-to)))))
+                                      (dissoc :id :valid-from)))))
 
 (defn from-cents [cents]
   (str (quot cents 100)))
@@ -44,7 +44,6 @@
                  ["půlden" (comp from-cents :half-day)]
                  ["oběd" (comp from-cents :lunch)]
                  ["Platný od" :valid-from]
-                 ["Platný do" :valid-to]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -72,12 +71,6 @@
           [re-com/datepicker-dropdown
            :model (time/from-date (:valid-from item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :valid-from (time/to-date %)])
-           :format "dd.MM.yyyy"
-           :show-today? true]
-          [re-com/label :label "Platný do"]
-          [re-com/datepicker-dropdown
-           :model (time/from-date (:valid-to item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :valid-to (time/to-date %)])
            :format "dd.MM.yyyy"
            :show-today? true]
           [re-com/label :label "5 dní"]

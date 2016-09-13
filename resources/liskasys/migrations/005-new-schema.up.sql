@@ -45,8 +45,8 @@ CREATE TABLE "price-list" (
 "days-5" INT NOT NULL,
 "half-day" INT NOT NULL,
 "lunch" INT NOT NULL,
-"valid-from" DATE NOT NULL,
-"valid-to" DATE);
+"valid-from" DATE NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS "billing-period" (
 "id" BIGINT IDENTITY,
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS "daily-plan" (
 );
 
 ALTER TABLE "daily-plan" ADD CONSTRAINT "fk-daily-plan-to-bill"
-  FOREIGN KEY ("bill-id") REFERENCES "person-bill" ("id");
+  FOREIGN KEY ("bill-id") REFERENCES "person-bill" ("id") ON DELETE CASCADE;
 ALTER TABLE "daily-plan" ADD CONSTRAINT "fk-daily-plan-to-person"
   FOREIGN KEY ("person-id") REFERENCES "person" ("id");
 ALTER TABLE "daily-plan" ADD CONSTRAINT "daily-plan-unique"

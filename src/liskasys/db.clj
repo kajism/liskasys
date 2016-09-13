@@ -177,3 +177,10 @@
   (timbre/info "Dumping DB to " file)
   (jdbc/query db-spec ["SCRIPT TO ?" file]))
 
+(defn zero-patterns? [person]
+  (and (= (:lunch-pattern person) "0000000")
+       (= (:att-pattern person) "0000000")))
+
+(defn select-active-persons [db-spec]
+  (->> (jdbc-common/select db-spec :person {:active? true})
+       (remove zero-patterns?)))

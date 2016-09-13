@@ -39,8 +39,8 @@
                  ["Jméno" :firstname]
                  ["Variabilní symbol" :var-symbol]
                  ["Dieta" #(:label (get @lunch-types (:lunch-type-id %)))]
-                 ["Rozvrh obědů" #(when (not= (:lunch-pattern %) "0000000") (:lunch-pattern %))]
                  ["Rozvrh docházky" #(when (not= (:att-pattern %) "0000000") (:att-pattern %))]
+                 ["Rozvrh obědů" #(when (not= (:lunch-pattern %) "0000000") (:lunch-pattern %))]
                  ["Email" :email]
                  ["Mobilní telefon" :phone]
                  [[re-com/md-icon-button

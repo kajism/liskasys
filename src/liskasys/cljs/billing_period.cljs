@@ -2,11 +2,20 @@
   (:require [clj-brnolib.cljs.comp.buttons :as buttons]
             [clj-brnolib.cljs.comp.data-table :refer [data-table]]
             [clj-brnolib.cljs.util :as util]
+            [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [secretary.core :as secretary]))
+
+(re-frame/register-handler
+ ::generate-person-bills
+ common/debug-mw
+ (fn [db [_ period-id]]
+   (server-call [:person-bill/generate {:period-id period-id}]
+                [:entities-set [:entities-where :person-bill {:period-id period-id}]])
+   db))
 
 (defn yyyymm->str [ym]
   (when ym
@@ -42,13 +51,16 @@
                   :csv-export]]]]])))
 
 (defn page-billing-period []
-  (let [billing-period (re-frame/subscribe [:entity-edit :billing-period])]
+  (let [item-id (re-frame/subscribe [:entity-edit-id :billing-period])
+        billing-period (re-frame/subscribe [:entity-edit :billing-period])
+        person-bills (re-frame/subscribe [:entities-where :person-bill {:period-id @item-id}])
+        persons (re-frame/subscribe [:entities :person])]
     (fn []
       (let [item @billing-period]
         [re-com/v-box :gap "5px"
          :children
          [[:h3 "Platební období"]
-          [re-com/label :label "Od (rok + měsíc)"]
+          [re-com/label :label "Od - Do"]
           [re-com/h-box :gap "5px"
            :children
            [[re-com/input-text
@@ -56,11 +68,8 @@
              :on-change #(re-frame/dispatch [:entity-change :billing-period (:id item) :from-yyyymm (util/parse-int %)])
              :validation-regex #"^\d{0,6}$"
              :width "120px"]
-            "RRRRMM"]]
-          [re-com/label :label "Do (rok + měsíc)"]
-          [re-com/h-box :gap "5px"
-           :children
-           [[re-com/input-text
+            "-"
+            [re-com/input-text
              :model (str (:to-yyyymm item))
              :on-change #(re-frame/dispatch [:entity-change :billing-period (:id item) :to-yyyymm (util/parse-int %)])
              :validation-regex #"^\d{0,6}$"
@@ -71,7 +80,24 @@
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :billing-period])]
             "nebo"
             [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/billing-period/e")]
-            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/billing-periods")]]]]]))))
+            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/billing-periods")]]]
+          (when (:id item)
+            [re-com/v-box :gap "5px"
+             :children
+             [[:h4 "Předpisy plateb"]
+              [re-com/button
+               :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " předpisy plateb")
+               :class "btn-danger"
+               :on-click #(re-frame/dispatch [::generate-person-bills (:id item)])]
+              [data-table
+               :rows @person-bills
+               :colls [["Jméno" #(->> % :person-id (get @persons) :-fullname)]
+                       ["Celkem Kč" :total-cents]
+                       ["Zaplaceno?" :paid?]
+                       ["Cena za docházku" :att-price-cents]
+                       ["Obědy" :total-lunches]
+                       ["Rozvrh docházky" #(when (not= (:att-pattern %) "0000000") (:att-pattern %))]
+                       ["Rozvrh obědů" #(when (not= (:lunch-pattern %) "0000000") (:lunch-pattern %))]]]]])]]))))
 
 (secretary/defroute "/billing-periods" []
   (re-frame/dispatch [:set-current-page :billing-periods]))

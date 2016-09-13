@@ -189,6 +189,7 @@
             "delete" (jdbc-common/delete! db-spec table-kw {:id ?data})
             (case msg-id
               :user/auth {}
+              :person-bill/generate (service/re-generate-person-bills db-spec (:period-id ?data))
               (throw (Exception. (str "Unknown msg-id: " msg-id))))))))
 
      (GET "/save-sql-backup" []

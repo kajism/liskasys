@@ -92,6 +92,7 @@
                                              :edit? s/Bool}}
    (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
                           (s/optional-key :info) (s/maybe s/Str)}
+   (s/optional-key :entities-where) {s/Keyword s/Any}
    (s/optional-key :user) {(s/maybe s/Int) (s/maybe User)}
    (s/optional-key :child) {(s/maybe s/Int) (s/maybe Child)}
    (s/optional-key :user-child) {s/Int UserChild}

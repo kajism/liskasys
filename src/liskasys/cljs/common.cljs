@@ -28,9 +28,22 @@
      out)))
 
 (re-frame/register-sub
+ :entities-where
+ (fn [db [_ kw where-m]]
+   (let [out (ratom/reaction (get-in @db [:entities-where kw where-m]))]
+     (when (nil? @out)
+       (re-frame/dispatch [:entities-load kw where-m]))
+     out)))
+
+(re-frame/register-sub
+ :entity-edit-id
+ (fn [db [_ kw]]
+   (ratom/reaction (get-in @db [:entity-edit kw :id]))))
+
+(re-frame/register-sub
  :entity-edit
  (fn [db [_ kw]]
-   (let [id (ratom/reaction (get-in @db [:entity-edit kw :id]))
+   (let [id (re-frame/subscribe [:entity-edit-id kw])
          ents (re-frame/subscribe [:entities kw])]
      (ratom/reaction (get @ents @id)))))
 
@@ -43,17 +56,19 @@
 (re-frame/register-handler
  :entities-load
  debug-mw
- (fn [db [_ kw]]
-   (server-call [(keyword (name kw) "select") {}]
-                [:entities-set kw])
+ (fn [db [_ kw where-m]]
+   (server-call [(keyword (name kw) "select") (or where-m {})]
+                [:entities-set (if-not where-m
+                                 [kw]
+                                 [:entities-where kw where-m])])
    db))
 
 (re-frame/register-handler
  :entities-set
  debug-mw
- (fn [db [_ kw v]]
-   (assoc db kw (into {} (map (juxt :id identity)
-                              v)))))
+ (fn [db [_ path v]]
+   (assoc-in db path (into {} (map (juxt :id identity)
+                                   v)))))
 
 (re-frame/register-handler
  :entity-set-edit

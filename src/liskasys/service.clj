@@ -3,6 +3,8 @@
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
             [clj-time.format :as tf]
+            [clojure.java.jdbc :as jdbc]
+            [clojure.set :as s]
             [liskasys.db :as db]
             [postal.core :as postal]
             [taoensso.timbre :as timbre])
@@ -119,3 +121,21 @@
          (remove (fn [[date att-day]]
                    (bank-holiday? (tc/to-local-date date) bank-holidays)))
          (into (sorted-map)))))
+
+(defn- generate-person-bills [db-spec period-id]
+  (doseq [person (db/select-active-persons db-spec)]
+    (jdbc-common/insert! db-spec :person-bill (-> (select-keys person [:id :var-symbol :att-pattern :lunch-pattern])
+                                                  (s/rename-keys {:id :person-id})
+                                                  (merge {:period-id period-id
+                                                          :paid? false
+                                                          :total-cents 0
+                                                          :total-lunches 0
+                                                          :att-price-cents 0})))
+    ))
+
+(defn re-generate-person-bills [db-spec period-id]
+  (jdbc/with-db-transaction [tx db-spec]
+    (jdbc-common/delete! tx :person-bill {:period-id period-id :paid? false})
+    (generate-person-bills tx period-id)
+    (jdbc-common/select tx :person-bill {:period-id period-id})))
+
