@@ -90,8 +90,17 @@
                :class "btn-danger"
                :on-click #(re-frame/dispatch [::generate-person-bills (:id item)])]
               [data-table
+               :table-id :person-bills
                :rows @person-bills
-               :colls [["Jméno" #(->> % :person-id (get @persons) :-fullname)]
+               :colls [["Jméno" (fn [row]
+                                  [re-com/h-box :gap "5px"
+                                   :children
+                                   [(->> row :person-id (get @persons) :-fullname)
+                                    [re-com/hyperlink-href
+                                     :href (str "#/person/" (:person-id row) "e")
+                                     :label [re-com/md-icon-button
+                                             :md-icon-name "zmdi-edit"
+                                             :tooltip "Editovat"]]]])]
                        ["Celkem Kč" (comp util/from-cents :total-cents)]
                        ["Zaplaceno?" :paid?]
                        ["Cena za docházku" (comp util/from-cents :att-price-cents)]
