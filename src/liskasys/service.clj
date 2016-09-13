@@ -53,7 +53,7 @@
   (and (or (nil? (:valid-from-year bank-holiday)) (>= year (:valid-from-year bank-holiday)))
        (or (nil? (:valid-to-year bank-holiday)) (<= year (:valid-to-year bank-holiday)))))
 
-(defn- bank-holiday? [clj-date bank-holidays]
+(defn- bank-holiday? [bank-holidays clj-date]
   (let [y (t/year clj-date)]
     (seq (filter (fn [bh]
                    (and (valid-in-year? bh y)
@@ -66,7 +66,7 @@
                  bank-holidays))))
 
 (defn find-children-with-attendance-day [db-spec date]
-  (when-not (bank-holiday? (tc/to-local-date date) (jdbc-common/select db-spec :bank-holiday {}))
+  (when-not (bank-holiday? (jdbc-common/select db-spec :bank-holiday {}) (tc/to-local-date date))
     (db/select-children-with-attendance-day db-spec date)))
 
 (defn- find-lunch-counts-by-diet-label [db-spec date]
@@ -119,19 +119,80 @@
   (let [bank-holidays (jdbc-common/select db-spec :bank-holiday {})]
     (->> (db/select-next-attendance-weeks db-spec child-id weeks)
          (remove (fn [[date att-day]]
-                   (bank-holiday? (tc/to-local-date date) bank-holidays)))
+                   (bank-holiday? bank-holidays (tc/to-local-date date))))
          (into (sorted-map)))))
 
+(defn find-last-price-list [db-spec]
+  (->> (jdbc-common/select db-spec :price-list {})
+       (sort-by :valid-from)
+       last))
+
+(defn- calculate-att-price [price-list days-per-week half-days-count]
+  (+ (get price-list (keyword (str "days-" days-per-week)) 0)
+     (* half-days-count (:half-day price-list))))
+
+(defn- day-numbers-from-pattern [pattern match-char]
+  (->> pattern
+       (map-indexed vector)
+       (keep (fn [[idx ch]]
+               (when (= ch match-char)
+                 (inc idx))))
+       set))
+
+(defn- period-start-end
+  "Returns local dates with end exclusive!!"
+  [{:keys [from-yyyymm to-yyyymm] :as period}]
+  [(t/local-date (quot from-yyyymm 100) (rem from-yyyymm 100) 1)
+   (t/plus (t/local-date (quot to-yyyymm 100) (rem to-yyyymm 100) 1)
+           (t/months 1))])
+
+(defn- generate-daily-plan
+  [{:keys [lunch-pattern att-pattern] person-id :id :as person} billing-period bank-holidays]
+  (let [[from to] (period-start-end billing-period)
+        lunch-days (day-numbers-from-pattern lunch-pattern \1)
+        full-days (day-numbers-from-pattern att-pattern \1)
+        half-days (day-numbers-from-pattern att-pattern \2)]
+       (->> from
+            (iterate (fn [ld]
+                       (t/plus ld (t/days 1))))
+            (take-while (fn [ld]
+                          (t/before? ld to)))
+            (remove (partial bank-holiday? bank-holidays))
+            (keep (fn [ld]
+                    (let [day-of-week (t/day-of-week ld)
+                          lunch? (contains? lunch-days day-of-week)
+                          child-att (cond
+                                      (contains? full-days day-of-week) 1
+                                      (contains? half-days day-of-week) 2
+                                      :else 0)]
+                      (when (or lunch? (pos? child-att))
+                        {:person-id person-id
+                         :date (tc/to-date ld)
+                         :lunch? lunch?
+                         :child-att child-att})))))))
+
 (defn- generate-person-bills [db-spec period-id]
-  (doseq [person (db/select-active-persons db-spec)]
-    (jdbc-common/insert! db-spec :person-bill (-> (select-keys person [:id :var-symbol :att-pattern :lunch-pattern])
-                                                  (s/rename-keys {:id :person-id})
-                                                  (merge {:period-id period-id
-                                                          :paid? false
-                                                          :total-cents 0
-                                                          :total-lunches 0
-                                                          :att-price-cents 0})))
-    ))
+  (let [billing-period (first (jdbc-common/select db-spec :billing-period {:id period-id}))
+        price-list (find-last-price-list db-spec)
+        bank-holidays (jdbc-common/select db-spec :bank-holiday {})]
+    (doseq [person (db/select-active-persons db-spec)
+            :let [daily-plans (generate-daily-plan (timbre/spy person) billing-period bank-holidays)
+                  lunch-count (->> daily-plans
+                                   (filter :lunch?)
+                                   count)
+                  half-days-count (->> daily-plans
+                                       (filter #(-> % :child-att (= 2)))
+                                       count)
+                  days-per-week (count (day-numbers-from-pattern (:att-pattern person) \1))
+                  att-price (calculate-att-price price-list days-per-week half-days-count)]]
+      (jdbc-common/insert! db-spec :person-bill (-> person
+                                                    (select-keys [:id :var-symbol :att-pattern :lunch-pattern])
+                                                    (s/rename-keys {:id :person-id})
+                                                    (merge {:period-id period-id
+                                                            :paid? false
+                                                            :total-lunches lunch-count
+                                                            :att-price-cents att-price
+                                                            :total-cents (+ att-price (* lunch-count (:lunch price-list)))}))))))
 
 (defn re-generate-person-bills [db-spec period-id]
   (jdbc/with-db-transaction [tx db-spec]

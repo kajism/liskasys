@@ -18,13 +18,6 @@
    (assoc-in db [:price-list nil] (-> (get-in db [:price-list (get-in db [:entity-edit :price-list :id])])
                                       (dissoc :id :valid-from)))))
 
-(defn from-cents [cents]
-  (str (quot cents 100)))
-
-(defn to-cents [units]
-  (when-not (str/blank? units)
-    (* (util/parse-int units) 100)))
-
 (defn page-price-lists []
   (let [price-lists (re-frame/subscribe [:entities :price-list])]
     (fn []
@@ -36,13 +29,13 @@
         [data-table
          :table-id :price-lists
          :rows @price-lists
-         :colls [["5 dní" (comp from-cents :days-5)]
-                 ["4 dny" (comp from-cents :days-4)]
-                 ["3 dny" (comp from-cents :days-3)]
-                 ["2 dny" (comp from-cents :days-2)]
-                 ["1 den" (comp from-cents :days-1)]
-                 ["půlden" (comp from-cents :half-day)]
-                 ["oběd" (comp from-cents :lunch)]
+         :colls [["5 dní" (comp util/from-cents :days-5)]
+                 ["4 dny" (comp util/from-cents :days-4)]
+                 ["3 dny" (comp util/from-cents :days-3)]
+                 ["2 dny" (comp util/from-cents :days-2)]
+                 ["1 den" (comp util/from-cents :days-1)]
+                 ["půlden" (comp util/from-cents :half-day)]
+                 ["oběd" (comp util/from-cents :lunch)]
                  ["Platný od" :valid-from]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
@@ -60,6 +53,9 @@
                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :price-list (:id row)])]]])
                   :csv-export]]]]])))
 
+(defn- from-cents [cents]
+  (str (util/from-cents cents)))
+
 (defn page-price-list []
   (let [price-list (re-frame/subscribe [:entity-edit :price-list])]
     (fn []
@@ -76,43 +72,43 @@
           [re-com/label :label "5 dní"]
           [re-com/input-text
            :model (from-cents (:days-5 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-5 (to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-5 (util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "4 dny"]
           [re-com/input-text
            :model (from-cents (:days-4 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-4 (to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-4 (util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "3 dny"]
           [re-com/input-text
            :model (from-cents (:days-3 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-3 (to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-3 (util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "2 dny"]
           [re-com/input-text
            :model (from-cents (:days-2 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-2 (to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-2 (util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "1 den"]
           [re-com/input-text
            :model (from-cents (:days-1 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-1 (to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :days-1 (util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "Půldenní"]
           [re-com/input-text
            :model (from-cents (:half-day item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :half-day (to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :half-day (util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "Oběd"]
           [re-com/input-text
            :model (from-cents (:lunch item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :lunch (to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:id item) :lunch (util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/h-box :align :center :gap "5px"

@@ -92,9 +92,9 @@
               [data-table
                :rows @person-bills
                :colls [["Jméno" #(->> % :person-id (get @persons) :-fullname)]
-                       ["Celkem Kč" :total-cents]
+                       ["Celkem Kč" (comp util/from-cents :total-cents)]
                        ["Zaplaceno?" :paid?]
-                       ["Cena za docházku" :att-price-cents]
+                       ["Cena za docházku" (comp util/from-cents :att-price-cents)]
                        ["Obědy" :total-lunches]
                        ["Rozvrh docházky" #(when (not= (:att-pattern %) "0000000") (:att-pattern %))]
                        ["Rozvrh obědů" #(when (not= (:lunch-pattern %) "0000000") (:lunch-pattern %))]]]]])]]))))

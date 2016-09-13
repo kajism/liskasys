@@ -81,3 +81,10 @@
                   (/ div 1000))))
             1000000000000
             ["TB" "GB" "MB" "kB" "B"])))
+
+(defn from-cents [cents]
+  (quot cents 100))
+
+(defn to-cents [units]
+  (when-not (str/blank? units)
+    (* (parse-int units) 100)))
