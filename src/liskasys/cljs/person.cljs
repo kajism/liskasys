@@ -63,16 +63,7 @@
   (let [person (re-frame/subscribe [:entity-edit :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])
         parent-childs (re-frame/subscribe [:entities :parent-child])
-        persons (re-frame/subscribe [:entities :person])
-        validation-fn #(cond-> {}
-                         (str/blank? (:firstname %))
-                         (assoc :firstname "Vyplňte správně jméno")
-                         (str/blank? (:lastname %))
-                         (assoc :lastname "Vyplňte správně příjmení")
-                         (not (validation/valid-email? (:email %)))
-                         (assoc :email "Vyplňte správně emailovou adresu")
-                         true
-                         timbre/spy)]
+        persons (re-frame/subscribe [:entities :person])]
     (fn []
       (if-not (and @persons @parent-childs @lunch-types)
         [re-com/throbber]
@@ -107,7 +98,13 @@
              :placeholder "běžná"
              :width "250px"]
             [re-com/label :label "Rozvrh obědů"]
-            [input-text item :person :lunch-pattern]
+            [re-com/h-box :gap "5px"
+             :children
+             [[input-text item :person :lunch-pattern]
+              [re-com/checkbox
+               :label "obědy zdarma?"
+               :model (:free-lunches? item)
+               :on-change #(re-frame/dispatch [:entity-change :person (:id item) :free-lunches? %])]]]
             [re-com/checkbox
              :label "dítě?"
              :model (:child? item)
@@ -116,7 +113,13 @@
               [re-com/v-box
                :children
                [[re-com/label :label "Rozvrh docházky"]
-                [input-text item :person :att-pattern]
+                [re-com/h-box :gap "5px"
+                 :children
+                 [[input-text item :person :att-pattern]
+                  [re-com/checkbox
+                   :label "docházka zdarma?"
+                   :model (:free-att? item)
+                   :on-change #(re-frame/dispatch [:entity-change :person (:id item) :free-att? %])]]]
                 (when (:id item)
                   [re-com/v-box
                    :children
@@ -153,7 +156,7 @@
                   "admin, obedy"]]]])
             [re-com/h-box :align :center :gap "5px"
              :children
-             [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person validation-fn])]
+             [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person])]
               "nebo"
               [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/person/e")]
               [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/persons")]]]]])))))
