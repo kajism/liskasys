@@ -34,7 +34,7 @@
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]
          [{:db/id #db/id [:db.part/user]
-           :db/ident :file-category/lunch-menu
+           :db/ident :file.category/lunch-menu
            :db/doc "Lunch menu files"}]]}
  :liskasys/person
  {:txes [[{:db/ident :person/firstname
@@ -243,7 +243,15 @@
            :db/valueType :db.type/long
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}]]}
+           :db.install/_attribute :db.part/db}]
+         [{:db/id #db/id [:db.part/user]
+           :price-list/days-5 600000
+           :price-list/days-4 530000
+           :price-list/days-3 420000
+           :price-list/days-2 300000
+           :price-list/days-1 160000
+           :price-list/half-day 30000
+           :price-list/lunch 6500}]]}
  :liskasys/billing-period
  {:txes [[{:db/ident :billing-period/from-yyyymm
            :db/valueType :db.type/long
