@@ -12,7 +12,9 @@
   ([to-esc]
    (cond
      (keyword? to-esc)
-     (format "\"%s\"" (name to-esc))
+     (format "\"%s\"" (str (when (namespace to-esc)
+                             (str (namespace to-esc) "/"))
+                           (name to-esc)))
      (map? to-esc)
      (->> to-esc
           (map (fn [[k v]]
