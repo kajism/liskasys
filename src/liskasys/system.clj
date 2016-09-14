@@ -11,6 +11,7 @@
             [duct.middleware.not-found :refer [wrap-not-found]]
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
             [environ.core :refer [env]]
+            [liskasys.component.datomic :refer [datomic]]
             [liskasys.component.scheduler :refer [scheduler]]
             [liskasys.endpoint.main :refer [main-endpoint]]
             [meta-merge.core :refer [meta-merge]]
@@ -62,6 +63,7 @@
          :app  (handler-component (:app config))
          :http (jetty-server (:http config))
          :db   (hikaricp (:db config))
+         :datomic (datomic (:datomic config))
          :scheduler (scheduler)
          :ragtime (ragtime (:ragtime config))
          :main (endpoint-component main-endpoint))
@@ -69,5 +71,5 @@
          {:http [:app]
           :app  [:main]
           :ragtime [:db]
-          :scheduler [:db]
-          :main [:db]}))))
+          :scheduler [:db :datomic]
+          :main [:db :datomic]}))))

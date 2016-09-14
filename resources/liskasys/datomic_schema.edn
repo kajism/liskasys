@@ -1,0 +1,335 @@
+{:liskasys/tx-attrs
+ {:txes [[{:db/ident :tx/person-id
+           :db/doc "Transaction person ID"
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
+ :liskasys/lunch-type
+ {:txes [[{:db/ident :lunch-type/label
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :lunch-type/color
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
+ :liskasys/file
+ {:txes [[{:db/ident :file/category
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :file/content-type
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :file/orig-filename
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/id #db/id [:db.part/user]
+           :db/ident :file-category/lunch-menu
+           :db/doc "Lunch menu files"}]]}
+ :liskasys/person
+ {:txes [[{:db/ident :person/firstname
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/lastname
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/email
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/phone
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/passwd
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/roles
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/lunch-pattern
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/att-pattern
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/active?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/child?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/free-lunches?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/free-att?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/var-symbol
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/lunch-type
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/parent
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/many
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
+ :liskasys/lunch-order
+ {:txes [[{:db/ident :lunch-order/date
+           :db/valueType :db.type/instant
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/identity
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :lunch-order/total
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
+ :liskasys/bank-holiday
+ {:txes [[{:db/ident :bank-holiday/label
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :bank-holiday/day
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :bank-holiday/month
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :bank-holiday/easter-delta
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :bank-holiday/valid-from-year
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :bank-holiday/valid-to-year
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Nový rok"
+           :bank-holiday/day 1
+           :bank-holiday/month 1}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Velký pátek"
+           :bank-holiday/easter-delta -3}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Velikonoční pondělí"
+           :bank-holiday/easter-delta 0}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Svátek práce"
+           :bank-holiday/day 1
+           :bank-holiday/month 5}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Den vítězství"
+           :bank-holiday/day 8
+           :bank-holiday/month 5}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Cyril a Metoděj"
+           :bank-holiday/day 5
+           :bank-holiday/month 7}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Mistr Jan Hus"
+           :bank-holiday/day 6
+           :bank-holiday/month 7}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Den české státnosti"
+           :bank-holiday/day 28
+           :bank-holiday/month 9}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Den vzniku samostatného československého státu"
+           :bank-holiday/day 28
+           :bank-holiday/month 10}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Den boje za svobodu a demokracii"
+           :bank-holiday/day 17
+           :bank-holiday/month 11}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "Štědrý den"
+           :bank-holiday/day 24
+           :bank-holiday/month 12}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "1. svátek vánoční"
+           :bank-holiday/day 25
+           :bank-holiday/month 12}
+          {:db/id #db/id [:db.part/user]
+           :bank-holiday/label "2. svátek vánoční"
+           :bank-holiday/day 26
+           :bank-holiday/month 12}]]}
+ :liskasys/price-list
+ {:txes [[{:db/ident :price-list/days-1
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :price-list/days-2
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :price-list/days-3
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :price-list/days-4
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :price-list/days-5
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :price-list/half-day
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :price-list/lunch
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
+ :liskasys/billing-period
+ {:txes [[{:db/ident :billing-period/from-yyyymm
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :billing-period/to-yyyymm
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
+ :liskasys/person-bill
+ {:txes [[{:db/ident :person-bill/period
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person-bill/person
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person-bill/total
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person-bill/paid?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person-bill/lunch-count
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person-bill/att-price
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
+ :liskasys/daily-plan
+ {:txes [[{:db/ident :daily-plan/person
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :daily-plan/bill
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :daily-plan/date
+           :db/valueType :db.type/instant
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :daily-plan/lunch?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :daily-plan/child-att
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :daily-plan/lunch-ordered?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :daily-plan/lunch-cancelled-at
+           :db/valueType :db.type/instant
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :daily-plan/att-cancelled-at
+           :db/valueType :db.type/instant
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :daily-plan/substituted-by
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
+ }

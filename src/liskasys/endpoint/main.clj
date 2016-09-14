@@ -39,7 +39,7 @@
 (defn- upload-dir []
   (or (:upload-dir env) "./uploads/"))
 
-(defn main-endpoint [{{db-spec :spec} :db}]
+(defn main-endpoint [{{db-spec :spec} :db {conn :conn} :datomic}]
   (routes
    (context "" {{{children-count :-children-count roles :-roles :as user} :user} :session}
      (GET "/" {:keys [params]}

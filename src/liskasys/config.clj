@@ -7,4 +7,5 @@
 (def environ
   {:http {:port (some-> env :port Integer.)}
    :db   {:uri  (env :database-url)}
+   :datomic {:uri (env :datomic-uri)}
    :nrepl-port (some-> env :nrepl-port Integer.)})

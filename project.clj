@@ -12,6 +12,7 @@
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.237"]
+                 [com.datomic/datomic-free "0.9.5394"]
                  [com.stuartsierra/component "0.3.1"]
                  [hiccup "1.0.5"]
                  [ring "1.4.0"]
@@ -35,7 +36,8 @@
                  [ring-middleware-format "0.7.0"]
                  [crypto-password "0.2.0"]
                  [twarc "0.1.9"]
-                 [com.draines/postal "2.0.1"]]
+                 [com.draines/postal "2.0.1"]
+                 [io.rkn/conformity "0.4.0"]]
   :plugins [[lein-environ "1.0.2"]
             [lein-gen "0.2.2"]
             [lein-cljsbuild "1.1.2"]]
@@ -75,5 +77,6 @@
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
                    :env {:dev "true"
                          :port "3000"
+                         :datomic-uri "datomic:free://localhost:4334/liskasys"
                          :database-url "jdbc:h2:./liskasys-dev.db"}}
    :project/test  {}})

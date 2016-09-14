@@ -12,7 +12,8 @@
             [duct.component.figwheel :as figwheel]
             [liskasys.config :as config]
             [liskasys.system :as system]
-            [clojure.java.jdbc :as jdbc]))
+            [clojure.java.jdbc :as jdbc]
+            [datomic.api :as d]))
 
 (def dev-config
   {:app {:middleware [wrap-stacktrace]}
@@ -62,3 +63,9 @@
 
 (defn restore-db [sql-file-path]
   (jdbc/execute! (db-spec) [(str "RUNSCRIPT FROM '" sql-file-path "'")]))
+
+(defn conn []
+  (-> system :datomic :conn))
+
+(defn db []
+  (d/db (conn)))
