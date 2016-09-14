@@ -2,6 +2,7 @@ LISKASYST
 
 podpurny informacni system pro lesni materskou skolu Listicka
 
+* DATOMIC FREE ???
 * TODOs
 ** new schema
 *** DONE migrate attendance days + lunches to patterns
@@ -13,34 +14,30 @@ CLOSED: [2016-09-12 Mon 17:19]
 *** DONE price list CRUD
 CLOSED: [2016-09-12 Mon 17:19]
 *** TODO generate person bills for period
+**** prazdniny (27.12. - 31.12. + 1.7. - 31.8.) a "reditelske volno" (jednorazove)
+**** odecist odhlasene obedy (mesicni uctovani nebo fond obedu?)
 *** generate daily plans for confirmed bills
 *** migrate cancellations to daily plans
 *** rewrite all code to use the new schema
 **** cancellations
 **** lunch orders
 **** lunch and cancellations views
-*** active person filter
+*** active person filter, child/adult filter
 *** GUI for patterns editing
 *** deprecate old DB tables and GUIs
-** TODO prazdniny (27.12. - 31.12. + 1.7. - 31.8.) a "reditelske volno" (jednorazove)
-** TODO filtr na strance Deti - default vypnuto zobrazeni deti bez platne dochazky (nyni nebo v budoucnu)
-** TODO zobrazit nastavenou dochazku v seznamu dětí
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance
 *** vyrovnani obedu
-** verify special cases
-*** Frantisek a Anicka maji obedy (budou platit) i dochazku (nebudou platit)
-*** lektori maji obedy zdarma
-*** moznost nastavit odber obedu i bez dochazky (nektere deti, ale i dospeli)
-** TODO form validation?!?!?
+** TODO form validation!!!
 ** TODO odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** TODO DB indexes
 ** TODO datepickery nahradit textovym polem s validaci formatu
-** TODO plna a mobilni verze (detekce + moznost kdykoliv prepnout) - material or semantic UI???
-*** TODO zobrazit dochazku na 4 tydny
-*** TODO moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
-*** TODO zobrazit rodicum zrusene obedy
+** TODO moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
+** TODO zobrazit rodicum platby a zrusene obedy
+** server side validation without exception (hash-map like on the client
+** omezení počtu chybných přihlášení (+ reset)
+** export dat do csv
 ** DONE promyslet novou koncepci / DB schema dle aktualnich pozadavku
 CLOSED: [2016-09-02 Fri 15:18]
 *** vse navazano na platebni obdobi
@@ -99,9 +96,6 @@ CLOSED: [2016-05-01 Sun 09:42]
 CLOSED: [2016-08-11 Thu 14:44]
 ** DONE SSL
 CLOSED: [2016-08-11 Thu 14:45]
-** server side validation without exception (hash-map like on the client
-** omezení počtu chybných přihlášení (+ reset)
-** export dat do csv
 * bugs
 ** DONE editace dochazky dítěte zobrazuje i so a ne
 CLOSED: [2016-08-24 Wed 12:58]
