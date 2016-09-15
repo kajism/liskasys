@@ -99,7 +99,7 @@
            (-> (response/redirect "/" :see-other)
                (assoc-in [:session :user]
                          (-> person
-                             (select-keys [:db/id :-fullname :email])
+                             (select-keys [:db/id :-fullname :person/email])
                              (assoc :-roles (->> (str/split (str (:person/roles person)) #",")
                                                  (map str/trim)
                                                  set))
@@ -118,14 +118,7 @@
 
      (POST "/passwd" [old-pwd new-pwd new-pwd2]
        (try
-         (let [user (first (jdbc-common/select db-spec :user {:id (:id user)}))]
-           (when-not (= new-pwd new-pwd2)
-             (throw (Exception. "Zadaná hesla se neshodují.")))
-           (when (or (str/blank? new-pwd) (< (count (str/trim new-pwd)) 6))
-             (throw (Exception. "Nové heslo je příliš krátké.")))
-           (when-not (service/check-person-password user old-pwd)
-             (throw (Exception. "Chybně zadané původní heslo."))))
-         #_(jdbc-common/save! db-spec :user {:id (:id user) :passwd (scrypt/encrypt new-pwd)})
+         (service/change-user-passwd conn (:db/id user) (:person/email user) old-pwd new-pwd new-pwd2)
          (main-hiccup/liskasys-frame
           user
           (hiccup/passwd-form {:type :success :msg "Heslo bylo změněno"}))

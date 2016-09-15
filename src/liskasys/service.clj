@@ -5,6 +5,7 @@
             [clj-time.format :as tf]
             [clojure.java.jdbc :as jdbc]
             [clojure.set :as s]
+            [clojure.string :as str]
             [crypto.password.scrypt :as scrypt]
             [datomic.api :as d]
             [liskasys.db :as db]
@@ -14,7 +15,7 @@
            java.util.Locale))
 
 (def day-formatter (-> (tf/formatter "E dd.MM.yyyy")
-                        (tf/with-locale (Locale. "cs"))))
+                       (tf/with-locale (Locale. "cs"))))
 
 (def cz-collator (Collator/getInstance (Locale. "cs")))
 
@@ -80,7 +81,7 @@
          (filter att-day-with-lunch?)
          (group-by :lunch-type-id)
          (map (fn [[k v]] [(get lunch-types k) (count v)]))
-         (sort-by first cz-collator ))))
+         (sort-by first cz-collator))))
 
 (defn close-lunch-order [db-spec date total]
   (let [lunch-order (first (jdbc-common/select db-spec :lunch-order {:date date}))]
@@ -154,24 +155,24 @@
         lunch-days (day-numbers-from-pattern lunch-pattern \1)
         full-days (day-numbers-from-pattern att-pattern \1)
         half-days (day-numbers-from-pattern att-pattern \2)]
-       (->> from
-            (iterate (fn [ld]
-                       (t/plus ld (t/days 1))))
-            (take-while (fn [ld]
-                          (t/before? ld to)))
-            (remove (partial bank-holiday? bank-holidays))
-            (keep (fn [ld]
-                    (let [day-of-week (t/day-of-week ld)
-                          lunch? (contains? lunch-days day-of-week)
-                          child-att (cond
-                                      (contains? full-days day-of-week) 1
-                                      (contains? half-days day-of-week) 2
-                                      :else 0)]
-                      (when (or lunch? (pos? child-att))
-                        {:person-id person-id
-                         :date (tc/to-date ld)
-                         :lunch? lunch?
-                         :child-att child-att})))))))
+    (->> from
+         (iterate (fn [ld]
+                    (t/plus ld (t/days 1))))
+         (take-while (fn [ld]
+                       (t/before? ld to)))
+         (remove (partial bank-holiday? bank-holidays))
+         (keep (fn [ld]
+                 (let [day-of-week (t/day-of-week ld)
+                       lunch? (contains? lunch-days day-of-week)
+                       child-att (cond
+                                   (contains? full-days day-of-week) 1
+                                   (contains? half-days day-of-week) 2
+                                   :else 0)]
+                   (when (or lunch? (pos? child-att))
+                     {:person-id person-id
+                      :date (tc/to-date ld)
+                      :lunch? lunch?
+                      :child-att child-att})))))))
 
 (defn- generate-person-bills [db-spec period-id]
   (let [billing-period (first (jdbc-common/select db-spec :billing-period {:id period-id}))
@@ -216,17 +217,17 @@
 
 (defn- build-query [db attr where-m]
   (reduce (fn [query [where-attr where-val]]
-                        (let [?where-attr (symbol (str "?" (name where-attr)))]
-                          (-> query
-                              (update-in [:query :in] conj ?where-attr)
-                              (update-in [:query :where] conj ['?e where-attr ?where-attr])
-                              (update-in [:args] conj where-val))))
-                      {:query {:find ['[(pull ?e [*]) ...]]
-                               :in ['$]
-                               :where [['?e attr]]}
-                       :args [db]
-                       :timeout 2000}
-                      where-m))
+            (let [?where-attr (symbol (str "?" (name where-attr)))]
+              (-> query
+                  (update-in [:query :in] conj ?where-attr)
+                  (update-in [:query :where] conj ['?e where-attr ?where-attr])
+                  (update-in [:args] conj where-val))))
+          {:query {:find ['[(pull ?e [*]) ...]]
+                   :in ['$]
+                   :where [['?e attr]]}
+           :args [db]
+           :timeout 2000}
+          where-m))
 
 (defn find-all [db entity-type where-m]
   (let [attr (get ent-type->attr entity-type entity-type)
@@ -288,3 +289,14 @@
     (if (check-person-password person pwd)
       person
       (timbre/warn "User" username " tried to log in." (->> (seq pwd) (map (comp char inc int)) (apply str))))))
+
+(defn change-user-passwd [conn user-id email old-pwd new-pwd new-pwd2]
+  (let [person (login (d/db conn) email old-pwd)]
+    (when-not person
+      (throw (Exception. "Chybně zadané původní heslo.")))
+    (when-not (= new-pwd new-pwd2)
+      (throw (Exception. "Zadaná hesla se neshodují.")))
+    (when (or (str/blank? new-pwd) (< (count (str/trim new-pwd)) 6))
+      (throw (Exception. "Nové heslo je příliš krátké.")))
+    (transact-entity conn user-id {:db/id (:db/id person)
+                                   :person/passwd (scrypt/encrypt new-pwd)})))
