@@ -24,8 +24,8 @@
         [data-table
          :table-id :lunch-types
          :rows @lunch-types
-         :colls [["Název" :label]
-                 ["Barva" :color]
+         :colls [["Název" :lunch-type/label]
+                 ["Barva" :lunch-type/color]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -35,20 +35,20 @@
                      :gap "5px"
                      :children
                      [[re-com/hyperlink-href
-                       :href (str "#/lunch-type/" (:id row) "e")
+                       :href (str "#/lunch-type/" (:db/id row) "e")
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-type (:id row)])]]])
+                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-type (:db/id row)])]]])
                   :csv-export]]]]])))
 
 (defn page-lunch-type []
   (let [lunch-type (re-frame/subscribe [:entity-edit :lunch-type])
         validation-fn #(cond-> {}
-                         (str/blank? (:label %))
-                         (assoc :label "Vyplňte název")
-                         (str/blank? (:color %))
-                         (assoc :color "Vyplňte barvu")
+                         (str/blank? (:lunch-type/label %))
+                         (assoc :lunch-type/label "Vyplňte název")
+                         (str/blank? (:lunch-type/color %))
+                         (assoc :lunch-type/color "Vyplňte barvu")
                          true
                          timbre/spy)]
     (fn []
@@ -58,9 +58,9 @@
          :children
          [[:h3 "Diety"]
           [re-com/label :label "Název"]
-          [input-text item :lunch-type :label]
+          [input-text item :lunch-type :lunch-type/label]
           [re-com/label :label "Barva"]
-          [input-text item :lunch-type :color]
+          [input-text item :lunch-type :lunch-type/color]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :lunch-type validation-fn])]

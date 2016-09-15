@@ -11,6 +11,7 @@
             [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
             [crypto.password.scrypt :as scrypt]
+            [datomic.api :as d]
             [environ.core :refer [env]]
             [liskasys.db :as db]
             [liskasys.endpoint.main-hiccup :as main-hiccup]
@@ -180,13 +181,9 @@
              (throw (Exception. "Not authorized")))
          (response/response
           (case action
-            "select" (cond->> (jdbc-common/select db-spec table-kw {})
-                       (= table-kw :user)
-                       (map #(dissoc % :passwd)))
-            "save" (jdbc-common/save! db-spec table-kw (cond-> ?data
-                                                         (= table-kw :cancellation)
-                                                         (assoc :user-id (:id user))))
-            "delete" (jdbc-common/delete! db-spec table-kw {:id ?data})
+            "select" (service/find-all (d/db conn) table-kw ?data)
+            "save" (service/transact-entity conn (:id user) ?data)
+            "delete" (service/retract-entity conn (:id user) ?data)
             (case msg-id
               :user/auth {}
               :person-bill/generate (service/re-generate-person-bills db-spec (:period-id ?data))

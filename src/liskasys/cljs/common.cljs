@@ -38,7 +38,7 @@
 (re-frame/register-sub
  :entity-edit-id
  (fn [db [_ kw]]
-   (ratom/reaction (get-in @db [:entity-edit kw :id]))))
+   (ratom/reaction (get-in @db [:entity-edit kw :db/id]))))
 
 (re-frame/register-sub
  :entity-edit
@@ -67,14 +67,14 @@
  :entities-set
  debug-mw
  (fn [db [_ path v]]
-   (assoc-in db path (into {} (map (juxt :id identity)
+   (assoc-in db path (into {} (map (juxt :db/id identity)
                                    v)))))
 
 (re-frame/register-handler
  :entity-set-edit
  debug-mw
  (fn [db [_ kw id edit?]]
-   (assoc-in db [:entity-edit kw] {:id id
+   (assoc-in db [:entity-edit kw] {:db/id id
                                    :edit? (boolean edit?)})))
 
 (re-frame/register-handler
@@ -97,7 +97,7 @@
  :entity-save
  debug-mw
  (fn [db [_ kw validation-fn ent-id]]
-   (let [id (or ent-id (get-in db [:entity-edit kw :id]))
+   (let [id (or ent-id (get-in db [:entity-edit kw :db/id]))
          ent (get-in db [kw id])
          errors (when validation-fn (validation-fn ent))
          file (:-file ent)]
@@ -114,9 +114,9 @@
  (fn [db [_ kw new-ent]]
    (re-frame/dispatch [:set-msg :info "Záznam byl uložen"])
    (when (get @kw->url kw)
-     (set! js/window.location.hash (str "#/" (get @kw->url kw) "/" (:id new-ent) "e")))
+     (set! js/window.location.hash (str "#/" (get @kw->url kw) "/" (:db/id new-ent) "e")))
    (-> db
-       (assoc-in [kw (:id new-ent)] new-ent)
+       (assoc-in [kw (:db/id new-ent)] new-ent)
        (update kw #(dissoc % nil)))))
 
 (re-frame/register-handler
@@ -133,4 +133,4 @@
  (fn [db [_ kw parent-id file-id]]
    (when file-id
      (server-call [(keyword (name kw) "delete") file-id] nil nil db))
-   (update-in db [kw parent-id :file/_parent] #(filterv (fn [file] (not= file-id (:id file))) %))))
+   (update-in db [kw parent-id :file/_parent] #(filterv (fn [file] (not= file-id (:db/id file))) %))))

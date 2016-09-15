@@ -2,16 +2,14 @@
   (:require [schema.core :as s]))
 
 (def CommonAttrs
-  {(s/optional-key :id) s/Int
-   (s/optional-key :created) s/Inst
-   (s/optional-key :modified) s/Inst
+  {(s/optional-key :db/id) s/Int
    (s/optional-key :-errors) (s/maybe {s/Keyword  s/Str})})
 
 (def LunchType
-  {(s/optional-key :id) s/Int
-   (s/optional-key :label) s/Str
-   (s/optional-key :color) s/Str
-   (s/optional-key :-errors) (s/maybe {s/Keyword  s/Str})})
+  (merge
+   CommonAttrs
+   { (s/optional-key :lunch-type/label) s/Str
+    (s/optional-key :lunch-type/color) s/Str}))
 
 (def User
   (merge
@@ -88,7 +86,7 @@
   {:current-page s/Keyword
    (s/optional-key :auth-user) User
    (s/optional-key :table-states) s/Any
-   (s/optional-key :entity-edit) {s/Keyword {:id (s/maybe s/Int)
+   (s/optional-key :entity-edit) {s/Keyword {:db/id (s/maybe s/Int)
                                              :edit? s/Bool}}
    (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
                           (s/optional-key :info) (s/maybe s/Str)}

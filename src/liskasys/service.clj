@@ -5,6 +5,7 @@
             [clj-time.format :as tf]
             [clojure.java.jdbc :as jdbc]
             [clojure.set :as s]
+            [datomic.api :as d]
             [liskasys.db :as db]
             [postal.core :as postal]
             [taoensso.timbre :as timbre])
@@ -207,4 +208,48 @@
     (jdbc-common/delete! tx :person-bill {:period-id period-id :paid? false})
     (generate-person-bills tx period-id)
     (jdbc-common/select tx :person-bill {:period-id period-id})))
+
+(def ent-type->attr
+  {:lunch-type :lunch-type/label
+   :person :person/firstname})
+
+(defn- build-query [db attr where-m]
+  (reduce (fn [query [where-attr where-val]]
+                        (let [?where-attr (symbol (str "?" (name where-attr)))]
+                          (-> query
+                              (update-in [:query :in] conj ?where-attr)
+                              (update-in [:query :where] conj ['?e where-attr ?where-attr])
+                              (update-in [:args] conj where-val))))
+                      {:query {:find ['[(pull ?e [*]) ...]]
+                               :in ['$]
+                               :where [['?e attr]]}
+                       :args [db]
+                       :timeout 2000}
+                      where-m))
+
+(defn find-all [db entity-type where-m]
+  (let [attr (get ent-type->attr entity-type entity-type)
+        query (build-query db attr where-m)]
+    (cond->> (d/query query)
+      (= entity-type :person)
+      (map #(dissoc % :person/passwd)))))
+
+(defn transact-entity [conn user-id ent]
+  (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))
+        tx-result @(d/transact conn [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}
+                                     (assoc ent :db/id ent-id)])]
+    (timbre/debug tx-result)
+    (d/pull (:db-after tx-result) '[*] (or (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) ent-id)))))
+
+(defn retract-entity
+  "Returns the number of retracted datoms (attributes)."
+  [conn user-id ent-id]
+  (-> (d/transact conn [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}
+                        [:db.fn/retractEntity ent-id]])
+      deref
+      timbre/spy
+      :tx-data
+      count
+      (- 2)))
+
 

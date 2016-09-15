@@ -7,7 +7,7 @@
         conversion-fn (or conversion-fn identity)]
     [re-com/input-text
      :model (str (attr-kw item))
-     :on-change #(re-frame/dispatch [:entity-change ent-kw (:id item) attr-kw (conversion-fn %)])
+     :on-change #(re-frame/dispatch [:entity-change ent-kw (:db/id item) attr-kw (conversion-fn %)])
      :status (when error-msg :warning)
      :status-icon? true
      :status-tooltip error-msg]))

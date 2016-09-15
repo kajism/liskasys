@@ -7,9 +7,6 @@
             [taoensso.timbre :as timbre]
             [liskasys.db :as db]))
 
-(defn find-all [db attr]
-  (d/q [:find '[(pull ?e [*]) ...] :where ['?e attr]] db))
-
 (defn- lunch-type [{:keys [db-spec db] :as ctx}]
   (->> (jdbc-common/select db-spec :lunch-type {})
        (reduce (fn [ctx {:keys [id label color]}]
@@ -112,7 +109,7 @@
                  ctx))))
 
 (defn- attendance [{:keys [db-spec db] :as ctx}]
-  (let [persons-by-id (->> (find-all db :person/firstname)
+  (let [persons-by-id (->> (d/q '[:find [(pull ?e [*]) ...] :where [?e :person/firstname]] db)
                            (map (juxt :db/id identity))
                            (into {}))
         att-id->days (->> (jdbc-common/select db-spec :attendance-day {})
