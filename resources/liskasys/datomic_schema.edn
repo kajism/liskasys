@@ -147,16 +147,6 @@
            :db/valueType :db.type/long
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
-          {:db/ident :bank-holiday/valid-from-year
-           :db/valueType :db.type/long
-           :db/cardinality :db.cardinality/one
-           :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
-          {:db/ident :bank-holiday/valid-to-year
-           :db/valueType :db.type/long
-           :db/cardinality :db.cardinality/one
-           :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]
          [{:db/id #db/id [:db.part/user]
            :bank-holiday/label "Nový rok"

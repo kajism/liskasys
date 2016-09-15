@@ -213,6 +213,7 @@
 
 (def ent-type->attr
   {:lunch-type :lunch-type/label
+   :bank-holiday :bank-holiday/label
    :person :person/firstname
    :price-list :price-list/days-1
    :billing-period :billing-period/from-yyyymm

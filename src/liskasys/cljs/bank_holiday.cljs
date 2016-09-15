@@ -18,10 +18,10 @@
         [data-table
          :table-id :bank-holidays
          :rows @bank-holidays
-         :colls [["Měsíc" :month]
-                 ["Den" :day]
-                 ["+- od Velikonoc" :easter-delta]
-                 ["Název" :label]
+         :colls [["Měsíc" :bank-holiday/month]
+                 ["Den" :bank-holiday/day]
+                 ["+- od Velikonoc" :bank-holiday/easter-delta]
+                 ["Název" :bank-holiday/label]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -31,11 +31,11 @@
                      :gap "5px"
                      :children
                      [[re-com/hyperlink-href
-                       :href (str "#/bank-holiday/" (:id row) "e")
+                       :href (str "#/bank-holiday/" (:db/id row) "e")
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :bank-holiday (:id row)])]]])
+                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :bank-holiday (:db/id row)])]]])
                   :csv-export]]]]])))
 
 (defn page-bank-holiday []
@@ -47,38 +47,26 @@
          [[:h3 "Státní svátek"]
           [re-com/label :label "Název"]
           [re-com/input-text
-           :model (str (:label item))
-           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:id item) :label %])
+           :model (str (:bank-holiday/label item))
+           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/label %])
            :width "400px"]
           [re-com/label :label "Měsíc"]
           [re-com/input-text
-           :model (str (:month item))
-           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:id item) :month (util/parse-int %)])
+           :model (str (:bank-holiday/month item))
+           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/month (util/parse-int %)])
            :validation-regex #"^\d{0,2}$"
            :width "60px"]
           [re-com/label :label "Den"]
           [re-com/input-text
-           :model (str (:day item))
-           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:id item) :day (util/parse-int %)])
+           :model (str (:bank-holiday/day item))
+           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/day (util/parse-int %)])
            :validation-regex #"^\d{0,2}$"
            :width "60px"]
           [re-com/label :label "+- dnů od Velikonoc"]
           [re-com/input-text
-           :model (str (:easter-delta item))
-           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:id item) :easter-delta (util/parse-int %)])
+           :model (str (:bank-holiday/easter-delta item))
+           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/easter-delta (util/parse-int %)])
            :validation-regex #"^[-\d]{0,2}$"
-           :width "60px"]
-          [re-com/label :label "Platný od roku"]
-          [re-com/input-text
-           :model (str (:valid-from-year item))
-           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:id item) :valid-from-year (util/parse-int %)])
-           :validation-regex #"^\d{0,4}$"
-           :width "60px"]
-          [re-com/label :label "Platný do roku"]
-          [re-com/input-text
-           :model (str (:valid-to-year item))
-           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:id item) :valid-to-year (util/parse-int %)])
-           :validation-regex #"^\d{0,4}$"
            :width "60px"]
           [re-com/h-box :align :center :gap "5px"
            :children

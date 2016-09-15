@@ -52,12 +52,10 @@
 
 (def BankHoliday
   (merge CommonAttrs
-         {(s/optional-key :label) s/Str
-          (s/optional-key :day) (s/maybe s/Int)
-          (s/optional-key :month) (s/maybe s/Int)
-          (s/optional-key :easter-delta) (s/maybe s/Int)
-          (s/optional-key :valid-from-year) s/Int
-          (s/optional-key :valid-to-year) (s/maybe s/Int)}))
+         {(s/optional-key :bank-holiday/label) s/Str
+          (s/optional-key :bank-holiday/day) (s/maybe s/Int)
+          (s/optional-key :bank-holiday/month) (s/maybe s/Int)
+          (s/optional-key :bank-holiday/easter-delta) (s/maybe s/Int)}))
 
 (def BillingPeriod
   (merge CommonAttrs
