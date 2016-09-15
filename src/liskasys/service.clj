@@ -213,7 +213,10 @@
 
 (def ent-type->attr
   {:lunch-type :lunch-type/label
-   :person :person/firstname})
+   :person :person/firstname
+   :price-list :price-list/days-1
+   :billing-period :billing-period/from-yyyymm
+   :person-bill :person-bill/total})
 
 (defn- build-query [db attr where-m]
   (reduce (fn [query [where-attr where-val]]
@@ -244,7 +247,8 @@
                  (assoc ent :db/id ent-id)]
         tx-result @(d/transact conn (timbre/spy tx-data))]
     (timbre/debug tx-result)
-    (d/pull (:db-after tx-result) '[*] (or (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) ent-id)))))
+    (d/pull (:db-after tx-result) '[*] (or (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) ent-id)
+                                           ent-id))))
 
 (defn retract-entity
   "Returns the number of retracted datoms (attributes)."

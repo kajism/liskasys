@@ -61,20 +61,18 @@
 
 (def BillingPeriod
   (merge CommonAttrs
-         {(s/optional-key :from-yyyymm) (s/maybe s/Int)
-          (s/optional-key :to-yyyymm) (s/maybe s/Int)}))
+         {(s/optional-key :billing-period/from-yyyymm) (s/maybe s/Int)
+          (s/optional-key :billing-period/to-yyyymm) (s/maybe s/Int)}))
 
 (def PriceList
   (merge CommonAttrs
-         {(s/optional-key :days-1) (s/maybe s/Int)
-          (s/optional-key :days-2) (s/maybe s/Int)
-          (s/optional-key :days-3) (s/maybe s/Int)
-          (s/optional-key :days-4) (s/maybe s/Int)
-          (s/optional-key :days-5) (s/maybe s/Int)
-          (s/optional-key :half-day) (s/maybe s/Int)
-          (s/optional-key :lunch) (s/maybe s/Int)
-          (s/optional-key :valid-from) s/Inst
-          (s/optional-key :valid-to) (s/maybe s/Inst)}))
+         {(s/optional-key :price-list/days-1) (s/maybe s/Int)
+          (s/optional-key :price-list/days-2) (s/maybe s/Int)
+          (s/optional-key :price-list/days-3) (s/maybe s/Int)
+          (s/optional-key :price-list/days-4) (s/maybe s/Int)
+          (s/optional-key :price-list/days-5) (s/maybe s/Int)
+          (s/optional-key :price-list/half-day) (s/maybe s/Int)
+          (s/optional-key :price-list/lunch) (s/maybe s/Int)}))
 
 (def AppDb
   {:current-page s/Keyword

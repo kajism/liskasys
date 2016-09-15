@@ -32,8 +32,8 @@
         [data-table
          :table-id :billing-periods
          :rows @billing-periods
-         :colls [["Od" (comp yyyymm->str :from-yyyymm)]
-                 ["Do" (comp yyyymm->str :to-yyyymm)]
+         :colls [["Od" (comp yyyymm->str :billing-period/from-yyyymm)]
+                 ["Do" (comp yyyymm->str :billing-period/to-yyyymm)]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -43,11 +43,11 @@
                      :gap "5px"
                      :children
                      [[re-com/hyperlink-href
-                       :href (str "#/billing-period/" (:id row) "e")
+                       :href (str "#/billing-period/" (:db/id row) "e")
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:id row)])]]])
+                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])]]])
                   :csv-export]]]]])))
 
 (defn page-billing-period []
@@ -64,14 +64,14 @@
           [re-com/h-box :gap "5px"
            :children
            [[re-com/input-text
-             :model (str (:from-yyyymm item))
-             :on-change #(re-frame/dispatch [:entity-change :billing-period (:id item) :from-yyyymm (util/parse-int %)])
+             :model (str (:billing-period/from-yyyymm item))
+             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/from-yyyymm (util/parse-int %)])
              :validation-regex #"^\d{0,6}$"
              :width "120px"]
             "-"
             [re-com/input-text
-             :model (str (:to-yyyymm item))
-             :on-change #(re-frame/dispatch [:entity-change :billing-period (:id item) :to-yyyymm (util/parse-int %)])
+             :model (str (:billing-period/to-yyyymm item))
+             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/to-yyyymm (util/parse-int %)])
              :validation-regex #"^\d{0,6}$"
              :width "120px"]
             "RRRRMM"]]
@@ -81,14 +81,14 @@
             "nebo"
             [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/billing-period/e")]
             [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/billing-periods")]]]
-          (when (:id item)
+          (when (:db/id item)
             [re-com/v-box :gap "5px"
              :children
              [[:h4 "Předpisy plateb"]
               [re-com/button
                :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " předpisy plateb")
                :class "btn-danger"
-               :on-click #(re-frame/dispatch [::generate-person-bills (:id item)])]
+               :on-click #(re-frame/dispatch [::generate-person-bills (:db/id item)])]
               [data-table
                :table-id :person-bills
                :rows @person-bills
