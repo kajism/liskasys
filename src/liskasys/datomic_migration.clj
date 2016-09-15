@@ -1,9 +1,13 @@
 (ns liskasys.datomic-migration
   (:require [clj-brnolib.jdbc-common :as jdbc-common]
+            [clojure.java.jdbc :as jdbc]
             [clojure.pprint :refer [pprint]]
+            [clojure.set :as set]
             [datomic.api :as d]
-            [taoensso.timbre :as timbre]
-            [clojure.set :as set]))
+            [taoensso.timbre :as timbre]))
+
+(defn find-all [db attr]
+  (d/q [:find '[(pull ?e [*]) ...] :where ['?e attr]] db))
 
 (defn- lunch-type [{:keys [db-spec db] :as ctx}]
   (->> (jdbc-common/select db-spec :lunch-type {})
@@ -20,7 +24,6 @@
                                               :lunch-type/label label
                                               :lunch-type/color color}))))
                ctx)))
-
 
 ;;TODO in separate TX, need existing :db/id to name files
 (defn- lunch-menu [ctx]
@@ -52,7 +55,6 @@
                                        var-symbol))
                        eid (or eid (d/tempid :db.part/user))]
                    (-> ctx
-                       (assoc-in [:child-ids id] eid)
                        (update :tx-data conj (cond-> {:db/id eid
                                                       :person/child? true
                                                       :person/var-symbol var-symbol
@@ -89,38 +91,66 @@
                                                (assoc :person/roles roles))))))
                ctx)))
 
-(defn- user-child->parent-child [db-spec user-ids-mapping child-ids-mapping]
-  (doseq [user-child (jdbc-common/select db-spec :user-child {})
-          :let [parent-child {:parent-id (get user-ids-mapping (:user-id user-child))
-                              :child-id (get child-ids-mapping (:child-id user-child))}
-                parent-child (assoc parent-child :id (:id (first (jdbc-common/select db-spec :parent-child parent-child))))]]
-    (when-not (or (:id parent-child) (= (:parent-id parent-child) (:child-id parent-child)))
-      (jdbc-common/insert! db-spec :parent-child parent-child))))
+(defn child-ids-mapping [db-spec db]
+  (->> (jdbc-common/select db-spec :child {})
+       (map (fn [{:keys [id var-symbol]}]
+              [id (ffirst (d/q '[:find ?e
+                                 :in $ ?var-symbol
+                                 :where [?e :person/var-symbol ?var-symbol]]
+                               db
+                               var-symbol))]))
+       (into {})))
 
-(defn- user-child [{:keys [db db-spec child-ids user-ids] :as ctx}]
-  (let [person-parents (d/q '[:find ?e ?p :where [?e :person/parent ?p]] db)]
+(defn- user-child [{:keys [db db-spec user-ids] :as ctx}]
+  (let [person-parents (d/q '[:find ?e ?p :where [?e :person/parent ?p]] db)
+        child-ids (child-ids-mapping db-spec db)]
     (->> (jdbc-common/select db-spec :user-child {})
          (reduce (fn [ctx {:keys [user-id child-id]}]
-                   (cond-> ctx
-                     (not (contains? person-parents [(get child-ids child-id)
-                                                     (get user-ids user-id)]))
-                     (update :tx-data conj {:db/id (get child-ids child-id)
-                                            :person/parent (get user-ids user-id)})))
+                   (update ctx :tx-data conj {:db/id (get child-ids child-id)
+                                              :person/parent (get user-ids user-id)}))
                  ctx))))
 
-(defn- attendance [ctx]
-  ctx)
-
-(defn find-all [db attr]
-  (d/q [:find '[(pull ?e [*]) ...] :where ['?e attr]] db))
+(defn- attendance [{:keys [db-spec db] :as ctx}]
+  (let [persons-by-id (->> (find-all db :person/firstname)
+                           (map (juxt :db/id identity))
+                           (into {}))
+        att-id->days (->> (jdbc-common/select db-spec :attendance-day {})
+                          (group-by :attendance-id))
+        child-ids (child-ids-mapping db-spec db)]
+    (->> (->> (jdbc/query db-spec ["select * from \"attendance\" where \"valid-to\" is null or \"valid-to\" > now()"])
+              (group-by :child-id))
+         (reduce (fn [ctx [child-id ch-atts]]
+                   (let [att-days (->> ch-atts
+                                       first
+                                       :id
+                                       att-id->days
+                                       (mapv (juxt :day-of-week identity))
+                                       (into {}))
+                         person (-> child-id
+                                    child-ids
+                                    persons-by-id
+                                    (assoc :person/lunch-pattern (->> (range 1 8)
+                                                                      (map (comp :lunch? att-days))
+                                                                      (map #(if % 1 0))
+                                                                      (apply str))
+                                           :person/att-pattern (->> (range 1 8)
+                                                                    (map (comp :full-day? att-days))
+                                                                    (map #(case % nil 0 true 1 false 2))
+                                                                    (apply str))))]
+                     (when (> (count ch-atts) 1)
+                       (timbre/warn "more than 1 att:" (:child-id (first ch-atts))))
+                     (update ctx :tx-data conj (cond-> (select-keys person [:db/id :person/att-pattern :person/lunch-pattern])
+                                                 (not (:person/child? person))
+                                                 (assoc :person/att-pattern "0000000")))))
+                 ctx))))
 
 (defn- transact [conn ctx]
-  (pprint (dissoc ctx :db-spec :db :lunch-type-ids :child-ids))
+  (pprint (dissoc ctx :db-spec :db :lunch-type-ids))
   (let [tx-data @(d/transact conn (:tx-data ctx))]
     (pprint tx-data)
     (assoc ctx :db (:db-after tx-data) :tx-data [])))
 
-(defn migrate [db-spec conn]
+(defn migrate-to-datomic [db-spec conn]
   (->> {:db-spec db-spec
         :db (d/db conn)
         :tx-data []}
@@ -130,5 +160,6 @@
        (transact conn)
        user
        user-child
+       (transact conn)
        attendance
        (transact conn)))

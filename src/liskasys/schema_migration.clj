@@ -38,9 +38,6 @@
 (defn- att->pattern [db-spec child-ids-mapping]
   (let [atts (->> (jdbc/query db-spec ["select * from \"attendance\" where \"valid-to\" is null or \"valid-to\" > now()"])
                   (group-by :child-id))
-        childs-by-id (->> (jdbc-common/select db-spec :child {})
-                          (map (juxt :id identity))
-                          (into {}))
         persons-by-id (->> (jdbc-common/select db-spec :person {})
                            (map (juxt :id identity))
                            (into {}))
