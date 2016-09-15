@@ -15,7 +15,7 @@
       tc/to-date))
 
 (defn assoc-fullname [person]
-  (assoc person :-fullname (str (:lastname person) " " (:firstname person))))
+  (assoc person :-fullname (str (:person/lastname person) " " (:person/firstname person))))
 
 (defmethod jdbc-common/select :user
   [db-spec table-kw where-m]

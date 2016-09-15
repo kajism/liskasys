@@ -11,29 +11,23 @@
    { (s/optional-key :lunch-type/label) s/Str
     (s/optional-key :lunch-type/color) s/Str}))
 
-(def User
+(def Person
   (merge
    CommonAttrs
-   {(s/optional-key :firstname) s/Str
-    (s/optional-key :lastname) s/Str
+   {(s/optional-key :person/firstname) s/Str
+    (s/optional-key :person/lastname) s/Str
     (s/optional-key :-fullname) s/Str
-    (s/optional-key :email) s/Str
-    (s/optional-key :phone) (s/maybe s/Str)
-    (s/optional-key :passwd) (s/maybe s/Str)
-    (s/optional-key :roles) s/Any
-    (s/optional-key :failed-logins) (s/maybe s/Int)}))
-
-(def Child
-  (merge
-   CommonAttrs
-   {(s/optional-key :firstname) s/Str
-    (s/optional-key :lastname) s/Str
-    (s/optional-key :-fullname) s/Str
-    (s/optional-key :var-symbol) s/Int
-    (s/optional-key :lunch-type-id) (s/maybe s/Int)}))
-
-(def UserChild
-  {:id s/Int :user-id s/Int :child-id s/Int :created s/Inst})
+    (s/optional-key :person/email) s/Str
+    (s/optional-key :person/phone) (s/maybe s/Str)
+    (s/optional-key :person/passwd) (s/maybe s/Str)
+    (s/optional-key :person/roles) s/Any
+    (s/optional-key :person/var-symbol) s/Int
+    (s/optional-key :person/lunch-type) (s/maybe {:db/id s/Int})
+    (s/optional-key :person/active?) (s/maybe s/Bool)
+    (s/optional-key :person/child?) (s/maybe s/Bool)
+    (s/optional-key :person/parent) (s/maybe [{:db/id s/Int}])
+    (s/optional-key :person/lunch-pattern) (s/maybe s/Str)
+    (s/optional-key :person/att-pattern) (s/maybe s/Str)}))
 
 (def Attendance
   (merge
@@ -84,16 +78,14 @@
 
 (def AppDb
   {:current-page s/Keyword
-   (s/optional-key :auth-user) User
+   (s/optional-key :auth-user) Person
    (s/optional-key :table-states) s/Any
    (s/optional-key :entity-edit) {s/Keyword {:db/id (s/maybe s/Int)
                                              :edit? s/Bool}}
    (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
                           (s/optional-key :info) (s/maybe s/Str)}
    (s/optional-key :entities-where) {s/Keyword s/Any}
-   (s/optional-key :user) {(s/maybe s/Int) (s/maybe User)}
-   (s/optional-key :child) {(s/maybe s/Int) (s/maybe Child)}
-   (s/optional-key :user-child) {s/Int UserChild}
+   (s/optional-key :person) {(s/maybe s/Int) (s/maybe Person)}
    (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
    (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}
    (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}

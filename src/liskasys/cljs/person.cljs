@@ -35,14 +35,14 @@
         [data-table
          :table-id :persons
          :rows @persons
-         :colls [["Příjmení" :lastname]
-                 ["Jméno" :firstname]
-                 ["Variabilní symbol" :var-symbol]
-                 ["Dieta" #(:label (get @lunch-types (:lunch-type-id %)))]
-                 ["Rozvrh docházky" #(when (not= (:att-pattern %) "0000000") (:att-pattern %))]
-                 ["Rozvrh obědů" #(when (not= (:lunch-pattern %) "0000000") (:lunch-pattern %))]
-                 ["Email" :email]
-                 ["Mobilní telefon" :phone]
+         :colls [["Příjmení" :person/lastname]
+                 ["Jméno" :person/firstname]
+                 ["Variabilní symbol" :person/var-symbol]
+                 ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
+                 ["Rozvrh docházky" #(when (not= (:person/att-pattern %) "0000000") (:person/att-pattern %))]
+                 ["Rozvrh obědů" #(when (not= (:person/lunch-pattern %) "0000000") (:person/lunch-pattern %))]
+                 ["Email" :person/email]
+                 ["Mobilní telefon" :person/phone]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -52,75 +52,68 @@
                      :gap "5px"
                      :children
                      [[re-com/hyperlink-href
-                       :href (str "#/person/" (:id row) "e")
+                       :href (str "#/person/" (:db/id row) "e")
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:id row)])]]])
+                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])]]])
                   :none]]]]])))
 
 (defn page-person []
   (let [person (re-frame/subscribe [:entity-edit :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])
-        parent-childs (re-frame/subscribe [:entities :parent-child])
         persons (re-frame/subscribe [:entities :person])]
     (fn []
-      (if-not (and @persons @parent-childs @lunch-types)
+      (if-not (and @persons @lunch-types)
         [re-com/throbber]
         (let [item @person
-              errors (:-errors item)
-              child-parents (->> @parent-childs
-                               vals
-                               (keep #(when (= (:id item) (:child-id %))
-                                        (assoc % :-fullname (:-fullname (get @persons (:parent-id %))))))
-                               (util/sort-by-locale :-fullname))
-              sorted-users (->> (apply dissoc @persons (map :parent-id child-parents))
-                                vals
-                                (util/sort-by-locale :-fullname))]
+              errors (:-errors item)]
           [re-com/v-box :gap "5px"
            :children
            [[:h3 "Osoba"]
             [re-com/label :label "Příjmení"]
-            [input-text item :person :lastname]
+            [input-text item :person :person/lastname]
             [re-com/label :label "Jméno"]
-            [input-text item :person :firstname]
+            [input-text item :person :person/firstname]
             [re-com/checkbox
              :label "aktivní člen?"
-             :model (:active? item)
-             :on-change #(re-frame/dispatch [:entity-change :person (:id item) :active? %])]
+             :model (:person/active? item)
+             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/active? %])]
             [re-com/label :label "Variabilní symbol"]
-            [input-text item :child :var-symbol util/parse-int]
+            [input-text item :child :person/var-symbol util/parse-int]
             [re-com/label :label "Dieta"]
             [re-com/single-dropdown
-             :model (:lunch-type-id item)
-             :on-change #(re-frame/dispatch [:entity-change :child (:id item) :lunch-type-id %])
-             :choices (conj (util/sort-by-locale :label (vals @lunch-types)) {:id nil :label "běžná"})
+             :model (some-> item :person/lunch-type :db/id)
+             :on-change #(re-frame/dispatch [:entity-change :child (:db/id item) :person/lunch-type {:db/id %}])
+             :choices (conj (util/sort-by-locale :label (vals @lunch-types)) {:db/id nil :label "běžná"})
+             :id-fn :db/id
+             :label-fn :lunch-type/label
              :placeholder "běžná"
              :width "250px"]
             [re-com/label :label "Rozvrh obědů"]
             [re-com/h-box :gap "5px"
              :children
-             [[input-text item :person :lunch-pattern]
+             [[input-text item :person :person/lunch-pattern]
               [re-com/checkbox
                :label "obědy zdarma?"
-               :model (:free-lunches? item)
-               :on-change #(re-frame/dispatch [:entity-change :person (:id item) :free-lunches? %])]]]
+               :model (:person/free-lunches? item)
+               :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/free-lunches? %])]]]
             [re-com/checkbox
              :label "dítě?"
-             :model (:child? item)
-             :on-change #(re-frame/dispatch [:entity-change :person (:id item) :child? %])]
-            (if (:child? item)
+             :model (:person/child? item)
+             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/child? %])]
+            (if (:person/child? item)
               [re-com/v-box
                :children
                [[re-com/label :label "Rozvrh docházky"]
                 [re-com/h-box :gap "5px"
                  :children
-                 [[input-text item :person :att-pattern]
+                 [[input-text item :person :person/att-pattern]
                   [re-com/checkbox
                    :label "docházka zdarma?"
-                   :model (:free-att? item)
-                   :on-change #(re-frame/dispatch [:entity-change :person (:id item) :free-att? %])]]]
-                (when (:id item)
+                   :model (:person/free-att? item)
+                   :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/free-att? %])]]]
+                (when (:db/id item)
                   [re-com/v-box
                    :children
                    [[:h3 "Rodiče"]
@@ -128,17 +121,23 @@
                      [:tbody
                       [:tr
                        (doall
-                        (for [parent child-parents]
-                          ^{:key (:id parent)}
+                        (for [parent (->> (:person/parent item)
+                                          (map (comp @persons :db/id))
+                                          (util/sort-by-locale :-fullname))]
+                          ^{:key (:db/id parent)}
                           [:td
                            [re-com/label :label (:-fullname parent)]
-                           [buttons/delete-button #(re-frame/dispatch [:entity-delete :user-child (:id parent)]) :below-center]]))]
+                           [buttons/delete-button #(re-frame/dispatch [:entity-delete :user-child (:db/id parent)]) :below-center]]))]
                       [:tr
                        [:td
                         [re-com/single-dropdown
                          :model nil
-                         :on-change #(re-frame/dispatch [:user-child/save % (:id item)])
-                         :choices sorted-users
+                         :on-change #(re-frame/dispatch [:user-child/save % (:db/id item)])
+                         :choices (->> (apply dissoc @persons (map :db/id (:person/parent item)))
+                                       vals
+                                       (remove :person/child?)
+                                       (util/sort-by-locale :-fullname))
+                         :id-fn :db/id
                          :label-fn :-fullname
                          :placeholder "Přidat rodiče..."
                          :filter-box? true
@@ -146,13 +145,13 @@
               [re-com/v-box
                :children
                [[re-com/label :label "Email"]
-                [input-text item :person :email]
+                [input-text item :person :person/email]
                 [re-com/label :label "Telefon"]
-                [input-text item :person :phone]
+                [input-text item :person :person/phone]
                 [re-com/label :label "Role"]
                 [re-com/h-box :align :center :gap "5px"
                  :children
-                 [[input-text item :person :roles]
+                 [[input-text item :person :person/roles]
                   "admin, obedy"]]]])
             [re-com/h-box :align :center :gap "5px"
              :children

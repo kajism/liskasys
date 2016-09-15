@@ -232,7 +232,9 @@
         query (build-query db attr where-m)]
     (cond->> (d/query query)
       (= entity-type :person)
-      (map #(dissoc % :person/passwd)))))
+      (map #(-> %
+                db/assoc-fullname
+                (dissoc :person/passwd))))))
 
 (defn transact-entity [conn user-id ent]
   (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))
