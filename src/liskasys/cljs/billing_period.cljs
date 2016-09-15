@@ -53,7 +53,7 @@
 (defn page-billing-period []
   (let [item-id (re-frame/subscribe [:entity-edit-id :billing-period])
         billing-period (re-frame/subscribe [:entity-edit :billing-period])
-        person-bills (re-frame/subscribe [:entities-where :person-bill {:period-id @item-id}])
+        person-bills (re-frame/subscribe [:entities-where :person-bill {:person-bill/period @item-id}])
         persons (re-frame/subscribe [:entities :person])]
     (fn []
       (let [item @billing-period]
@@ -101,12 +101,12 @@
                                      :label [re-com/md-icon-button
                                              :md-icon-name "zmdi-edit"
                                              :tooltip "Editovat"]]]])]
-                       ["Celkem Kč" (comp util/from-cents :total-cents)]
-                       ["Zaplaceno?" :paid?]
-                       ["Cena za docházku" (comp util/from-cents :att-price-cents)]
-                       ["Obědy" :total-lunches]
-                       ["Rozvrh docházky" #(when (not= (:att-pattern %) "0000000") (:att-pattern %))]
-                       ["Rozvrh obědů" #(when (not= (:lunch-pattern %) "0000000") (:lunch-pattern %))]]]]])]]))))
+                       ["Celkem Kč" (comp util/from-cents :person-bill/total)]
+                       ["Zaplaceno?" :person-bill/paid?]
+                       ["Cena za docházku" (comp util/from-cents :person-bill/att-price)]
+                       ["Obědy" :person-bill/lunch-count]
+                       ["Rozvrh docházky" #(when (not= (:person/att-pattern %) "0000000") (:person/att-pattern %))]
+                       ["Rozvrh obědů" #(when (not= (:person/lunch-pattern %) "0000000") (:person/lunch-pattern %))]]]]])]]))))
 
 (secretary/defroute "/billing-periods" []
   (re-frame/dispatch [:set-current-page :billing-periods]))

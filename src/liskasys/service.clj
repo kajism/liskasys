@@ -222,10 +222,15 @@
 (defn- build-query [db attr where-m]
   (reduce (fn [query [where-attr where-val]]
             (let [?where-attr (symbol (str "?" (name where-attr)))]
-              (-> query
-                  (update-in [:query :in] conj ?where-attr)
-                  (update-in [:query :where] conj ['?e where-attr ?where-attr])
-                  (update-in [:args] conj where-val))))
+              (cond-> query
+                where-val
+                (update-in [:query :in] conj ?where-attr)
+                true
+                (update-in [:query :where] conj (if where-val
+                                                  ['?e where-attr ?where-attr]
+                                                  ['?e where-attr]))
+                where-val
+                (update-in [:args] conj where-val))))
           {:query {:find ['[(pull ?e [*]) ...]]
                    :in ['$]
                    :where [['?e attr]]}
