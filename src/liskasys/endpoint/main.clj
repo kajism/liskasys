@@ -10,7 +10,6 @@
             [clojure.string :as str]
             [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
-            [crypto.password.scrypt :as scrypt]
             [datomic.api :as d]
             [environ.core :refer [env]]
             [liskasys.db :as db]
@@ -29,13 +28,6 @@
            (map #(truss/have! (fn [d] (.before yesterday d))
                               (time/from-format % time/ddMMyyyy)))
            set))))
-
-(defn- check-password [db-spec user pwd]
-  (if (:passwd user)
-    (scrypt/check pwd (:passwd user))
-    (->> (db/select-children-by-user-id db-spec (:id user))
-         (filter #(= pwd (str (:var-symbol %))))
-         not-empty)))
 
 (defn- upload-dir []
   (or (:upload-dir env) "./uploads/"))
@@ -100,19 +92,18 @@
 
      (POST "/login" [username pwd :as req]
        (try
-         (let [user (first (jdbc-common/select db-spec :user {:email username}))]
-           (when-not (and user (check-password db-spec user pwd))
-             (timbre/warn "User" username " tried to log in." (->> (seq pwd) (map (comp char inc int)) (apply str)))
+         (let [person (service/login (d/db conn) username pwd)]
+           (when-not person
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (timbre/info "User" username "just logged in.")
            (-> (response/redirect "/" :see-other)
                (assoc-in [:session :user]
-                         (-> user
-                             (select-keys [:id :-fullname])
-                             (assoc :-roles (->> (str/split (str (:roles user)) #",")
+                         (-> person
+                             (select-keys [:db/id :-fullname :email])
+                             (assoc :-roles (->> (str/split (str (:person/roles person)) #",")
                                                  (map str/trim)
                                                  set))
-                             (assoc :-children-count (count (jdbc-common/select db-spec :user-child {:user-id (:id user)})))))))
+                             (assoc :-children-count (count (:person/_parent person)))))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 
@@ -132,9 +123,9 @@
              (throw (Exception. "Zadaná hesla se neshodují.")))
            (when (or (str/blank? new-pwd) (< (count (str/trim new-pwd)) 6))
              (throw (Exception. "Nové heslo je příliš krátké.")))
-           (when-not (check-password db-spec user old-pwd)
+           (when-not (service/check-person-password user old-pwd)
              (throw (Exception. "Chybně zadané původní heslo."))))
-         (jdbc-common/save! db-spec :user {:id (:id user) :passwd (scrypt/encrypt new-pwd)})
+         #_(jdbc-common/save! db-spec :user {:id (:id user) :passwd (scrypt/encrypt new-pwd)})
          (main-hiccup/liskasys-frame
           user
           (hiccup/passwd-form {:type :success :msg "Heslo bylo změněno"}))
@@ -182,12 +173,12 @@
          (response/response
           (case action
             "select" (service/find-all (d/db conn) table-kw ?data)
-            "save" (service/transact-entity conn (:id user) ?data)
-            "delete" (service/retract-entity conn (:id user) ?data)
+            "save" (service/transact-entity conn (:db/id user) ?data)
+            "delete" (service/retract-entity conn (:db/id user) ?data)
             (case msg-id
               :user/auth {}
-              :entity/retract (service/retract-entity conn (:id user) ?data)
-              :entity/retract-attr (service/retract-attr conn (:id user) ?data)
+              :entity/retract (service/retract-entity conn (:db/id user) ?data)
+              :entity/retract-attr (service/retract-attr conn (:db/id user) ?data)
               :person-bill/generate (service/re-generate-person-bills db-spec (:period-id ?data))
               (throw (Exception. (str "Unknown msg-id: " msg-id))))))))
 

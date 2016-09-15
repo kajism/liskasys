@@ -5,6 +5,7 @@
             [clj-time.format :as tf]
             [clojure.java.jdbc :as jdbc]
             [clojure.set :as s]
+            [crypto.password.scrypt :as scrypt]
             [datomic.api :as d]
             [liskasys.db :as db]
             [postal.core :as postal]
@@ -268,3 +269,22 @@
        :tx-data
        count
        (+ -2)))
+
+(defn check-person-password [{:keys [:db/id :person/passwd :person/_parent]} pwd]
+  (if passwd
+    (scrypt/check pwd passwd)
+    (->> _parent
+         (filter #(= pwd (str (:person/var-symbol %))))
+         not-empty)))
+
+(defn login [db username pwd]
+  (let [person (-> (d/q '[:find [(pull ?e [* {:person/_parent [:db/id :person/var-symbol]}]) ...]
+                          :in $ ?email
+                          :where
+                          [?e :person/email ?email]]
+                        db username)
+                   first
+                   db/assoc-fullname)]
+    (if (check-person-password person pwd)
+      person
+      (timbre/warn "User" username " tried to log in." (->> (seq pwd) (map (comp char inc int)) (apply str))))))
