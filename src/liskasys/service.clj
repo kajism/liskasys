@@ -238,8 +238,9 @@
 
 (defn transact-entity [conn user-id ent]
   (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))
-        tx-result @(d/transact conn [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}
-                                     (assoc ent :db/id ent-id)])]
+        tx-data [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}
+                 (assoc ent :db/id ent-id)]
+        tx-result @(d/transact conn (timbre/spy tx-data))]
     (timbre/debug tx-result)
     (d/pull (:db-after tx-result) '[*] (or (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) ent-id)))))
 
@@ -254,4 +255,16 @@
       count
       (- 2)))
 
-
+(defn retract-attr [conn user-id ent]
+  (timbre/debug ent)
+  "Returns the number of retracted datoms (attributes)."
+  (->> (map (fn [[attr-key attr-val]]
+              [:db/retract (:db/id ent) attr-key attr-val])
+            (dissoc ent :db/id))
+       (into [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}])
+       (d/transact conn)
+       deref
+       timbre/spy
+       :tx-data
+       count
+       (+ -2)))

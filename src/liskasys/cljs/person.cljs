@@ -15,15 +15,6 @@
             [clojure.string :as str]
             [clj-brnolib.cljs.comp.input-text :refer [input-text]]))
 
-(re-frame/register-handler
- :user-child/save
- common/debug-mw
- (fn [db [_ user-id child-id]]
-   (server-call [:user-child/save {:user-id user-id
-                                   :child-id child-id}]
-                nil
-                [:entity-saved :user-child])))
-
 (defn page-persons []
   (let [persons (re-frame/subscribe [:entities :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])]
@@ -127,12 +118,15 @@
                           ^{:key (:db/id parent)}
                           [:td
                            [re-com/label :label (:-fullname parent)]
-                           [buttons/delete-button #(re-frame/dispatch [:entity-delete :user-child (:db/id parent)]) :below-center]]))]
+                           [buttons/delete-button
+                            #(re-frame/dispatch [:common/retract-ref-many :person {:db/id (:db/id item)
+                                                                                   :person/parent (:db/id parent)}])
+                            :below-center]]))]
                       [:tr
                        [:td
                         [re-com/single-dropdown
                          :model nil
-                         :on-change #(re-frame/dispatch [:user-child/save % (:db/id item)])
+                         :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/parent (fn [v] (conj v {:db/id %}))])
                          :choices (->> (apply dissoc @persons (map :db/id (:person/parent item)))
                                        vals
                                        (remove :person/child?)

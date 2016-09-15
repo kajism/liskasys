@@ -134,3 +134,18 @@
    (when file-id
      (server-call [(keyword (name kw) "delete") file-id] nil nil db))
    (update-in db [kw parent-id :file/_parent] #(filterv (fn [file] (not= file-id (:db/id file))) %))))
+
+(re-frame/register-handler
+ :common/retract-ref-many
+ debug-mw
+ (fn [db [_ kw retract-attr]]
+   (server-call [:entity/retract-attr retract-attr] nil nil db)
+   (update-in db [kw (:db/id retract-attr)]
+              (fn [ent]
+                (reduce (fn [ent [attr-kw attr-val]]
+                          (cond-> ent
+                            (vector? (get ent attr-kw))
+                            (update attr-kw #(filterv (fn [x] (not (= (:db/id x) attr-val))) %))))
+                        ent
+                        (dissoc retract-attr :db/id))))))
+

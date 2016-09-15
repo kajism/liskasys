@@ -186,6 +186,8 @@
             "delete" (service/retract-entity conn (:id user) ?data)
             (case msg-id
               :user/auth {}
+              :entity/retract (service/retract-entity conn (:id user) ?data)
+              :entity/retract-attr (service/retract-attr conn (:id user) ?data)
               :person-bill/generate (service/re-generate-person-bills db-spec (:period-id ?data))
               (throw (Exception. (str "Unknown msg-id: " msg-id))))))))
 
