@@ -300,3 +300,5 @@
       (throw (Exception. "Nové heslo je příliš krátké.")))
     (transact-entity conn user-id {:db/id (:db/id person)
                                    :person/passwd (scrypt/encrypt new-pwd)})))
+(defn find-by-id [db eid]
+  (d/pull db '[*] eid))

@@ -130,7 +130,11 @@
      (GET "/profile" []
        (main-hiccup/liskasys-frame
         user
-        (hiccup/user-profile-form (first (jdbc-common/select db-spec :user {:id (:id user)})) nil)))
+        (hiccup/user-profile-form (-> (service/find-by-id (d/db conn) (:db/id user))
+                                      (set/rename-keys {:person/firstname :firstname
+                                                        :person/lastname :lastname
+                                                        :person/email :email
+                                                        :person/phone :phone})) nil)))
 
      (POST "/profile" {{:keys [firstname lastname email phone] :as params} :params}
        (try
@@ -142,7 +146,11 @@
            (throw (Exception. "Vyplňte správně kontaktní emailovou adresu")))
          (when-not (validation/valid-phone? phone)
            (throw (Exception. "Vyplňte správně kontaktní telefonní číslo")))
-         (jdbc-common/save! db-spec :user {:id (:id user) :firstname firstname :lastname lastname :email email :phone phone})
+         (service/transact-entity conn (:db/id user) {:db/id (:db/id user)
+                                                      :person/firstname firstname
+                                                      :person/lastname lastname
+                                                      :person/email email
+                                                      :person/phone phone})
          (main-hiccup/liskasys-frame
           user
           (hiccup/user-profile-form params {:type :success :msg "Změny byly uloženy"}))
