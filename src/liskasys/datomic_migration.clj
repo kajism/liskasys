@@ -4,7 +4,8 @@
             [clojure.pprint :refer [pprint]]
             [clojure.set :as set]
             [datomic.api :as d]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [liskasys.db :as db]))
 
 (defn find-all [db attr]
   (d/q [:find '[(pull ?e [*]) ...] :where ['?e attr]] db))
@@ -144,6 +145,18 @@
                                                  (assoc :person/att-pattern "0000000")))))
                  ctx))))
 
+(defn- set-person-active? [ctx]
+  (->> (d/q '[:find [(pull ?e [:db/id :person/_parent :person/lunch-pattern :person/att-pattern :person/child?]) ...]
+              :where
+              [?e :person/firstname]]
+            (:db ctx))
+       (reduce (fn [ctx person]
+                 (update ctx :tx-data conj {:db/id (:db/id person)
+                                            :person/active? (not (and (db/zero-patterns? person)
+                                                                      (or (:person/child? person)
+                                                                          (zero? (count (:person/_parent person))))))}))
+               ctx)))
+
 (defn- transact [conn ctx]
   (pprint (dissoc ctx :db-spec :db :lunch-type-ids))
   (let [tx-data @(d/transact conn (:tx-data ctx))]
@@ -162,4 +175,6 @@
        user-child
        (transact conn)
        attendance
+       (transact conn)
+       set-person-active?
        (transact conn)))
