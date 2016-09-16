@@ -167,13 +167,13 @@
 
      (POST "/api" [req-msg]
        (let [[msg-id ?data] req-msg
-             table-kw (keyword (namespace msg-id))
+             ent-type (keyword (namespace msg-id))
              action (name msg-id)]
          (when-not ((:-roles user) "admin")
              (throw (Exception. "Not authorized")))
          (response/response
           (case action
-            "select" (service/find-all (d/db conn) table-kw ?data)
+            "select" (service/find-by-type (d/db conn) ent-type ?data)
             "save" (service/transact-entity conn (:db/id user) ?data)
             "delete" (service/retract-entity conn (:db/id user) ?data)
             (case msg-id
@@ -181,12 +181,4 @@
               :entity/retract (service/retract-entity conn (:db/id user) ?data)
               :entity/retract-attr (service/retract-attr conn (:db/id user) ?data)
               :person-bill/generate (service/re-generate-person-bills conn (:db/id user) (:period-id ?data))
-              (throw (Exception. (str "Unknown msg-id: " msg-id))))))))
-
-     (GET "/save-sql-backup" []
-       (jdbc/query db-spec ["SCRIPT TO ?"
-                            (str "./db-dump/liskasys-db" (time/to-format (Date.) time/yyyyMMdd-HHmm) ".sql")])
-       ;; restore: (jdbc/execute! (user/db-spec) ["RUNSCRIPT FROM './liskasys-db.sql' "])
-       (main-hiccup/liskasys-frame
-        user
-        [:div "Ok"])))))
+              (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))

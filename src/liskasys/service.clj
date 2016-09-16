@@ -164,15 +164,7 @@
                       :daily-plan/lunch? lunch?
                       :daily-plan/child-att child-att})))))))
 
-(def ent-type->attr
-  {:lunch-type :lunch-type/label
-   :bank-holiday :bank-holiday/label
-   :person :person/firstname
-   :price-list :price-list/days-1
-   :billing-period :billing-period/from-yyyymm
-   :person-bill :person-bill/total})
-
-(defn- build-query [db attr where-m]
+(defn- build-query [db where-m]
   (reduce (fn [query [where-attr where-val]]
             (let [?where-attr (symbol (str "?" (name where-attr)))]
               (cond-> query
@@ -186,16 +178,27 @@
                 (update-in [:args] conj where-val))))
           {:query {:find ['[(pull ?e [*]) ...]]
                    :in ['$]
-                   :where [['?e attr]]}
+                   :where []}
            :args [db]
            :timeout 2000}
           where-m))
 
-(defn find-all [db entity-type where-m]
-  (let [attr (get ent-type->attr entity-type entity-type)
-        query (build-query db attr where-m)]
-    (cond->> (d/query query)
-      (= entity-type :person)
+(defn find-where [db where-m]
+  (d/query (build-query db where-m)))
+
+(def ent-type->attr
+  {:lunch-type :lunch-type/label
+   :lunch-menu :lunch-menu/from
+   :bank-holiday :bank-holiday/label
+   :person :person/firstname
+   :price-list :price-list/days-1
+   :billing-period :billing-period/from-yyyymm
+   :person-bill :person-bill/total})
+
+(defn find-by-type [db ent-type where-m]
+  (let [attr (get ent-type->attr ent-type ent-type)]
+    (cond->> (find-where db (merge {attr nil} where-m))
+      (= ent-type :person)
       (map #(-> %
                 db/assoc-fullname
                 (dissoc :person/passwd))))))
@@ -205,9 +208,9 @@
 
 (defn- generate-person-bills [db period-id]
   (let [billing-period (find-by-id db period-id)
-        price-list (first (find-all db :price-list/days-1 {}))
-        bank-holidays (find-all db :bank-holiday/label {})]
-    (for [person (->> (find-all db :person/firstname {:person/active? true})
+        price-list (first (find-where db {:price-list/days-1 nil}))
+        bank-holidays (find-where db {:bank-holiday/label nil})]
+    (for [person (->> (find-where db {:person/active? true})
                         (remove db/zero-patterns?))
             :let [daily-plans (generate-daily-plans (timbre/spy person) billing-period bank-holidays)
                   lunch-count (->> daily-plans
@@ -239,7 +242,7 @@
                        (into [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}])
                        (d/transact conn)
                        deref)]
-    (find-all (:db-after tx-result) :person-bill {:person-bill/period period-id})))
+    (find-where (:db-after tx-result) {:person-bill/period period-id})))
 
 (defn transact-entity [conn user-id ent]
   (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))
@@ -283,12 +286,11 @@
          not-empty)))
 
 (defn login [db username pwd]
-  (let [person (-> (d/q '[:find [(pull ?e [* {:person/_parent [:db/id :person/var-symbol]}]) ...]
+  (let [person (-> (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol]}]) .
                           :in $ ?email
                           :where
                           [?e :person/email ?email]]
                         db username)
-                   first
                    db/assoc-fullname)]
     (if (check-person-password person pwd)
       person
