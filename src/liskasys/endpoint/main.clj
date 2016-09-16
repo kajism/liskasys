@@ -3,9 +3,9 @@
             [clj-brnolib.jdbc-common :as jdbc-common]
             [clj-brnolib.time :as time]
             [clj-brnolib.validation :as validation]
-            [clj-time.core :as clj-time]
-            [clojure.java.io :as io]
-            [clojure.java.jdbc :as jdbc]
+            [clj-time.coerce :as tc]
+            [clj-time.core :as t]
+            [clojure.edn :as edn]
             [clojure.set :as set]
             [clojure.string :as str]
             [compojure.coercions :refer [as-int]]
@@ -17,13 +17,11 @@
             [liskasys.service :as service]
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]
-            [taoensso.truss :as truss])
-  (:import java.io.StringReader
-           java.util.Date))
+            [taoensso.truss :as truss]))
 
 (defn- make-date-sets [str-date-seq]
   (when str-date-seq
-    (let [yesterday (time/to-date (clj-time/yesterday))]
+    (let [yesterday (time/to-date (t/yesterday))]
       (->> (truss/have sequential? str-date-seq)
            (map #(truss/have! (fn [d] (.before yesterday d))
                               (time/from-format % time/ddMMyyyy)))
@@ -58,22 +56,31 @@
          (response/redirect "")
          #_(main-hiccup/cancellation-form db user params)))
 
-     (GET "/jidelni-listek" {:keys [params]}
-       (main-hiccup/lunch-menu db-spec user params))
+     (GET "/jidelni-listek" [history delete-id new?]
+       (when-let [eid (edn/read-string delete-id)]
+         (service/retract-entity conn (:db/id user) eid))
+       (let [history (or (edn/read-string history) 0)
+             {:keys [lunch-menu previous? history]} (service/find-last-lunch-menu (d/db conn) history)]
+         (main-hiccup/liskasys-frame
+          user
+          (main-hiccup/lunch-menu lunch-menu previous? history new? ((:-roles user) "admin")))))
 
-     (GET "/jidelni-listek/:id" [id :<< as-int]
+     #_(GET "/jidelni-listek/:id" [id :<< as-int]
        (let [lunch-menu (first (jdbc-common/select db-spec :lunch-menu {:id id}))]
          (-> (response/file-response (str (upload-dir) "lunch-menu/" (:id lunch-menu) ".dat") {:root "."})
              (response/content-type (:content-type lunch-menu))
              (response/header "Content-Disposition" (str "inline; filename=" (:orig-filename lunch-menu))))))
 
      (POST "/jidelni-listek" [menu upload]
-       (let [id (jdbc-common/insert! db-spec :lunch-menu {:text menu
-                                                          :orig-filename (not-empty (:filename upload))
-                                                          :content-type (when (not-empty (:filename upload))
-                                                                          (:content-type upload))})
-             server-file (str (upload-dir) "lunch-menu/" id ".dat")]
-         (when (not-empty (:filename upload))
+       (let [id (service/transact-entity conn (:db/id user) {:lunch-menu/text menu
+                                                             :lunch-menu/from (-> (t/today) tc/to-date)
+                                                             ;; :orig-filename (not-empty (:filename upload))
+                                                             ;; :content-type (when (not-empty (:filename upload))
+                                                             ;;                 (:content-type upload))
+                                                             })
+             ;;server-file (str (upload-dir) "lunch-menu/" id ".dat")
+             ]
+         #_(when (not-empty (:filename upload))
            (io/make-parents server-file)
            (io/copy (:tempfile upload) (io/file server-file))))
        (response/redirect "/jidelni-listek"))

@@ -2,10 +2,6 @@ LISKASYST
 
 podpurny informacni system pro lesni materskou skolu Listicka
 
-* TODO DATOMIC
-** lunch-menu
-** person-bill
-*** join patterns and variable symbol from history
 * TODOs
 ** new schema
 *** DONE migrate attendance days + lunches to patterns

@@ -268,13 +268,15 @@
 (defn retract-entity
   "Returns the number of retracted datoms (attributes)."
   [conn user-id ent-id]
-  (-> (d/transact conn [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}
-                        [:db.fn/retractEntity ent-id]])
-      deref
-      timbre/spy
-      :tx-data
-      count
-      (- 2)))
+  (->> [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}
+        [:db.fn/retractEntity ent-id]]
+       timbre/spy
+       (d/transact conn)
+       deref
+       timbre/spy
+       :tx-data
+       count
+       (+ -2)))
 
 (defn retract-attr [conn user-id ent]
   (timbre/debug ent)
@@ -318,3 +320,15 @@
     (transact-entity conn user-id {:db/id (:db/id person)
                                    :person/passwd (scrypt/encrypt new-pwd)})))
 
+(defn find-last-lunch-menu [db history]
+  (let [eids (d/q '[:find [?e ...] :where [?e :lunch-menu/text]] db)
+        history (min (dec (count eids)) history)
+        last-two (->> eids
+                      sort
+                      reverse
+                      (drop history)
+                      (take 2)
+                      (d/pull-many db '[*]))]
+    {:lunch-menu (first last-two)
+     :previous? (boolean (second last-two))
+     :history history}))

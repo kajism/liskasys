@@ -5,7 +5,10 @@
             [clojure.set :as set]
             [datomic.api :as d]
             [taoensso.timbre :as timbre]
-            [liskasys.db :as db]))
+            [liskasys.db :as db]
+            [clj-time.coerce :as tc]
+            [clj-time.core :as t]
+            [clojure.string :as str]))
 
 (defn- lunch-type [{:keys [db-spec db] :as ctx}]
   (->> (jdbc-common/select db-spec :lunch-type {})
@@ -23,16 +26,22 @@
                                               :lunch-type/color color}))))
                ctx)))
 
-;;TODO in separate TX, need existing :db/id to name files
 (defn- lunch-menu [ctx]
   (->> (jdbc-common/select (:db-spec ctx) :lunch-menu {})
-       (reduce (fn [ctx {:keys [id text content-type orig-filename]}]
-                 (let [tempid (d/tempid :db.part/user)]
-                   (-> ctx
-                       (update :tx-data conj {:db/id tempid
-                                              :file/category :file.category/lunch-menu
-                                              :file/content-type content-type
-                                              :file/orig-filename orig-filename}))))
+       (sort-by :created)
+       (reduce (fn [ctx {:keys [id text content-type orig-filename created]}]
+                 (let [from (-> created tc/from-date t/with-time-at-start-of-day tc/to-date)
+                       eid (or (d/q '[:find ?e .
+                                      :in $ ?from
+                                      :where [?e :lunch-menu/from ?from]]
+                                    (:db ctx)
+                                    from)
+                               (d/tempid :db.part/user))]
+                   (cond-> ctx
+                     (not (str/blank? text))
+                     (update :tx-data conj {:db/id eid
+                                            :lunch-menu/from from
+                                            :lunch-menu/text text}))))
                ctx)))
 
 (defn- lunch-order [ctx]
@@ -89,7 +98,7 @@
                                                (assoc :person/roles roles))))))
                ctx)))
 
-(defn child-ids-mapping [db-spec db]
+(defn- child-ids-mapping [db-spec db]
   (->> (jdbc-common/select db-spec :child {})
        (map (fn [{:keys [id var-symbol]}]
               [id (ffirst (d/q '[:find ?e
@@ -165,6 +174,7 @@
         :db (d/db conn)
         :tx-data []}
        lunch-type
+       lunch-menu
        lunch-order
        child
        (transact conn)
