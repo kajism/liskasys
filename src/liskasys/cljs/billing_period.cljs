@@ -84,7 +84,7 @@
           (when (:db/id item)
             [re-com/v-box :gap "5px"
              :children
-             [[:h4 "Předpisy plateb"]
+             [[:h4 "Rozpisy plateb"]
               [re-com/button
                :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " předpisy plateb")
                :class "btn-danger"
@@ -95,9 +95,9 @@
                :colls [["Jméno" (fn [row]
                                   [re-com/h-box :gap "5px"
                                    :children
-                                   [(->> row :person-id (get @persons) :-fullname)
+                                   [(->> row :person-bill/person :db/id (get @persons) :-fullname)
                                     [re-com/hyperlink-href
-                                     :href (str "#/person/" (:person-id row) "e")
+                                     :href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")
                                      :label [re-com/md-icon-button
                                              :md-icon-name "zmdi-edit"
                                              :tooltip "Editovat"]]]])]
