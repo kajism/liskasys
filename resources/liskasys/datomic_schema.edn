@@ -17,6 +17,18 @@
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]]}
+ :liskasys/lunch-menu
+ {:txes [[{:db/ident :lunch-menu/from
+           :db/valueType :db.type/instant
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :lunch-menu/text
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
  :liskasys/file
  {:txes [[{:db/ident :file/category
            :db/valueType :db.type/ref
