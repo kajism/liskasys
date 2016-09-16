@@ -1,19 +1,20 @@
 (ns liskasys.cljs.person
   (:require [clj-brnolib.cljs.comp.buttons :as buttons]
             [clj-brnolib.cljs.comp.data-table :refer [data-table]]
+            [clj-brnolib.cljs.comp.input-text :refer [input-text]]
             [clj-brnolib.cljs.util :as util]
             [clj-brnolib.validation :as validation]
             [cljs.pprint :refer [pprint]]
+            [clojure.string :as str]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [secretary.core :as secretary]
-            [taoensso.timbre :as timbre]
             [reagent.core :as reagent]
-            [clojure.string :as str]
-            [clj-brnolib.cljs.comp.input-text :refer [input-text]]))
+            [secretary.core :as secretary]
+            [taoensso.timbre :as timbre]))
 
 (defn page-persons []
   (let [persons (re-frame/subscribe [:entities :person])
@@ -114,10 +115,10 @@
                        (doall
                         (for [parent (->> (:person/parent item)
                                           (map (comp @persons :db/id))
-                                          (util/sort-by-locale :-fullname))]
+                                          (util/sort-by-locale cljc-util/person-fullname))]
                           ^{:key (:db/id parent)}
                           [:td
-                           [re-com/label :label (:-fullname parent)]
+                           [re-com/label :label (cljc-util/person-fullname parent)]
                            [buttons/delete-button
                             #(re-frame/dispatch [:common/retract-ref-many :person {:db/id (:db/id item)
                                                                                    :person/parent (:db/id parent)}])
@@ -130,9 +131,9 @@
                          :choices (->> (apply dissoc @persons (map :db/id (:person/parent item)))
                                        vals
                                        (remove :person/child?)
-                                       (util/sort-by-locale :-fullname))
+                                       (util/sort-by-locale cljc-util/person-fullname))
                          :id-fn :db/id
-                         :label-fn :-fullname
+                         :label-fn cljc-util/person-fullname
                          :placeholder "Přidat rodiče..."
                          :filter-box? true
                          :width "250px"]]]]]]])]]

@@ -99,7 +99,7 @@
            (-> (response/redirect "/" :see-other)
                (assoc-in [:session :user]
                          (-> person
-                             (select-keys [:db/id :-fullname :person/email])
+                             (select-keys [:db/id :person/lastname :person/firstname :person/email])
                              (assoc :-roles (->> (str/split (str (:person/roles person)) #",")
                                                  (map str/trim)
                                                  set))

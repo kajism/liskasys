@@ -7,6 +7,7 @@
             [clj-time.format :as tf]
             [clj-time.periodic :as tp]
             [clojure.pprint :refer [pprint]]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.db :as db]
             [liskasys.service :as service]
             [taoensso.timbre :as timbre])
@@ -45,7 +46,7 @@
             [:a {:href "/odhlasene-obedy"} "Odhlášené obědy"]])]
         [:ul.nav.navbar-nav.navbar-right
          [:li
-          [:a {:href "/profile"} (:-fullname user)]]
+          [:a {:href "/profile"} (cljc-util/person-fullname user)]]
          (when (roles "admin")
            [:li
             [:a {:target "admin" :href "/admin.app"} "Admin"]])

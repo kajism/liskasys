@@ -2,6 +2,7 @@
   (:require [clj-brnolib.cljs.comp.buttons :as buttons]
             [clj-brnolib.cljs.comp.data-table :refer [data-table]]
             [clj-brnolib.cljs.util :as util]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
@@ -95,12 +96,13 @@
                :colls [["Jméno" (fn [row]
                                   [re-com/h-box :gap "5px"
                                    :children
-                                   [(->> row :person-bill/person :db/id (get @persons) :-fullname)
+                                   [(->> row :person-bill/person :db/id (get @persons) cljc-util/person-fullname)
                                     [re-com/hyperlink-href
                                      :href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")
                                      :label [re-com/md-icon-button
                                              :md-icon-name "zmdi-edit"
                                              :tooltip "Editovat"]]]])]
+                       ["Var symbol" :person/var-symbol]
                        ["Celkem Kč" (comp util/from-cents :person-bill/total)]
                        ["Zaplaceno?" :person-bill/paid?]
                        ["Cena za docházku" (comp util/from-cents :person-bill/att-price)]

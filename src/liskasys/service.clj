@@ -200,8 +200,13 @@
     (cond->> (find-where db (merge {attr nil} where-m))
       (= ent-type :person)
       (map #(-> %
-                db/assoc-fullname
-                (dissoc :person/passwd))))))
+                (dissoc :person/passwd)))
+      (= ent-type :person-bill)
+      (map #(let [tx (apply max (d/q '[:find [?tx ...] :in $ ?e :where [?e :person-bill/total _ ?tx]] db (:db/id %)))
+                  patterns (d/pull (d/as-of db tx)
+                                   [:person/var-symbol :person/att-pattern :person/lunch-pattern]
+                                   (get-in % [:person-bill/person :db/id]))]
+              (merge % patterns))))))
 
 (defn find-by-id [db eid]
   (d/pull db '[*] eid))
@@ -209,7 +214,14 @@
 (defn- generate-person-bills [db period-id]
   (let [billing-period (find-by-id db period-id)
         price-list (first (find-where db {:price-list/days-1 nil}))
-        bank-holidays (find-where db {:bank-holiday/label nil})]
+        bank-holidays (find-where db {:bank-holiday/label nil})
+        person-bill-ids (->> (d/q '[:find ?person-id ?bill-id
+                                    :in $ ?period-id
+                                    :where
+                                    [?bill-id :person-bill/period ?period-id]
+                                    [?bill-id :person-bill/person ?person-id]]
+                                  db period-id)
+                             (into {}))]
     (for [person (->> (find-where db {:person/active? true})
                         (remove db/zero-patterns?))
             :let [daily-plans (generate-daily-plans (timbre/spy person) billing-period bank-holidays)
@@ -229,7 +241,7 @@
                   lunch-price (if (:person/free-lunches? person)
                                 0
                                 (:price-list/lunch price-list))]]
-      {:db/id (d/tempid :db.part/user)
+      {:db/id (or (get person-bill-ids (:db/id person)) (d/tempid :db.part/user))
        :person-bill/person (:db/id person)
        :person-bill/period period-id
        :person-bill/paid? false
@@ -286,12 +298,11 @@
          not-empty)))
 
 (defn login [db username pwd]
-  (let [person (-> (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol]}]) .
-                          :in $ ?email
-                          :where
-                          [?e :person/email ?email]]
-                        db username)
-                   db/assoc-fullname)]
+  (let [person (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol]}]) .
+                      :in $ ?email
+                      :where
+                      [?e :person/email ?email]]
+                    db username)]
     (if (check-person-password person pwd)
       person
       (timbre/warn "User" username " tried to log in." (->> (seq pwd) (map (comp char inc int)) (apply str))))))
