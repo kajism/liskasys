@@ -57,6 +57,13 @@
           (s/optional-key :bank-holiday/month) (s/maybe s/Int)
           (s/optional-key :bank-holiday/easter-delta) (s/maybe s/Int)}))
 
+(def SchoolHoliday
+  (merge CommonAttrs
+         {(s/optional-key :school-holiday/label) s/Str
+          (s/optional-key :school-holiday/from) (s/maybe s/Inst)
+          (s/optional-key :school-holiday/to) (s/maybe s/Inst)
+          (s/optional-key :school-holiday/every-year?) (s/maybe s/Bool)}))
+
 (def BillingPeriod
   (merge CommonAttrs
          {(s/optional-key :billing-period/from-yyyymm) (s/maybe s/Int)
@@ -86,6 +93,7 @@
    (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}
    (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}
    (s/optional-key :bank-holiday) {(s/maybe s/Int) BankHoliday}
+   (s/optional-key :school-holiday) {(s/maybe s/Int) SchoolHoliday}
    (s/optional-key :billing-period) {(s/maybe s/Int) BillingPeriod}
    (s/optional-key :price-list) {(s/maybe s/Int) PriceList}})
 

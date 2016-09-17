@@ -12,6 +12,7 @@
             liskasys.cljs.lunch-type
             liskasys.cljs.person
             liskasys.cljs.price-list
+            liskasys.cljs.school-holiday
             liskasys.cljs.user
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
@@ -100,6 +101,7 @@
         [:li [:a {:href "#/price-lists"} "Ceníky"]]
         [:li [:a {:href "#/lunch-types"} "Diety"]]
         [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
+        [:li [:a {:href "#/school-holidays"} "Prázdniny"]]
         [:li [:a {:href "#/users"} "--Uživatelé--"]]
         [:li [:a {:href "#/children"} "--Děti--"]]
         [:li [:a {:href "#/cancellations"} "--Omluvenky--"]]]]

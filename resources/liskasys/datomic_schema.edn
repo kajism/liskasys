@@ -143,6 +143,7 @@
  {:txes [[{:db/ident :bank-holiday/label
            :db/valueType :db.type/string
            :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
           {:db/ident :bank-holiday/day
@@ -210,6 +211,38 @@
            :bank-holiday/label "2. svátek vánoční"
            :bank-holiday/day 26
            :bank-holiday/month 12}]]}
+ :liskasys/school-holiday
+ {:txes [[{:db/ident :school-holiday/label
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :school-holiday/from
+           :db/valueType :db.type/instant
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :school-holiday/to
+           :db/valueType :db.type/instant
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :school-holiday/every-year?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/id #db/id [:db.part/user]
+           :school-holiday/label "Letní prázdniny"
+           :school-holiday/from #inst "2016-07-01"
+           :school-holiday/to #inst "2016-08-31"
+           :school-holiday/every-year? true}
+          {:db/id #db/id [:db.part/user]
+           :school-holiday/label "Vánoční prázdniny"
+           :school-holiday/from #inst "2016-12-27"
+           :school-holiday/to #inst "2016-12-31"
+           :school-holiday/every-year? true}]]}
  :liskasys/price-list
  {:txes [[{:db/ident :price-list/days-1
            :db/valueType :db.type/long

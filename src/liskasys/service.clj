@@ -190,6 +190,7 @@
   {:lunch-type :lunch-type/label
    :lunch-menu :lunch-menu/from
    :bank-holiday :bank-holiday/label
+   :school-holiday :school-holiday/label
    :person :person/firstname
    :price-list :price-list/days-1
    :billing-period :billing-period/from-yyyymm

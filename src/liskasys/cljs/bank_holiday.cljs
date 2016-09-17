@@ -18,10 +18,10 @@
         [data-table
          :table-id :bank-holidays
          :rows @bank-holidays
-         :colls [["Měsíc" :bank-holiday/month]
+         :colls [["Název" :bank-holiday/label]
+                 ["Měsíc" :bank-holiday/month]
                  ["Den" :bank-holiday/day]
                  ["+- od Velikonoc" :bank-holiday/easter-delta]
-                 ["Název" :bank-holiday/label]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -36,7 +36,8 @@
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :bank-holiday (:db/id row)])]]])
-                  :csv-export]]]]])))
+                  :csv-export]]
+         :order-by 1]]])))
 
 (defn page-bank-holiday []
   (let [bank-holiday (re-frame/subscribe [:entity-edit :bank-holiday])]
