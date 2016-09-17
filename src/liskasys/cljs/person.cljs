@@ -87,7 +87,10 @@
             [re-com/label :label "Rozvrh obědů"]
             [re-com/h-box :gap "5px"
              :children
-             [[input-text item :person :person/lunch-pattern]
+             [[re-com/input-text
+               :model (str (:person/lunch-pattern item))
+               :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-pattern %])
+               :validation-regex #"^\d{0,7}$"]
               "poútstčtpásone: 0 = bez oběda, 1-9 = požadovaný počet obědů"]]
             [re-com/checkbox
              :label "obědy zdarma?"
@@ -103,7 +106,10 @@
                [[re-com/label :label "Rozvrh docházky"]
                 [re-com/h-box :gap "5px"
                  :children
-                 [[input-text item :person :person/att-pattern]
+                 [[re-com/input-text
+                   :model (str (:person/att-pattern item))
+                   :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/att-pattern %])
+                   :validation-regex #"^[0-2]{0,7}$"]
                   "poútstčtpásone: 0 = bez docházky, 1 = celodenní, 2 = půldenní"]]
                 [re-com/checkbox
                  :label "docházka zdarma?"
