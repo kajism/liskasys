@@ -243,7 +243,7 @@
                      (t/before? ld to)))
        (remove holiday?-fn)))
 
-(defn- generate-person-bills [db period-id]
+(defn- generate-person-bills-tx [db period-id]
   (let [billing-period (find-by-id db period-id)
         price-list (first (find-where db {:price-list/days-1 nil}))
         person-id->bill (atom (->> (d/q '[:find ?person-id (pull ?bill-id [*])
@@ -294,7 +294,7 @@
          (into out))))
 
 (defn re-generate-person-bills [conn user-id period-id]
-  (let [tx-result (->> (generate-person-bills (d/db conn) period-id)
+  (let [tx-result (->> (generate-person-bills-tx (d/db conn) period-id)
                        (into [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}])
                        (d/transact conn)
                        deref)]

@@ -78,11 +78,11 @@
 
 (secretary/defroute #"/lunch-menu/(\d*)(e?)" [id edit?]
   (when-not (util/parse-int id)
-    (re-frame/dispatch [:entity-change :lunch-menu nil :lunch-menu/from (->> (t/today)
-                                                                             (iterate #(t/plus % (t/days 1)))
-                                                                             (drop-while #(not= (t/day-of-week %) 1))
-                                                                             first
-                                                                             tc/to-date)]))
+    (re-frame/dispatch [:entity-new :lunch-menu {:lunch-menu/from (->> (t/today)
+                                                                       (iterate #(t/plus % (t/days 1)))
+                                                                       (drop-while #(not= (t/day-of-week %) 1))
+                                                                       first
+                                                                       tc/to-date)}]))
   (re-frame/dispatch [:entity-set-edit :lunch-menu (util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :lunch-menu]))
 (pages/add-page :lunch-menu #'page-lunch-menu)

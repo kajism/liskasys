@@ -91,6 +91,7 @@
    (s/optional-key :table-states) s/Any
    (s/optional-key :entity-edit) {s/Keyword {:db/id (s/maybe s/Int)
                                              :edit? s/Bool}}
+   (s/optional-key :new-ents) {s/Keyword s/Any}
    (s/optional-key :msg) {(s/optional-key :error) (s/maybe s/Str)
                           (s/optional-key :info) (s/maybe s/Str)}
    (s/optional-key :entities-where) {s/Keyword s/Any}

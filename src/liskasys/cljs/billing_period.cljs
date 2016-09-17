@@ -8,7 +8,8 @@
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [secretary.core :as secretary]))
+            [secretary.core :as secretary]
+            [cljs-time.core :as t]))
 
 (re-frame/register-handler
  ::generate-person-bills
@@ -87,7 +88,7 @@
              :children
              [[:h4 "Rozpisy plateb"]
               [re-com/button
-               :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " předpisy plateb")
+               :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " rozpisy plateb")
                :class "btn-danger"
                :on-click #(re-frame/dispatch [::generate-person-bills (:db/id item)])]
               [data-table
@@ -115,6 +116,10 @@
 (pages/add-page :billing-periods #'page-billing-periods)
 
 (secretary/defroute #"/billing-period/(\d*)(e?)" [id edit?]
+  (when-not (util/parse-int id)
+    (let [[_ from to] (iterate #(t/plus % (t/months 1)) (t/today))]
+      (re-frame/dispatch [:entity-new :billing-period {:billing-period/from-yyyymm (+ (* (t/year from) 100) (t/month from))
+                                                       :billing-period/to-yyyymm (+ (* (t/year to) 100) (t/month to))}])))
   (re-frame/dispatch [:entity-set-edit :billing-period (util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :billing-period]))
 (pages/add-page :billing-period #'page-billing-period)

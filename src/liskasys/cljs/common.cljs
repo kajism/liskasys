@@ -45,7 +45,9 @@
  (fn [db [_ kw]]
    (let [id (re-frame/subscribe [:entity-edit-id kw])
          ents (re-frame/subscribe [:entities kw])]
-     (ratom/reaction (get @ents @id)))))
+     (ratom/reaction (if @id
+                       (get @ents @id)
+                       (get-in @db [:new-ents kw]))))))
 
 (re-frame/register-sub
  :entity-edit?
@@ -82,23 +84,24 @@
  debug-mw
  (fn [db [_ kw new-ent]]
    (if new-ent
-     (assoc-in db [kw nil] new-ent)
-     (update db kw dissoc nil))))
+     (assoc-in db [:new-ents kw] new-ent)
+     (update db :new-ents dissoc kw))))
 
 (re-frame/register-handler
  :entity-change
  debug-mw
  (fn [db [_ kw id attr val]]
-   (if (fn? val)
-     (update-in db [kw id attr] val)
-     (assoc-in db [kw id attr] val))))
+   ((if (fn? val) update-in assoc-in)
+    db
+    (if id [kw id attr] [:new-ents kw attr])
+    val)))
 
 (re-frame/register-handler
  :entity-save
  debug-mw
  (fn [db [_ kw validation-fn ent-id]]
    (let [id (or ent-id (get-in db [:entity-edit kw :db/id]))
-         ent (get-in db [kw id])
+         ent (if id (get-in db [kw id]) (get-in db [:new-ents kw]))
          errors (when validation-fn (validation-fn ent))
          file (:-file ent)]
      (if (empty? errors)
@@ -106,7 +109,7 @@
                     file
                     [:entity-saved kw])
        (timbre/debug "validation errors" errors))
-     (assoc-in db [kw id :-errors] errors))))
+     (assoc-in db (if id [kw id :-errors] [:new-ents kw :-errors]) errors))))
 
 (re-frame/register-handler
  :entity-saved
@@ -117,7 +120,7 @@
      (set! js/window.location.hash (str "#/" (get @kw->url kw) "/" (:db/id new-ent) "e")))
    (-> db
        (assoc-in [kw (:db/id new-ent)] new-ent)
-       (update kw #(dissoc % nil)))))
+       (update :new-ents #(dissoc % kw)))))
 
 (re-frame/register-handler
  :entity-delete
