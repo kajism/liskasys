@@ -187,5 +187,5 @@
               :user/auth {}
               :entity/retract (service/retract-entity conn (:db/id user) ?data)
               :entity/retract-attr (service/retract-attr conn (:db/id user) ?data)
-              :person-bill/generate (service/re-generate-person-bills conn (:db/id user) (:period-id ?data))
+              :person-bill/generate (service/re-generate-person-bills conn (:db/id user) (:person-bill/period ?data))
               (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))

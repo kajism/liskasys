@@ -14,8 +14,8 @@
  ::generate-person-bills
  common/debug-mw
  (fn [db [_ period-id]]
-   (server-call [:person-bill/generate {:period-id period-id}]
-                [:entities-set [:entities-where :person-bill {:period-id period-id}]])
+   (server-call [:person-bill/generate {:person-bill/period period-id}]
+                [:entities-set [:entities-where :person-bill {:person-bill/period period-id}]])
    db))
 
 (defn yyyymm->str [ym]
