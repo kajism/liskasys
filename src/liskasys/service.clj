@@ -153,37 +153,24 @@
                  (inc idx))))
        set))
 
-(defn- period-start-end
-  "Returns local dates with end exclusive!!"
-  [{:keys [:billing-period/from-yyyymm :billing-period/to-yyyymm] :as period}]
-  [(t/local-date (quot from-yyyymm 100) (rem from-yyyymm 100) 1)
-   (t/plus (t/local-date (quot to-yyyymm 100) (rem to-yyyymm 100) 1)
-           (t/months 1))])
-
 (defn- generate-daily-plans
-  [{:keys [:person/lunch-pattern :person/att-pattern] person-id :db/id :as person} billing-period holiday?-fn]
-  (let [[from to] (period-start-end billing-period)
-        lunch-days (day-numbers-from-pattern lunch-pattern \1)
+  [{:keys [:person/lunch-pattern :person/att-pattern] person-id :db/id :as person} dates]
+  (let [lunch-days (day-numbers-from-pattern lunch-pattern \1)
         full-days (day-numbers-from-pattern att-pattern \1)
         half-days (day-numbers-from-pattern att-pattern \2)]
-    (->> from
-         (iterate (fn [ld]
-                    (t/plus ld (t/days 1))))
-         (take-while (fn [ld]
-                       (t/before? ld to)))
-         (remove holiday?-fn)
-         (keep (fn [ld]
-                 (let [day-of-week (t/day-of-week ld)
-                       lunch? (contains? lunch-days day-of-week)
-                       child-att (cond
-                                   (contains? full-days day-of-week) 1
-                                   (contains? half-days day-of-week) 2
-                                   :else 0)]
-                   (when (or lunch? (pos? child-att))
-                     {:daily-plan/person person-id
-                      :daily-plan/date (tc/to-date ld)
-                      :daily-plan/lunch? lunch?
-                      :daily-plan/child-att child-att})))))))
+    (keep (fn [ld]
+            (let [day-of-week (t/day-of-week ld)
+                  lunch? (contains? lunch-days day-of-week)
+                  child-att (cond
+                              (contains? full-days day-of-week) 1
+                              (contains? half-days day-of-week) 2
+                              :else 0)]
+              (when (or lunch? (pos? child-att))
+                {:daily-plan/person person-id
+                 :daily-plan/date (tc/to-date ld)
+                 :daily-plan/lunch? lunch?
+                 :daily-plan/child-att child-att})))
+          dates)))
 
 (defn- build-query [db where-m]
   (reduce (fn [query [where-attr where-val]]
@@ -240,6 +227,22 @@
       (or (bank-holiday? bank-holidays ld)
           (school-holiday? school-holidays ld)))))
 
+(defn- billing-period-start-end
+  "Returns local dates with end exclusive!!"
+  [{:keys [:billing-period/from-yyyymm :billing-period/to-yyyymm] :as period}]
+  [(t/local-date (quot from-yyyymm 100) (rem from-yyyymm 100) 1)
+   (t/plus (t/local-date (quot to-yyyymm 100) (rem to-yyyymm 100) 1)
+           (t/months 1))])
+
+(defn- period-dates [holiday?-fn from to]
+  "Returns all local-dates except holidays from - to (exclusive)."
+  (->> from
+       (iterate (fn [ld]
+                  (t/plus ld (t/days 1))))
+       (take-while (fn [ld]
+                     (t/before? ld to)))
+       (remove holiday?-fn)))
+
 (defn- generate-person-bills [db period-id]
   (let [billing-period (find-by-id db period-id)
         price-list (first (find-where db {:price-list/days-1 nil}))
@@ -250,10 +253,11 @@
                                           [?bill-id :person-bill/person ?person-id]]
                                         db period-id)
                                    (into {})))
+        dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))
         out (doall
              (for [person (->> (find-where db {:person/active? true})
                                (remove db/zero-patterns?))
-                   :let [daily-plans (generate-daily-plans (timbre/spy person) billing-period (make-holiday?-fn db))
+                   :let [daily-plans (generate-daily-plans person dates)
                          lunch-count (->> daily-plans
                                           (filter :daily-plan/lunch?)
                                           count)
