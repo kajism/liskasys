@@ -178,8 +178,8 @@
   (jdbc/query db-spec ["SCRIPT TO ?" file]))
 
 (defn zero-patterns? [{:keys [:person/lunch-pattern :person/att-pattern] :as person}]
-  (and (or (nil? lunch-pattern) (= lunch-pattern "0000000"))
-       (or (nil? att-pattern) (= att-pattern "0000000"))))
+  (and (or (str/blank? lunch-pattern) (= (set (seq lunch-pattern)) #{\0}))
+       (or (str/blank? att-pattern) (= (set (seq att-pattern)) #{\0}))))
 
 (defn select-active-persons [db-spec]
   (->> (jdbc-common/select db-spec :person {:active? true})
