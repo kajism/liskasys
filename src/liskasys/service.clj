@@ -52,16 +52,37 @@
 
 (def easter-monday-for-year-memo (memoize easter-monday-for-year))
 
-(defn- bank-holiday? [bank-holidays clj-date]
-  (let [y (t/year clj-date)]
-    (seq (filter (fn [{:keys [:bank-holiday/day :bank-holiday/month :bank-holiday/easter-delta]}]
-                   (or (and (= (t/day clj-date) day)
-                            (= (t/month clj-date) month))
-                       (and (some? easter-delta)
-                            (t/equal? clj-date
-                                      (t/plus (easter-monday-for-year-memo y)
-                                              (t/days easter-delta))))))
-                 bank-holidays))))
+(defn- *bank-holiday? [{:keys [:bank-holiday/day :bank-holiday/month :bank-holiday/easter-delta]} ld]
+  (or (and (= (t/day ld) day)
+           (= (t/month ld) month))
+      (and (some? easter-delta)
+           (t/equal? ld
+                     (t/plus (easter-monday-for-year-memo (t/year ld))
+                             (t/days easter-delta))))))
+
+(defn- bank-holiday? [bank-holidays ld]
+  (seq (filter #(*bank-holiday? % ld) bank-holidays)))
+
+(defn- *school-holiday? [{:keys [:school-holiday/from :school-holiday/to :school-holiday/every-year?]} ld]
+  (let [from (tc/from-date from)
+        dt (tc/to-date-time ld)
+        from (if-not every-year?
+               from
+               (let [from (t/date-time (t/year dt) (t/month from) (t/day from))]
+                 (if-not (t/after? from dt)
+                   from
+                   (t/date-time (dec (t/year dt)) (t/month from) (t/day from)))))
+        to (tc/from-date to)
+        to (if-not every-year?
+             to
+             (let [to (t/date-time (t/year from) (t/month to) (t/day to))]
+               (if-not (t/before? to from)
+                 to
+                 (t/date-time (inc (t/year from)) (t/month to) (t/day to)))))]
+    (t/within? from to dt)))
+
+(defn- school-holiday? [school-holidays ld]
+  (seq (filter #(*school-holiday? % ld) school-holidays)))
 
 (defn find-children-with-attendance-day [db-spec date]
   (when-not (bank-holiday? (jdbc-common/select db-spec :bank-holiday {}) (tc/to-local-date date))
@@ -140,7 +161,7 @@
            (t/months 1))])
 
 (defn- generate-daily-plans
-  [{:keys [:person/lunch-pattern :person/att-pattern] person-id :db/id :as person} billing-period bank-holidays]
+  [{:keys [:person/lunch-pattern :person/att-pattern] person-id :db/id :as person} billing-period holiday?-fn]
   (let [[from to] (period-start-end billing-period)
         lunch-days (day-numbers-from-pattern lunch-pattern \1)
         full-days (day-numbers-from-pattern att-pattern \1)
@@ -150,7 +171,7 @@
                     (t/plus ld (t/days 1))))
          (take-while (fn [ld]
                        (t/before? ld to)))
-         (remove (partial bank-holiday? bank-holidays))
+         (remove holiday?-fn)
          (keep (fn [ld]
                  (let [day-of-week (t/day-of-week ld)
                        lunch? (contains? lunch-days day-of-week)
@@ -212,10 +233,16 @@
 (defn find-by-id [db eid]
   (d/pull db '[*] eid))
 
+(defn make-holiday?-fn [db]
+  (let [bank-holidays (find-where db {:bank-holiday/label nil})
+        school-holidays (find-where db {:school-holiday/label nil})]
+    (fn [ld]
+      (or (bank-holiday? bank-holidays ld)
+          (school-holiday? school-holidays ld)))))
+
 (defn- generate-person-bills [db period-id]
   (let [billing-period (find-by-id db period-id)
         price-list (first (find-where db {:price-list/days-1 nil}))
-        bank-holidays (find-where db {:bank-holiday/label nil})
         person-bill-ids (atom (->> (d/q '[:find ?person-id ?bill-id
                                           :in $ ?period-id
                                           :where
@@ -226,7 +253,7 @@
         out (doall
              (for [person (->> (find-where db {:person/active? true})
                                (remove db/zero-patterns?))
-                   :let [daily-plans (generate-daily-plans (timbre/spy person) billing-period bank-holidays)
+                   :let [daily-plans (generate-daily-plans (timbre/spy person) billing-period (make-holiday?-fn db))
                          lunch-count (->> daily-plans
                                           (filter :daily-plan/lunch?)
                                           count)

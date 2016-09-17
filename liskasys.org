@@ -13,7 +13,8 @@ CLOSED: [2016-09-12 Mon 17:19]
 *** DONE price list CRUD
 CLOSED: [2016-09-12 Mon 17:19]
 *** TODO generate person bills for period
-**** prazdniny (27.12. - 31.12. + 1.7. - 31.8.) a "reditelske volno" (jednorazove)
+**** DONE prazdniny (27.12. - 31.12. + 1.7. - 31.8.) a "reditelske volno" (jednorazove)
+CLOSED: [2016-09-17 Sat 12:42]
 **** vypocitat potrebnou castku do fondu obedu
 *** generate daily plans for confirmed bills
 *** migrate cancellations to daily plans
@@ -29,6 +30,7 @@ CLOSED: [2016-09-12 Mon 17:19]
 *** schvalovaci email Dance
 *** vyrovnani obedu
 ** TODO form validation!!! clojure.spec
+** TODO tests service/*holiday?, time/from-dMyyyy
 ** TODO odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** TODO DB indexes
 ** TODO datepickery nahradit textovym polem s validaci formatu
