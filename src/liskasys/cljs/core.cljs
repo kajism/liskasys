@@ -9,6 +9,7 @@
             liskasys.cljs.billing-period
             liskasys.cljs.cancellation
             liskasys.cljs.child
+            liskasys.cljs.lunch-menu
             liskasys.cljs.lunch-type
             liskasys.cljs.person
             liskasys.cljs.price-list
@@ -90,7 +91,8 @@
     [:div#liskasys-navbar.collapse.navbar-collapse
      [:ul.nav.navbar-nav
       [:li [:a {:href "#/persons"} "Lidé"]]
-      [:li [:a {:href "#/billing-periods"} "Platební období"]]]
+      [:li [:a {:href "#/billing-periods"} "Platební období"]]
+      [:li [:a {:href "#/lunch-menus"} "Jídelníček"]]]
      [:ul.nav.navbar-nav.navbar-right
       #_[:li
        [:a {:target "_parent" :href "/obedy"} "Obědy"]]

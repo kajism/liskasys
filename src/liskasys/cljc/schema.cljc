@@ -8,8 +8,14 @@
 (def LunchType
   (merge
    CommonAttrs
-   { (s/optional-key :lunch-type/label) s/Str
+   {(s/optional-key :lunch-type/label) s/Str
     (s/optional-key :lunch-type/color) s/Str}))
+
+(def LunchMenu
+  (merge
+   CommonAttrs
+   {(s/optional-key :lunch-menu/from) s/Inst
+    (s/optional-key :lunch-menu/text) s/Str}))
 
 (def Person
   (merge
@@ -92,6 +98,7 @@
    (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
    (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}
    (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}
+   (s/optional-key :lunch-menu) {(s/maybe s/Int) LunchMenu}
    (s/optional-key :bank-holiday) {(s/maybe s/Int) BankHoliday}
    (s/optional-key :school-holiday) {(s/maybe s/Int) SchoolHoliday}
    (s/optional-key :billing-period) {(s/maybe s/Int) BillingPeriod}

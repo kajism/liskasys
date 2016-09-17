@@ -36,7 +36,7 @@
            [:li
             [:a {:href "/"} "Omluvenky"]])
          [:li
-          [:a {:href "/jidelni-listek"} "Jídelní lístek"]]
+          [:a {:href "/jidelni-listek"} "Jídelníček"]]
          (when (or (roles "admin")
                    (roles "obedy"))
            [:li
@@ -140,35 +140,14 @@
             (list-of-kids user (remove service/att-day-with-lunch? atts))]
            [:td (count (remove #(some? (:lunch-cancelled? %)) atts))]])]]])))
 
-(defn lunch-menu-new-form []
-  [:form {:method "post"
-          :role "form"
-          :enctype "multipart/form-data"}
-   [:div.form-group
-    [:textarea.form-control {:name "menu" :rows "25" :cols "50"}]]
-   #_[:div.form-group
-    [:input {:type "file" :name "upload"}]]
-   [:button.btn.btn-success {:type "submit"} "Uložit"]])
-
-(defn lunch-menu [lunch-menu previous? history new? admin?]
+(defn lunch-menu [lunch-menu previous? history]
   [:div.container
    [:h3 "Jídelní lístek"]
-   (if new?
-     (lunch-menu-new-form)
-     [:div
-      (when admin?
-        [:div.row
-         [:div.col-md-6
-          [:a {:href "?new?=true"}
-           [:button.btn.btn-default "Nový"]]] " "
-         [:div.col-md-6.text-right
-          [:a {:href (str "?delete-id=" (:db/id lunch-menu) "&history=" history)}
-           [:button.btn.btn-danger "Smazat"]]]
-         [:br][:br]])
-      (when lunch-menu
-        [:div
-         [:pre (:lunch-menu/text lunch-menu)]
-         #_(cond
+   [:div
+    (when lunch-menu
+      [:div
+       [:pre (:lunch-menu/text lunch-menu)]
+       #_(cond
            (nil? (:content-type lunch-menu))
            [:pre (:lunch-menu/text lunch-menu)]
            (= "image/" (subs (:content-type lunch-menu) 0 6))
@@ -179,15 +158,15 @@
            [:div
             [:a {:target "_blank" :href (str "/jidelni-listek/" (:db/id lunch-menu))} "Stáhnout"]
             [:br][:br]])
-         [:div.row
-          [:div.col-md-6
-           (when previous?
-             [:a {:href (str "?history=" (inc history))}
-              [:button.btn.btn-default "Předchozí"]])]
-          [:div.col-md-6.text-right
-           (when (pos? history)
-             [:a {:href (str "?history=" (dec history))}
-              [:button.btn.btn-default "Následující"]])]]])])])
+       [:div.row
+        [:div.col-md-6
+         (when previous?
+           [:a {:href (str "?history=" (inc history))}
+            [:button.btn.btn-default "Předchozí"]])]
+        [:div.col-md-6.text-right
+         (when (pos? history)
+           [:a {:href (str "?history=" (dec history))}
+            [:button.btn.btn-default "Následující"]])]]])]])
 
 (defn cancelled-lunches [db-spec user]
   (liskasys-frame

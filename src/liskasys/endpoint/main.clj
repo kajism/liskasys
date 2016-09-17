@@ -56,14 +56,12 @@
          (response/redirect "")
          #_(main-hiccup/cancellation-form db user params)))
 
-     (GET "/jidelni-listek" [history delete-id new?]
-       (when-let [eid (edn/read-string delete-id)]
-         (service/retract-entity conn (:db/id user) eid))
+     (GET "/jidelni-listek" [history]
        (let [history (or (edn/read-string history) 0)
              {:keys [lunch-menu previous? history]} (service/find-last-lunch-menu (d/db conn) history)]
          (main-hiccup/liskasys-frame
           user
-          (main-hiccup/lunch-menu lunch-menu previous? history new? ((:-roles user) "admin")))))
+          (main-hiccup/lunch-menu lunch-menu previous? history))))
 
      #_(GET "/jidelni-listek/:id" [id :<< as-int]
        (let [lunch-menu (first (jdbc-common/select db-spec :lunch-menu {:id id}))]
