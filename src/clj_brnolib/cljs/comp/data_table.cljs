@@ -45,7 +45,7 @@
                   (str (str/join ";" (map #(% row)
                                           (map second colls))) "\n"))))))
 
-(defn data-table [& {:keys [table-id order-by desc? rows-per-page row-checkboxes?] :as args}]
+(defn data-table [& {:keys [table-id order-by desc? rows-per-page row-checkboxes? date-format] :as args}]
   (let [order-by (or order-by 0)
         init-state {:order-by order-by
                     :desc? (or desc? false)
@@ -195,7 +195,7 @@
                      [:td {:class (str #_"text-nowrap" (when (or (number? value) (transit/bigdec? value)) " text-right"))}
                       (cond
                         (or (string? value) (vector? value)) value
-                        (= js/Date (type value)) (time/to-format value time/ddMMyyyyHHmm)
+                        (= js/Date (type value)) (time/to-format value (or date-format time/ddMMyyyy))
                         (number? value) (util/money->text value)
                         (transit/bigdec? value) (util/money->text (util/parse-int (.-rep value)))
                         (= js/Boolean (type value)) (util/boolean->text value)
