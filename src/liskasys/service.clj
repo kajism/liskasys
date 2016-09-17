@@ -241,8 +241,7 @@
        (remove holiday?-fn)))
 
 (defn- generate-person-bills-tx [db period-id]
-  (let [billing-period (find-by-id db period-id)
-        price-list (first (find-where db {:price-list/days-1 nil}))
+  (let [price-list (first (find-where db {:price-list/days-1 nil}))
         person-id->bill (atom (->> (d/q '[:find ?person-id (pull ?bill-id [*])
                                           :in $ ?period-id
                                           :where
@@ -250,6 +249,7 @@
                                           [?bill-id :person-bill/person ?person-id]]
                                         db period-id)
                                    (into {})))
+        billing-period (find-by-id db period-id)
         dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))
         out (->>
              (for [person (->> (find-where db {:person/active? true})
@@ -290,12 +290,33 @@
          (map #(vector :db.fn/retractEntity %))
          (into out))))
 
-(defn re-generate-person-bills [conn user-id period-id]
-  (let [tx-result (->> (generate-person-bills-tx (d/db conn) period-id)
+(defn- transact-period-person-bills [conn user-id period-id tx-data]
+  (let [tx-result (->> tx-data
                        (into [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}])
                        (d/transact conn)
                        deref)]
     (find-by-type (:db-after tx-result) :person-bill {:person-bill/period period-id})))
+
+(defn re-generate-person-bills [conn user-id period-id]
+  (->> (generate-person-bills-tx (d/db conn) period-id)
+       (transact-period-person-bills conn user-id period-id)))
+
+(defn all-period-bills-paid [conn user-id period-id]
+  (let [db (d/db conn)
+        billing-period (find-by-id db period-id)
+        dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))]
+    (->> (d/q '[:find [(pull ?e [:db/id {:person-bill/person [:db/id :person/lunch-pattern :person/att-pattern]}]) ...]
+                :in $ ?period-id ?paid?
+                :where
+                [?e :person-bill/period ?period-id]
+                [?e :person-bill/paid? ?paid?]]
+              db period-id false)
+         (mapcat (fn [person-bill]
+                   (->> (generate-daily-plans (:person-bill/person person-bill) dates)
+                        (map #(-> % (assoc :db/id (d/tempid :db.part/user)
+                                           :daily-plan/bill (:db/id person-bill))))
+                        (into [[:db/add (:db/id person-bill) :person-bill/paid? true]]))))
+         (transact-period-person-bills conn user-id period-id))))
 
 (defn transact-entity [conn user-id ent]
   (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))

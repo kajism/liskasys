@@ -16,14 +16,15 @@ CLOSED: [2016-09-12 Mon 17:19]
 **** DONE prazdniny (27.12. - 31.12. + 1.7. - 31.8.) a "reditelske volno" (jednorazove)
 CLOSED: [2016-09-17 Sat 12:42]
 **** vypocitat potrebnou castku do fondu obedu
-*** generate daily plans for confirmed bills
-*** migrate cancellations to daily plans
-*** rewrite all code to use the new schema
+*** DONE generate daily plans for confirmed bills
+CLOSED: [2016-09-17 Sat 22:08]
+*** TODO migrate cancellations to daily plans
+*** rewrite all code to use datomic
 **** cancellations
 **** lunch orders
 **** lunch and cancellations views
 *** active person filter, child/adult filter
-*** GUI for patterns editing
+*** GUI for patterns editing???
 *** deprecate old DB tables and GUIs
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
@@ -33,12 +34,13 @@ CLOSED: [2016-09-17 Sat 12:42]
 ** TODO tests service/*holiday?, time/from-dMyyyy
 ** TODO odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** TODO DB indexes
-** TODO datepickery nahradit textovym polem s validaci formatu
 ** TODO moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
 ** TODO zobrazit rodicum platby a zrusene obedy
 ** server side validation without exception (hash-map like on the client
 ** omezení počtu chybných přihlášení (+ reset)
 ** export dat do csv
+** DONE datepickery nahradit textovym polem s validaci formatu
+CLOSED: [2016-09-17 Sat 21:26]
 ** DONE promyslet novou koncepci / DB schema dle aktualnich pozadavku
 CLOSED: [2016-09-02 Fri 15:18]
 *** vse navazano na platebni obdobi

@@ -19,6 +19,14 @@
                 [:entities-set [:entities-where :person-bill {:person-bill/period period-id}]])
    db))
 
+(re-frame/register-handler
+ ::all-period-bills-paid
+ common/debug-mw
+ (fn [db [_ period-id]]
+   (server-call [:person-bill/all-period-bills-paid {:person-bill/period period-id}]
+                [:entities-set [:entities-where :person-bill {:person-bill/period period-id}]])
+   db))
+
 (defn yyyymm->str [ym]
   (when ym
     (let [m (rem ym 100)]
@@ -87,10 +95,17 @@
             [re-com/v-box :gap "5px"
              :children
              [[:h4 "Rozpisy plateb"]
-              [re-com/button
-               :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " rozpisy plateb")
-               :class "btn-danger"
-               :on-click #(re-frame/dispatch [::generate-person-bills (:db/id item)])]
+              [re-com/h-box :gap "5px"
+               :children
+               [[re-com/button
+                 :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " rozpisy plateb")
+                 :class "btn-danger"
+                 :on-click #(re-frame/dispatch [::generate-person-bills (:db/id item)])]
+                (when (pos? (count @person-bills))
+                  [re-com/button
+                   :label "Vše zaplaceno!"
+                   :class "btn-danger"
+                   :on-click #(re-frame/dispatch [::all-period-bills-paid (:db/id item)])])]]
               [data-table
                :table-id :person-bills
                :rows @person-bills

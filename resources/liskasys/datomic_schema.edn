@@ -81,13 +81,39 @@
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
+          {:db/ident :person/var-symbol
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/lunch-type
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
           {:db/ident :person/lunch-pattern
            :db/valueType :db.type/string
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
+          {:db/ident :person/free-lunches?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/lunch-fund
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
           {:db/ident :person/att-pattern
            :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/free-att?
+           :db/valueType :db.type/boolean
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
@@ -98,27 +124,6 @@
            :db.install/_attribute :db.part/db}
           {:db/ident :person/child?
            :db/valueType :db.type/boolean
-           :db/cardinality :db.cardinality/one
-           :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
-          {:db/ident :person/free-lunches?
-           :db/valueType :db.type/boolean
-           :db/cardinality :db.cardinality/one
-           :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
-          {:db/ident :person/free-att?
-           :db/valueType :db.type/boolean
-           :db/cardinality :db.cardinality/one
-           :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
-          {:db/ident :person/var-symbol
-           :db/valueType :db.type/long
-           :db/cardinality :db.cardinality/one
-           :db/unique :db.unique/value
-           :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
-          {:db/ident :person/lunch-type
-           :db/valueType :db.type/ref
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
