@@ -345,18 +345,18 @@
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
-          {:db/ident :daily-plan/lunch?
-           :db/valueType :db.type/boolean
-           :db/cardinality :db.cardinality/one
-           :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
           {:db/ident :daily-plan/child-att
            :db/valueType :db.type/long
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
-          {:db/ident :daily-plan/lunch-ordered?
-           :db/valueType :db.type/boolean
+          {:db/ident :daily-plan/lunch-req
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :daily-plan/lunch-ord
+           :db/valueType :db.type/long
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}

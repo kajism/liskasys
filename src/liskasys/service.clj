@@ -145,31 +145,28 @@
   (+ (* months-count (get price-list (keyword "price-list" (str "days-" days-per-week)) 0))
      (* half-days-count (:price-list/half-day price-list))))
 
-(defn- day-numbers-from-pattern [pattern match-char]
+(defn- pattern-map [pattern]
   (->> pattern
        (map-indexed vector)
        (keep (fn [[idx ch]]
-               (when (= ch match-char)
-                 (inc idx))))
-       set))
+               [(inc idx) (- (int ch) (int \0))]))
+       (into {})))
 
 (defn- generate-daily-plans
   [{:keys [:person/lunch-pattern :person/att-pattern] person-id :db/id :as person} dates]
-  (let [lunch-days (day-numbers-from-pattern lunch-pattern \1)
-        full-days (day-numbers-from-pattern att-pattern \1)
-        half-days (day-numbers-from-pattern att-pattern \2)]
+  (let [lunch-map (pattern-map lunch-pattern)
+        att-map (pattern-map att-pattern)]
     (keep (fn [ld]
             (let [day-of-week (t/day-of-week ld)
-                  lunch? (contains? lunch-days day-of-week)
-                  child-att (cond
-                              (contains? full-days day-of-week) 1
-                              (contains? half-days day-of-week) 2
-                              :else 0)]
-              (when (or lunch? (pos? child-att))
-                {:daily-plan/person person-id
-                 :daily-plan/date (tc/to-date ld)
-                 :daily-plan/lunch? lunch?
-                 :daily-plan/child-att child-att})))
+                  lunch-req (get lunch-map day-of-week)
+                  child-att (get att-map day-of-week)]
+              (when (or (pos? lunch-req) (pos? child-att))
+                (cond-> {:daily-plan/person person-id
+                         :daily-plan/date (tc/to-date ld)}
+                  (pos? lunch-req)
+                  (assoc :daily-plan/lunch-req lunch-req)
+                  (pos? child-att)
+                  (assoc :daily-plan/child-att child-att)))))
           dates)))
 
 (defn- build-query [db where-m]
@@ -259,15 +256,15 @@
                                (remove db/zero-patterns?))
                    :let [daily-plans (generate-daily-plans person dates)
                          lunch-count (->> daily-plans
-                                          (filter :daily-plan/lunch?)
-                                          count)
+                                          (keep :daily-plan/lunch-req)
+                                          (reduce + 0))
                          att-price (if (:person/free-att? person)
                                      0
                                      (calculate-att-price price-list
                                                           (- (:billing-period/to-yyyymm billing-period)
                                                              (:billing-period/from-yyyymm billing-period)
                                                              -1)
-                                                          (count (day-numbers-from-pattern (:person/att-pattern person) \1))
+                                                          (count (->> person :person/att-pattern pattern-map vals (filter (partial = 1))))
                                                           (->> daily-plans
                                                                (filter #(-> % :daily-plan/child-att (= 2)))
                                                                count)))
