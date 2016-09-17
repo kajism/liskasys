@@ -29,12 +29,14 @@
          :rows @persons
          :colls [["Příjmení" :person/lastname]
                  ["Jméno" :person/firstname]
-                 ["Variabilní symbol" :person/var-symbol]
-                 ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
+                 #_["Variabilní symbol" :person/var-symbol]
+                 #_["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
                  ["Rozvrh docházky" #(when (not= (:person/att-pattern %) "0000000") (:person/att-pattern %))]
                  ["Rozvrh obědů" #(when (not= (:person/lunch-pattern %) "0000000") (:person/lunch-pattern %))]
                  ["Email" :person/email]
-                 ["Mobilní telefon" :person/phone]
+                 ["Aktivní?" :person/active?]
+                 ["Dítě?" :person/child?]
+                 #_["Mobilní telefon" :person/phone]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -86,10 +88,11 @@
             [re-com/h-box :gap "5px"
              :children
              [[input-text item :person :person/lunch-pattern]
-              [re-com/checkbox
-               :label "obědy zdarma?"
-               :model (:person/free-lunches? item)
-               :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/free-lunches? %])]]]
+              "poútstčtpásone: 0 = bez oběda, 1-9 = požadovaný počet obědů"]]
+            [re-com/checkbox
+             :label "obědy zdarma?"
+             :model (:person/free-lunches? item)
+             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/free-lunches? %])]
             [re-com/checkbox
              :label "dítě?"
              :model (:person/child? item)
@@ -101,10 +104,11 @@
                 [re-com/h-box :gap "5px"
                  :children
                  [[input-text item :person :person/att-pattern]
-                  [re-com/checkbox
-                   :label "docházka zdarma?"
-                   :model (:person/free-att? item)
-                   :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/free-att? %])]]]
+                  "poútstčtpásone: 0 = bez docházky, 1 = celodenní, 2 = půldenní"]]
+                [re-com/checkbox
+                 :label "docházka zdarma?"
+                 :model (:person/free-att? item)
+                 :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/free-att? %])]
                 (when (:db/id item)
                   [re-com/v-box
                    :children

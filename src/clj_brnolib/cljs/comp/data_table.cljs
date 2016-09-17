@@ -107,9 +107,14 @@
                                      rows
                                      (filter
                                       (fn [row]
-                                        (> (.indexOf (str/lower-case (str ((nth (get colls coll-idx) 1) row)))
-                                                     (str/lower-case (get (:search-colls @state) coll-idx)))
-                                           -1))
+                                        (let [f (nth (get colls coll-idx) 1)
+                                              v (f row)
+                                              v (cond-> v
+                                                  (boolean? v)
+                                                  util/boolean->text)]
+                                          (> (.indexOf (str/lower-case (str v))
+                                                       (str/lower-case (get (:search-colls @state) coll-idx)))
+                                             -1)))
                                       rows)))
                                  sorted-rows
                                  (keys colls))

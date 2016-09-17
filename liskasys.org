@@ -12,30 +12,32 @@ CLOSED: [2016-09-02 Fri 16:59]
 CLOSED: [2016-09-12 Mon 17:19]
 *** DONE price list CRUD
 CLOSED: [2016-09-12 Mon 17:19]
-*** TODO generate person bills for period
+*** DONE generate person bills for period
+CLOSED: [2016-09-17 Sat 22:13]
 **** DONE prazdniny (27.12. - 31.12. + 1.7. - 31.8.) a "reditelske volno" (jednorazove)
 CLOSED: [2016-09-17 Sat 12:42]
-**** vypocitat potrebnou castku do fondu obedu
+**** TODO vypocitat potrebnou castku do fondu obedu
 *** DONE generate daily plans for confirmed bills
 CLOSED: [2016-09-17 Sat 22:08]
 *** TODO migrate cancellations to daily plans
-*** rewrite all code to use datomic
+*** TODO rewrite all code to use datomic
 **** cancellations
 **** lunch orders
 **** lunch and cancellations views
-*** active person filter, child/adult filter
-*** GUI for patterns editing???
+*** DONE active person filter, child/adult filter
+CLOSED: [2016-09-17 Sat 22:56]
 *** deprecate old DB tables and GUIs
+*** bugfix: deactivate parents with inactive kids
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance
-*** vyrovnani obedu
-** TODO form validation!!! clojure.spec
-** TODO tests service/*holiday?, time/from-dMyyyy
-** TODO odchytávání DB constraint exceptions => rozumna hlaska uživateli
-** TODO DB indexes
-** TODO moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
-** TODO zobrazit rodicum platby a zrusene obedy
+*** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
+** form validation!!! clojure.spec
+** tests service/*holiday?, time/from-dMyyyy
+** odchytávání DB constraint exceptions => rozumna hlaska uživateli
+** DB indexes
+** moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
+** zobrazit rodicum platby a zrusene obedy
 ** server side validation without exception (hash-map like on the client
 ** omezení počtu chybných přihlášení (+ reset)
 ** export dat do csv
