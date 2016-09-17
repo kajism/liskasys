@@ -36,6 +36,7 @@ CLOSED: [2016-09-17 Sat 22:56]
 ** tests service/*holiday?, time/from-dMyyyy
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** DB indexes
+** edit childs at parent (the other direction)
 ** moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
 ** zobrazit rodicum platby a zrusene obedy
 ** server side validation without exception (hash-map like on the client
