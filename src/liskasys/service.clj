@@ -71,14 +71,14 @@
                (let [from (t/date-time (t/year dt) (t/month from) (t/day from))]
                  (if-not (t/after? from dt)
                    from
-                   (t/date-time (dec (t/year dt)) (t/month from) (t/day from)))))
+                   (t/minus from (t/years 1)))))
         to (tc/from-date to)
         to (if-not every-year?
              to
              (let [to (t/date-time (t/year from) (t/month to) (t/day to))]
                (if-not (t/before? to from)
                  to
-                 (t/date-time (inc (t/year from)) (t/month to) (t/day to)))))]
+                 (t/plus to (t/years 1)))))]
     (t/within? from to dt)))
 
 (defn- school-holiday? [school-holidays ld]
