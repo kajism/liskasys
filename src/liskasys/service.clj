@@ -246,7 +246,7 @@
 (defn- generate-person-bills [db period-id]
   (let [billing-period (find-by-id db period-id)
         price-list (first (find-where db {:price-list/days-1 nil}))
-        person-bill-ids (atom (->> (d/q '[:find ?person-id ?bill-id
+        person-id->bill (atom (->> (d/q '[:find ?person-id (pull ?bill-id [*])
                                           :in $ ?period-id
                                           :where
                                           [?bill-id :person-bill/period ?period-id]
@@ -254,7 +254,7 @@
                                         db period-id)
                                    (into {})))
         dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))
-        out (doall
+        out (->>
              (for [person (->> (find-where db {:person/active? true})
                                (remove db/zero-patterns?))
                    :let [daily-plans (generate-daily-plans person dates)
@@ -274,18 +274,22 @@
                          lunch-price (if (:person/free-lunches? person)
                                        0
                                        (:price-list/lunch price-list))
-                         id (or (when-let [id (get @person-bill-ids (:db/id person))]
-                                  (swap! person-bill-ids dissoc (:db/id person))
-                                  id)
+                         id (or (when-let [person-bill (get @person-id->bill (:db/id person))]
+                                  (swap! person-id->bill dissoc (:db/id person))
+                                  (if (:person-bill/paid? person-bill)
+                                    ::paid
+                                    (:db/id person-bill)))
                                 (d/tempid :db.part/user))]]
-               {:db/id id
-                :person-bill/person (:db/id person)
-                :person-bill/period period-id
-                :person-bill/paid? false
-                :person-bill/lunch-count lunch-count
-                :person-bill/att-price att-price
-                :person-bill/total (+ att-price (* lunch-count lunch-price))}))]
-    (->> (vals @person-bill-ids)
+               (when-not (= ::paid id)
+                 {:db/id id
+                  :person-bill/person (:db/id person)
+                  :person-bill/period period-id
+                  :person-bill/paid? false
+                  :person-bill/lunch-count lunch-count
+                  :person-bill/att-price att-price
+                  :person-bill/total (+ att-price (* lunch-count lunch-price))}))
+             (filterv some?))]
+    (->> (vals @person-id->bill)
          (map #(vector :db.fn/retractEntity %))
          (into out))))
 
