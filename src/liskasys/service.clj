@@ -104,7 +104,7 @@
     (jdbc-common/save! db-spec :lunch-order (assoc lunch-order
                                                    :date date
                                                    :total total))))
-
+;;TODO separate email sending from lunch-order processing and :person/lunch-fund's decrease
 (defn send-lunch-order [db-spec date]
   (let [lunch-counts (not-empty (find-lunch-counts-by-diet-label db-spec date))
         total (apply + (map second lunch-counts))
@@ -317,6 +317,7 @@
                         (map #(-> % (assoc :db/id (d/tempid :db.part/user)
                                            :daily-plan/bill (:db/id person-bill))))
                         (into [[:db/add (:db/id person-bill) :person-bill/paid? true]]))))
+         ;;TODO increase :person/lunch-funds
          (transact-period-person-bills conn user-id period-id))))
 
 (defn transact-entity [conn user-id ent]

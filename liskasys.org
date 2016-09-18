@@ -28,6 +28,15 @@ CLOSED: [2016-09-18 Sun 07:24]
 CLOSED: [2016-09-18 Sun 08:47]
 *** TODO lunch-order migration
 **** vypocitat potrebnou castku do fondu obedu :person/lunch-fund
+16-09-09 17:39:30 monter21.cz - Ester Havrankova {:child-id 36 :attendance-id 40, :day-of-week 1, :full-day? false, :lunch? true}
+16-09-09 17:39:30 monter21.cz -                  {:child-id 36 :attendance-id 40, :day-of-week 5, :full-day? false, :lunch? true}
+nemela obed 2.,5. a 9.9.
+16-09-11 07:38:00 montern21.cz - Misa Nemcova       {:child-id 51 :attendance-id 60, :day-of-week 1, :full-day? true, :lunch? true}
+16-09-11 07:38:00 monter21.cz - Saving :attendance {:child-id 51 :attendance-id 60, :day-of-week 2, :full-day? true, :lunch? true}
+16-09-11 07:38:00 monte1.cz - Saving :attendance {:child-id 51 :attendance-id 60, :day-of-week 4, :full-day? true, :lunch? true}
+16-09-11 07:38:00 monter21.cz - Saving :attendance {:child-id 51 :attendance-id 60, :day-of-week 5, :full-day? true, :lunch? true}
+nemela obed 1.,2.,5.,6.,8. a 9.9.
+
 *** TODO rewrite all code to use datomic
 **** cancellations
 **** lunch orders

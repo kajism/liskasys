@@ -31,7 +31,7 @@
   (->> (jdbc-common/select (:db-spec ctx) :lunch-menu {})
        (sort-by :created)
        (reduce (fn [ctx {:keys [id text content-type orig-filename created]}]
-                 (let [from (-> created tc/from-date t/with-time-at-start-of-day tc/to-date)
+                 (let [from (-> created tc/from-sql-date t/with-time-at-start-of-day tc/to-date)
                        eid (or (d/q '[:find ?e .
                                       :in $ ?from
                                       :where [?e :lunch-menu/from ?from]]
@@ -158,13 +158,25 @@
                                                                                      (:person/_parent person))))))}))
                ctx)))
 
-;;TODO decrease lunch funds
-(defn- lunch-order [ctx]
-  (->> (jdbc-common/select (:db-spec ctx) :lunch-order {})
-       (reduce (fn [ctx {:keys [id date total]}]
-                 (update ctx :tx-data conj {:db/id (d/tempid :db.part/user)
-                                            :lunch-order/date date
-                                            :lunch-order/total total}))
+(defn- lunch-order [{:keys [db-spec db] :as ctx}]
+  (->> (jdbc-common/select db-spec :lunch-order {})
+       (reduce (fn [ctx {:keys [id total] :as row}]
+                 (let [date (-> (:date row) tc/from-sql-date tc/to-date)
+                       daily-plans (->> (service/find-where db {:daily-plan/date date
+                                                                :daily-plan/lunch-req nil})
+                                        (remove :daily-plan/lunch-cancelled?))
+                       total-req (->> daily-plans
+                                      (map :daily-plan/lunch-req)
+                                      (reduce + 0))]
+                   (when (not= total-req total)
+                     (timbre/warn date "Total lunch requested" total-req "but ordered" total)
+                     #_(timbre/info date "Total lunch requested and ordered" total-req))
+
+                   ;;TODO decrease :person/lunch-fund => call service/make-lunch-order
+
+                   #_(update ctx :tx-data conj {:db/id (d/tempid :db.part/user)
+                                              :lunch-order/date date
+                                              :lunch-order/total total})))
                ctx)))
 
 (defn- cancellation [{:keys [db-spec db child-ids] :as ctx}]
@@ -177,12 +189,13 @@
                                                         (into {}))))
                                  {}))]
     (->> (jdbc-common/select db-spec :cancellation {})
-         (reduce (fn [ctx {:keys [id child-id date lunch-cancelled?]}]
-                   (if-let [daily-plan (get-in daily-plans [date (get child-ids child-id)])]
-                     (update ctx :tx-data conj {:db/id (:db/id daily-plan)
-                                                :daily-plan/att-cancelled? true
-                                                :daily-plan/lunch-cancelled? lunch-cancelled?})
-                     ctx))
+         (reduce (fn [ctx {:keys [id child-id date lunch-cancelled?] :as row}]
+                   (let [date (-> (:date row) tc/from-sql-date tc/to-date)]
+                     (if-let [daily-plan (get-in daily-plans [date (get child-ids child-id)])]
+                       (update ctx :tx-data conj {:db/id (:db/id daily-plan)
+                                                  :daily-plan/att-cancelled? true
+                                                  :daily-plan/lunch-cancelled? lunch-cancelled?})
+                       ctx)))
                  ctx))))
 
 (defn- transact [conn ctx]
@@ -204,7 +217,6 @@
         :tx-data []}
        lunch-type
        lunch-menu
-       ;;lunch-order
        child
        (transact conn)
        user
@@ -220,6 +232,8 @@
         :child-ids (child-ids-mapping db-spec (d/db conn))
         :tx-data []}
        cancellation
+       (transact conn)
+       lunch-order
        (transact conn)))
 
 
