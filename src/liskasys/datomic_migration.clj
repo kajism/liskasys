@@ -152,7 +152,7 @@
                  ctx))))
 
 (defn- set-person-active? [ctx]
-  (->> (d/q '[:find [(pull ?e [:db/id :person/_parent :person/lunch-pattern :person/att-pattern :person/child?]) ...]
+  (->> (d/q '[:find [(pull ?e [:db/id {:person/_parent 1} :person/lunch-pattern :person/att-pattern :person/child?]) ...]
               :where
               [?e :person/firstname]]
             (:db ctx))
@@ -160,7 +160,8 @@
                  (update ctx :tx-data conj {:db/id (:db/id person)
                                             :person/active? (not (and (db/zero-patterns? person)
                                                                       (or (:person/child? person)
-                                                                          (zero? (count (:person/_parent person))))))}))
+                                                                          (not (some (complement db/zero-patterns?)
+                                                                                     (:person/_parent person))))))}))
                ctx)))
 
 (defn- transact [conn ctx]
