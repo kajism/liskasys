@@ -1,14 +1,15 @@
 (ns liskasys.datomic-migration
   (:require [clj-brnolib.jdbc-common :as jdbc-common]
+            [clj-time.coerce :as tc]
+            [clj-time.core :as t]
             [clojure.java.jdbc :as jdbc]
             [clojure.pprint :refer [pprint]]
             [clojure.set :as set]
+            [clojure.string :as str]
             [datomic.api :as d]
-            [taoensso.timbre :as timbre]
             [liskasys.db :as db]
-            [clj-time.coerce :as tc]
-            [clj-time.core :as t]
-            [clojure.string :as str]))
+            [liskasys.service :as service]
+            [taoensso.timbre :as timbre]))
 
 (defn- lunch-type [{:keys [db-spec db] :as ctx}]
   (->> (jdbc-common/select db-spec :lunch-type {})
@@ -42,14 +43,6 @@
                      (update :tx-data conj {:db/id eid
                                             :lunch-menu/from from
                                             :lunch-menu/text text}))))
-               ctx)))
-
-(defn- lunch-order [ctx]
-  (->> (jdbc-common/select (:db-spec ctx) :lunch-order {})
-       (reduce (fn [ctx {:keys [id date total]}]
-                 (update ctx :tx-data conj {:db/id (d/tempid :db.part/user)
-                                            :lunch-order/date date
-                                            :lunch-order/total total}))
                ctx)))
 
 (defn- child [{:keys [db-spec db lunch-type-ids] :as ctx}]
@@ -111,19 +104,20 @@
 (defn- user-child [{:keys [db db-spec user-ids] :as ctx}]
   (let [person-parents (d/q '[:find ?e ?p :where [?e :person/parent ?p]] db)
         child-ids (child-ids-mapping db-spec db)]
-    (->> (jdbc-common/select db-spec :user-child {})
+    (as-> (jdbc-common/select db-spec :user-child {}) $
          (reduce (fn [ctx {:keys [user-id child-id]}]
                    (update ctx :tx-data conj {:db/id (get child-ids child-id)
                                               :person/parent (get user-ids user-id)}))
-                 ctx))))
+                 ctx
+                 $)
+         (assoc $ :child-ids child-ids))))
 
-(defn- attendance [{:keys [db-spec db] :as ctx}]
+(defn- attendance [{:keys [db-spec db child-ids] :as ctx}]
   (let [persons-by-id (->> (d/q '[:find [(pull ?e [*]) ...] :where [?e :person/firstname]] db)
                            (map (juxt :db/id identity))
                            (into {}))
         att-id->days (->> (jdbc-common/select db-spec :attendance-day {})
-                          (group-by :attendance-id))
-        child-ids (child-ids-mapping db-spec db)]
+                          (group-by :attendance-id))]
     (->> (->> (jdbc/query db-spec ["select * from \"attendance\" where \"valid-to\" is null or \"valid-to\" > now()"])
               (group-by :child-id))
          (reduce (fn [ctx [child-id ch-atts]]
@@ -164,11 +158,45 @@
                                                                                      (:person/_parent person))))))}))
                ctx)))
 
+;;TODO decrease lunch funds
+(defn- lunch-order [ctx]
+  (->> (jdbc-common/select (:db-spec ctx) :lunch-order {})
+       (reduce (fn [ctx {:keys [id date total]}]
+                 (update ctx :tx-data conj {:db/id (d/tempid :db.part/user)
+                                            :lunch-order/date date
+                                            :lunch-order/total total}))
+               ctx)))
+
+(defn- cancellation [{:keys [db-spec db child-ids] :as ctx}]
+  (let [daily-plans (->> (service/find-where db {:daily-plan/date nil})
+                         (group-by :daily-plan/date)
+                         (reduce (fn [out [date plans]]
+                                   (assoc out date (->> plans
+                                                        (map (juxt #(get-in % [:daily-plan/person :db/id])
+                                                                   identity))
+                                                        (into {}))))
+                                 {}))]
+    (->> (jdbc-common/select db-spec :cancellation {})
+         (reduce (fn [ctx {:keys [id child-id date lunch-cancelled?]}]
+                   (if-let [daily-plan (get-in daily-plans [date (get child-ids child-id)])]
+                     (update ctx :tx-data conj {:db/id (:db/id daily-plan)
+                                                :daily-plan/att-cancelled? true
+                                                :daily-plan/lunch-cancelled? lunch-cancelled?})
+                     ctx))
+                 ctx))))
+
 (defn- transact [conn ctx]
   (pprint (dissoc ctx :db-spec :db :lunch-type-ids))
   (let [tx-data @(d/transact conn (:tx-data ctx))]
     (pprint tx-data)
     (assoc ctx :db (:db-after tx-data) :tx-data [])))
+
+(defn- create-period-bills-plans [conn]
+  (when-not (seq (service/find-where (d/db conn) {:billing-period/from-yyyymm nil}))
+    (let [{:keys [:db/id] :as billing-periond} (service/transact-entity conn nil {:billing-period/from-yyyymm 201609
+                                                                                  :billing-period/to-yyyymm 201610})]
+      (service/re-generate-person-bills conn nil id)
+      (service/all-period-bills-paid conn nil id))))
 
 (defn migrate-to-datomic [db-spec conn]
   (->> {:db-spec db-spec
@@ -176,7 +204,7 @@
         :tx-data []}
        lunch-type
        lunch-menu
-       lunch-order
+       ;;lunch-order
        child
        (transact conn)
        user
@@ -185,4 +213,13 @@
        attendance
        (transact conn)
        set-person-active?
+       (transact conn))
+  (create-period-bills-plans conn)
+  (->> {:db-spec db-spec
+        :db (d/db conn)
+        :child-ids (child-ids-mapping db-spec (d/db conn))
+        :tx-data []}
+       cancellation
        (transact conn)))
+
+

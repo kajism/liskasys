@@ -1,6 +1,6 @@
 {:liskasys/tx-attrs
- {:txes [[{:db/ident :tx/person-id
-           :db/doc "Transaction person ID"
+ {:txes [[{:db/ident :tx/person
+           :db/doc "Who made the tx"
            :db/valueType :db.type/ref
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
@@ -366,13 +366,13 @@
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
-          {:db/ident :daily-plan/lunch-cancelled-at
-           :db/valueType :db.type/instant
+         {:db/ident :daily-plan/lunch-cancelled?
+           :db/valueType :db.type/boolean
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
-          {:db/ident :daily-plan/att-cancelled-at
-           :db/valueType :db.type/instant
+          {:db/ident :daily-plan/att-cancelled?
+           :db/valueType :db.type/boolean
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}

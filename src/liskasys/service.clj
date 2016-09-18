@@ -291,10 +291,11 @@
          (into out))))
 
 (defn- transact-period-person-bills [conn user-id period-id tx-data]
-  (let [tx-result (->> tx-data
-                       (into [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}])
-                       (d/transact conn)
-                       deref)]
+  (let [tx-result @(cond->> tx-data
+                     user-id
+                     (into [{:db/id (d/tempid :db.part/tx) :tx/person user-id}])
+                     true
+                     (d/transact conn))]
     (find-by-type (:db-after tx-result) :person-bill {:person-bill/period period-id})))
 
 (defn re-generate-person-bills [conn user-id period-id]
@@ -320,8 +321,9 @@
 
 (defn transact-entity [conn user-id ent]
   (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))
-        tx-data [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}
-                 (assoc ent :db/id ent-id)]
+        tx-data (cond-> [(assoc ent :db/id ent-id)]
+                  user-id
+                  (conj {:db/id (d/tempid :db.part/tx) :tx/person user-id}))
         tx-result @(d/transact conn (timbre/spy tx-data))]
     (timbre/debug tx-result)
     (d/pull (:db-after tx-result) '[*] (or (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) ent-id)
@@ -330,7 +332,7 @@
 (defn retract-entity
   "Returns the number of retracted datoms (attributes)."
   [conn user-id ent-id]
-  (->> [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}
+  (->> [{:db/id (d/tempid :db.part/tx) :tx/person user-id}
         [:db.fn/retractEntity ent-id]]
        timbre/spy
        (d/transact conn)
@@ -346,7 +348,7 @@
   (->> (map (fn [[attr-key attr-val]]
               [:db/retract (:db/id ent) attr-key attr-val])
             (dissoc ent :db/id))
-       (into [{:db/id (d/tempid :db.part/tx) :tx/person-id user-id}])
+       (into [{:db/id (d/tempid :db.part/tx) :tx/person user-id}])
        (d/transact conn)
        deref
        timbre/spy

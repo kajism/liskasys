@@ -16,21 +16,23 @@ CLOSED: [2016-09-12 Mon 17:19]
 CLOSED: [2016-09-17 Sat 22:13]
 **** DONE prazdniny (27.12. - 31.12. + 1.7. - 31.8.) a "reditelske volno" (jednorazove)
 CLOSED: [2016-09-17 Sat 12:42]
-**** TODO vypocitat potrebnou castku do fondu obedu
 *** DONE generate daily plans for confirmed bills
 CLOSED: [2016-09-17 Sat 22:08]
-*** TODO migrate cancellations to daily plans (bill and plan creation for 9+10/16 be part of migration)
-*** TODO rewrite all code to use datomic
-**** cancellations
-**** lunch orders
-**** lunch and cancellations views
+*** DONE migrate cancellations to daily plans (bill and plan creation for 9+10/16 be part of migration)
+CLOSED: [2016-09-18 Sun 09:43]
 *** DONE active person filter, child/adult filter
 CLOSED: [2016-09-17 Sat 22:56]
 *** DONE 5 day patterns 01111 (without Sa+Su)
 CLOSED: [2016-09-18 Sun 07:24]
-*** deprecate old DB tables and GUIs
 *** DONE bugfix: deactivate parents with inactive kids
 CLOSED: [2016-09-18 Sun 08:47]
+*** TODO lunch-order migration
+**** vypocitat potrebnou castku do fondu obedu :person/lunch-fund
+*** TODO rewrite all code to use datomic
+**** cancellations
+**** lunch orders
+**** lunch and cancellations views
+*** deprecate old DB tables and GUIs
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance
