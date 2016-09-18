@@ -19,19 +19,21 @@ CLOSED: [2016-09-17 Sat 12:42]
 **** TODO vypocitat potrebnou castku do fondu obedu
 *** DONE generate daily plans for confirmed bills
 CLOSED: [2016-09-17 Sat 22:08]
-*** TODO migrate cancellations to daily plans
+*** TODO migrate cancellations to daily plans (bill and plan creation for 9+10/16 be part of migration)
 *** TODO rewrite all code to use datomic
 **** cancellations
 **** lunch orders
 **** lunch and cancellations views
 *** DONE active person filter, child/adult filter
 CLOSED: [2016-09-17 Sat 22:56]
+*** 5 day patterns 01111 (without Sa+Su)
 *** deprecate old DB tables and GUIs
 *** bugfix: deactivate parents with inactive kids
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance
 *** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
+** upgrade cloud to 2GB
 ** form validation!!! clojure.spec
 ** tests service/*holiday?, time/from-dMyyyy
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
