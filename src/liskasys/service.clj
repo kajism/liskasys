@@ -325,7 +325,8 @@
         tx-data (cond-> [(assoc ent :db/id ent-id)]
                   user-id
                   (conj {:db/id (d/tempid :db.part/tx) :tx/person user-id}))
-        tx-result @(d/transact conn (timbre/spy tx-data))]
+        _ (timbre/info "Transacting" tx-data)
+        tx-result @(d/transact conn tx-data)]
     (timbre/debug tx-result)
     (d/pull (:db-after tx-result) '[*] (or (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) ent-id)
                                            ent-id))))
