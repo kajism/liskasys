@@ -140,6 +140,7 @@
                          :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/parent (fn [v] (conj v {:db/id %}))])
                          :choices (->> (apply dissoc @persons (map :db/id (:person/parent item)))
                                        vals
+                                       (filter :person/active?)
                                        (remove :person/child?)
                                        (util/sort-by-locale cljc-util/person-fullname))
                          :id-fn :db/id
