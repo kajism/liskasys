@@ -348,6 +348,7 @@
           {:db/ident :daily-plan/date
            :db/valueType :db.type/instant
            :db/cardinality :db.cardinality/one
+           :db/index true
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
           {:db/ident :daily-plan/child-att
