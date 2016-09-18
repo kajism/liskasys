@@ -136,11 +136,11 @@
                          person (-> child-id
                                     child-ids
                                     persons-by-id
-                                    (assoc :person/lunch-pattern (->> (range 1 8)
+                                    (assoc :person/lunch-pattern (->> (range 1 6)
                                                                       (map (comp :lunch? att-days))
                                                                       (map #(if % 1 0))
                                                                       (apply str))
-                                           :person/att-pattern (->> (range 1 8)
+                                           :person/att-pattern (->> (range 1 6)
                                                                     (map (comp :full-day? att-days))
                                                                     (map #(case % nil 0 true 1 false 2))
                                                                     (apply str))))]

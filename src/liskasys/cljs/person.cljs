@@ -90,8 +90,8 @@
              [[re-com/input-text
                :model (str (:person/lunch-pattern item))
                :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-pattern %])
-               :validation-regex #"^\d{0,7}$"]
-              "poútstčtpásone: 0 = bez oběda, 1-9 = požadovaný počet obědů"]]
+               :validation-regex #"^\d{0,5}$"]
+              "poútstčtpá: 0 = bez oběda, 1-9 = požadovaný počet obědů"]]
             [re-com/checkbox
              :label "obědy zdarma?"
              :model (:person/free-lunches? item)
@@ -109,8 +109,8 @@
                  [[re-com/input-text
                    :model (str (:person/att-pattern item))
                    :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/att-pattern %])
-                   :validation-regex #"^[0-2]{0,7}$"]
-                  "poútstčtpásone: 0 = bez docházky, 1 = celodenní, 2 = půldenní"]]
+                   :validation-regex #"^[0-2]{0,5}$"]
+                  "poútstčtpá: 0 = bez docházky, 1 = celodenní, 2 = půldenní"]]
                 [re-com/checkbox
                  :label "docházka zdarma?"
                  :model (:person/free-att? item)

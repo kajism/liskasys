@@ -158,8 +158,8 @@
         att-map (pattern-map att-pattern)]
     (keep (fn [ld]
             (let [day-of-week (t/day-of-week ld)
-                  lunch-req (get lunch-map day-of-week)
-                  child-att (get att-map day-of-week)]
+                  lunch-req (get lunch-map day-of-week 0)
+                  child-att (get att-map day-of-week 0)]
               (when (or (pos? lunch-req) (pos? child-att))
                 (cond-> {:daily-plan/person person-id
                          :daily-plan/date (tc/to-date ld)}

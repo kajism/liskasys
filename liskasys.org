@@ -26,7 +26,8 @@ CLOSED: [2016-09-17 Sat 22:08]
 **** lunch and cancellations views
 *** DONE active person filter, child/adult filter
 CLOSED: [2016-09-17 Sat 22:56]
-*** 5 day patterns 01111 (without Sa+Su)
+*** DONE 5 day patterns 01111 (without Sa+Su)
+CLOSED: [2016-09-18 Sun 07:24]
 *** deprecate old DB tables and GUIs
 *** bugfix: deactivate parents with inactive kids
 ** TODO nahrady
