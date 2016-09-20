@@ -29,12 +29,14 @@ CLOSED: [2016-09-18 Sun 08:47]
 *** DONE lunch-order migration
 CLOSED: [2016-09-20 Tue 13:08]
 **** vypocitat potrebnou castku do fondu obedu :person/lunch-fund
+*** lunch-order overview (display persons lunch funds from tx)
 *** daily-plan CRUD
 *** TODO rewrite all code to use datomic
-**** cancellations
-**** lunch orders
+**** DONE lunch orders
+CLOSED: [2016-09-20 Tue 13:14]
+**** TODO cancellations
 **** lunch and cancellations views
-*** deprecate old DB tables and GUIs
+**** deprecate old DB tables and GUIs
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance

@@ -5,17 +5,23 @@
   {(s/optional-key :db/id) s/Int
    (s/optional-key :-errors) (s/maybe {s/Keyword  s/Str})})
 
-(def LunchType
-  (merge
-   CommonAttrs
-   {(s/optional-key :lunch-type/label) s/Str
-    (s/optional-key :lunch-type/color) s/Str}))
-
 (def LunchMenu
   (merge
    CommonAttrs
    {(s/optional-key :lunch-menu/from) s/Inst
     (s/optional-key :lunch-menu/text) s/Str}))
+
+(def LunchOrder
+  (merge
+   CommonAttrs
+   {(s/optional-key :lunch-order/date) s/Inst
+    (s/optional-key :lunch-order/total) s/Int}))
+
+(def LunchType
+  (merge
+   CommonAttrs
+   {(s/optional-key :lunch-type/label) s/Str
+    (s/optional-key :lunch-type/color) s/Str}))
 
 (def Person
   (merge
@@ -99,8 +105,9 @@
    (s/optional-key :person) {(s/maybe s/Int) (s/maybe Person)}
    (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
    (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}
-   (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}
    (s/optional-key :lunch-menu) {(s/maybe s/Int) LunchMenu}
+   (s/optional-key :lunch-order) {(s/maybe s/Int) LunchOrder}
+   (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}
    (s/optional-key :bank-holiday) {(s/maybe s/Int) BankHoliday}
    (s/optional-key :school-holiday) {(s/maybe s/Int) SchoolHoliday}
    (s/optional-key :billing-period) {(s/maybe s/Int) BillingPeriod}

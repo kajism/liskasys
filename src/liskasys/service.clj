@@ -154,8 +154,9 @@
   (d/query (build-query db where-m)))
 
 (def ent-type->attr
-  {:lunch-type :lunch-type/label
-   :lunch-menu :lunch-menu/from
+  {:lunch-menu :lunch-menu/from
+   :lunch-order :lunch-order/date
+   :lunch-type :lunch-type/label
    :bank-holiday :bank-holiday/label
    :school-holiday :school-holiday/label
    :person :person/firstname
