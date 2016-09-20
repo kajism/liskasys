@@ -7,15 +7,12 @@
             [liskasys.cljs.pages :as pages]
             liskasys.cljs.bank-holiday
             liskasys.cljs.billing-period
-            liskasys.cljs.cancellation
-            liskasys.cljs.child
             liskasys.cljs.lunch-menu
             liskasys.cljs.lunch-order
             liskasys.cljs.lunch-type
             liskasys.cljs.person
             liskasys.cljs.price-list
             liskasys.cljs.school-holiday
-            liskasys.cljs.user
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]

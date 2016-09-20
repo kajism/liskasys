@@ -8,7 +8,6 @@
             [clojure.string :as str]
             [crypto.password.scrypt :as scrypt]
             [datomic.api :as d]
-            [liskasys.db :as db]
             [postal.core :as postal]
             [taoensso.timbre :as timbre]
             [clojure.set :as set])

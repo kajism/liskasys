@@ -22,7 +22,7 @@
     (fn []
       [re-com/v-box
        :children
-       [[:h3 "Osoby"]
+       [[:h3 "Lidé"]
         [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/person/e")]
         [data-table
          :table-id :persons

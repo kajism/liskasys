@@ -8,7 +8,6 @@
             [clj-time.periodic :as tp]
             [clojure.pprint :refer [pprint]]
             [liskasys.cljc.util :as cljc-util]
-            [liskasys.db :as db]
             [liskasys.service :as service]
             [taoensso.timbre :as timbre])
   (:import java.text.Collator
@@ -105,7 +104,7 @@
         [:div [:strike (:-fullname att)]]
         [:div (:-fullname att)]))))
 
-(defn lunches [db-spec user params]
+#_(defn lunches [db-spec user params]
   (liskasys-frame
    user
    (let [lunch-types (jdbc-common/select db-spec :lunch-type {})]
@@ -172,7 +171,7 @@
            [:a {:href (str "?history=" (dec history))}
             [:button.btn.btn-default "Následující"]])]]])]])
 
-(defn cancelled-lunches [db-spec user]
+#_(defn cancelled-lunches [db-spec user]
   (liskasys-frame
    user
    (let [children (->> (if ((:-roles user) "admin")

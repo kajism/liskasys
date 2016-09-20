@@ -31,13 +31,15 @@ CLOSED: [2016-09-20 Tue 13:08]
 **** vypocitat potrebnou castku do fondu obedu :person/lunch-fund
 *** lunch-order overview (display persons lunch funds from tx)
 *** TODO daily-plan CRUD
-*** TODO rewrite all code to use datomic
+*** DONE rewrite all code to use datomic
+CLOSED: [2016-09-20 Tue 16:24]
 **** DONE lunch orders
 CLOSED: [2016-09-20 Tue 13:14]
 **** DONE cancellations
 CLOSED: [2016-09-20 Tue 15:53]
 **** lunch and cancellations views
-**** deprecate old DB tables and GUIs
+**** DONE deprecate old DB tables and GUIs
+CLOSED: [2016-09-20 Tue 16:23]
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance

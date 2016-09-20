@@ -12,7 +12,6 @@
             [compojure.core :refer :all]
             [datomic.api :as d]
             [environ.core :refer [env]]
-            [liskasys.db :as db]
             [liskasys.endpoint.main-hiccup :as main-hiccup]
             [liskasys.service :as service]
             [ring.util.response :as response]
