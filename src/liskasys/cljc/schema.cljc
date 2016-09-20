@@ -28,6 +28,7 @@
     (s/optional-key :person/passwd) (s/maybe s/Str)
     (s/optional-key :person/roles) s/Any
     (s/optional-key :person/var-symbol) s/Int
+    (s/optional-key :person/lunch-fund) (s/maybe s/Int)
     (s/optional-key :person/lunch-type) (s/maybe {:db/id s/Int})
     (s/optional-key :person/active?) (s/maybe s/Bool)
     (s/optional-key :person/child?) (s/maybe s/Bool)

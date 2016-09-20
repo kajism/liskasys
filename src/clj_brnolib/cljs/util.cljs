@@ -83,7 +83,8 @@
             ["TB" "GB" "MB" "kB" "B"])))
 
 (defn from-cents [cents]
-  (quot cents 100))
+  (when cents
+    (quot cents 100)))
 
 (defn to-cents [units]
   (when-not (str/blank? units)

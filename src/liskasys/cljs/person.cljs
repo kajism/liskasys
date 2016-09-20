@@ -31,6 +31,7 @@
                  ["Jméno" :person/firstname]
                  #_["Variabilní symbol" :person/var-symbol]
                  #_["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
+                 ["Fond obědů" #(some-> % :person/lunch-fund util/from-cents)]
                  ["Rozvrh docházky" #(when (not= (:person/att-pattern %) "0000000") (:person/att-pattern %))]
                  ["Rozvrh obědů" #(when (not= (:person/lunch-pattern %) "0000000") (:person/lunch-pattern %))]
                  ["Email" :person/email]
@@ -96,6 +97,15 @@
              :label "obědy zdarma?"
              :model (:person/free-lunches? item)
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/free-lunches? %])]
+            [re-com/label :label "Fond obědů"]
+            [re-com/h-box :gap "5px"
+             :children
+             [[re-com/input-text
+               :model (str (util/from-cents (:person/lunch-fund item)))
+               :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-fund (util/to-cents %)])
+               :validation-regex #"^\d{0,4}$"
+               :disabled? true]
+              "Kč"]]
             [re-com/checkbox
              :label "dítě?"
              :model (:person/child? item)

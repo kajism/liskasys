@@ -71,5 +71,5 @@
          {:http [:app]
           :app  [:main]
           :ragtime [:db]
-          :scheduler [:db :datomic]
+          :scheduler [:datomic]
           :main [:db :datomic]}))))
