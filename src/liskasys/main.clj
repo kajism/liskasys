@@ -5,9 +5,11 @@
             [duct.component.ragtime :as ragtime]
             [duct.middleware.errors :refer [wrap-hide-errors]]
             [duct.util.runtime :refer [add-shutdown-hook]]
-            [meta-merge.core :refer [meta-merge]]
             [liskasys.config :as config]
-            [liskasys.system :refer [new-system]]))
+            [liskasys.datomic-migration :as datomic-migration]
+            [liskasys.service :as service]
+            [liskasys.system :refer [new-system]]
+            [meta-merge.core :refer [meta-merge]]))
 
 (def prod-config
   {:app {:middleware     [[wrap-hide-errors :internal-error]]
@@ -19,10 +21,9 @@
               prod-config))
 
 (defn -main [& args]
-  (let [system (new-system config)]
-    (println "Starting HTTP server on port" (-> system :http :port))
-    (add-shutdown-hook ::stop-system #(component/stop system))
-    (-> system
-        component/start
-        :ragtime
-        ragtime/migrate)))
+  (let [system (-> (new-system config)
+                   component/start)]
+    (println "Started HTTP server on port" (-> system :http :port))
+    (when-not (seq (service/find-where (datomic.api/db (-> system :datomic :conn)) {:person/lunch-type nil}))
+      (datomic-migration/migrate-to-datomic (-> system :db :spec) (-> system :datomic :conn)))
+    (add-shutdown-hook ::stop-system #(component/stop system))))
