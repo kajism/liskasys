@@ -12,7 +12,8 @@
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.237"]
-                 [com.datomic/datomic-free "0.9.5394"]
+                 [com.datomic/datomic-free "0.9.5394"
+                  :exclusions [com.google.guava/guava]]
                  [com.stuartsierra/component "0.3.1"]
                  [hiccup "1.0.5"]
                  [ring "1.4.0"]
@@ -40,7 +41,7 @@
                  [io.rkn/conformity "0.4.0"]]
   :plugins [[lein-environ "1.0.2"]
             [lein-gen "0.2.2"]
-            [lein-cljsbuild "1.1.2"]]
+            [lein-cljsbuild "1.1.4"]]
   :generators [[duct/generators "0.5.10"]]
   :duct {:ns-prefix liskasys}
   :main ^:skip-aot liskasys.main
