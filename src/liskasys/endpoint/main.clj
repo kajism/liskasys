@@ -30,31 +30,31 @@
 (defn- upload-dir []
   (or (:upload-dir env) "./uploads/"))
 
-(defn main-endpoint [{{db-spec :spec} :db {conn :conn} :datomic}]
+(defn main-endpoint [{{conn :conn} :datomic}]
   (routes
    (context "" {{{children-count :-children-count roles :-roles :as user} :user} :session}
      (GET "/" {:keys [params]}
-       (if-not (or (pos? children-count) (roles "admin"))
-         (response/redirect "/obedy")
-         (let [parents-children (db/select-children-by-user-id db-spec (:id user))
-               selected-child-id (or (:child-id params) (:id (first parents-children)))
-               child-att-days (service/find-next-attendance-weeks db-spec selected-child-id 2)]
+       (if-not (pos? children-count)
+         (response/redirect "/jidelni-listek")
+         (let [db (d/db conn)
+               child-id (edn/read-string (:child-id params))
+               parents-children (service/find-children-by-person-id db (:db/id user))
+               selected-person-id (or child-id (:db/id (first parents-children)))
+               child-daily-plans (service/find-next-weeks-person-daily-plans db selected-person-id 2)]
            (main-hiccup/liskasys-frame
             user
-            (main-hiccup/cancellation-page parents-children selected-child-id child-att-days)))))
+            (main-hiccup/cancellation-page parents-children selected-person-id child-daily-plans)))))
 
      (POST "/" {:keys [params]}
        (let [cancel-dates (make-date-sets (:cancel-dates params))
-             already-cancelled-dates (make-date-sets (:already-cancelled-dates params))]
-         (doseq [cancel-date (set/difference cancel-dates already-cancelled-dates)]
-           (jdbc-common/save! db-spec :cancellation {:child-id (:child-id params)
-                                                     :user-id (:id user)
-                                                     :date cancel-date}))
-         (doseq [uncancel-date (set/difference already-cancelled-dates cancel-dates)]
-           (jdbc-common/delete! db-spec :cancellation {:child-id (:child-id params)
-                                                       :date uncancel-date}))
-         (response/redirect "")
-         #_(main-hiccup/cancellation-form db user params)))
+             already-cancelled-dates (make-date-sets (:already-cancelled-dates params))
+             child-id (edn/read-string (:child-id params))]
+         (service/transact-cancellations conn
+                                         (:db/id user)
+                                         child-id
+                                         (set/difference cancel-dates already-cancelled-dates)
+                                         (set/difference already-cancelled-dates cancel-dates))
+         (response/redirect (str (when child-id "/?child-id=") child-id))))
 
      (GET "/jidelni-listek" [history]
        (let [history (or (edn/read-string history) 0)
@@ -83,13 +83,13 @@
            (io/copy (:tempfile upload) (io/file server-file))))
        (response/redirect "/jidelni-listek"))
 
-     (GET "/obedy" {:keys [params]}
+     #_(GET "/obedy" {:keys [params]}
        (if-not (or ((:-roles user) "admin")
                    ((:-roles user) "obedy"))
          (response/redirect "/")
          (main-hiccup/lunches db-spec user params)))
 
-     (GET "/odhlasene-obedy" {:keys [params]}
+     #_(GET "/odhlasene-obedy" {:keys [params]}
        (main-hiccup/cancelled-lunches db-spec user))
 
      (GET "/login" []

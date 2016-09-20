@@ -10,12 +10,19 @@
             [datomic.api :as d]
             [liskasys.db :as db]
             [postal.core :as postal]
-            [taoensso.timbre :as timbre])
+            [taoensso.timbre :as timbre]
+            [clojure.set :as set])
   (:import java.text.Collator
            java.util.Locale))
 
-(def day-formatter (-> (tf/formatter "E dd.MM.yyyy")
+(def day-formatter (-> (tf/formatter "E d. MMMM yyyy")
                        (tf/with-locale (Locale. "cs"))))
+
+(defn format-day-date [date]
+  (->> date
+       tc/to-date-time
+       (tf/unparse day-formatter)
+       (str/lower-case)))
 
 (def cz-collator (Collator/getInstance (Locale. "cs")))
 
@@ -180,6 +187,13 @@
 (defn find-by-id [db eid]
   (d/pull db '[*] eid))
 
+(defn make-holiday?-fn [db]
+  (let [bank-holidays (find-where db {:bank-holiday/label nil})
+        school-holidays (find-where db {:school-holiday/label nil})]
+    (fn [ld]
+      (or (bank-holiday? bank-holidays ld)
+          (school-holiday? school-holidays ld)))))
+
 (defn find-person-daily-plans-with-lunches [db date]
   (d/q '[:find [(pull ?e [:db/id :daily-plan/lunch-req {:daily-plan/person [:db/id :person/lunch-type :person/lunch-fund]}]) ...]
          :in $ ?date
@@ -223,9 +237,7 @@
        (sort-by first cz-collator)))
 
 (defn- send-lunch-order-email [date emails lunch-counts]
-  (let [subject (str "Objednávka obědů pro Lištičku na " (->> date
-                                                              tc/to-date-time
-                                                              (tf/unparse day-formatter)))
+  (let [subject (str "Objednávka obědů pro Lištičku na " (format-day-date date))
         msg {:from "daniela.chaloupkova@post.cz"
              :to emails
              :subject subject
@@ -281,12 +293,19 @@
                                 (mapv :person/email (find-persons-with-role db "obedy"))
                                 lunch-counts)))))
 
-(defn find-next-attendance-weeks [db-spec child-id weeks]
-  (let [bank-holidays (jdbc-common/select db-spec :bank-holiday {})]
-    (->> (db/select-next-attendance-weeks db-spec child-id weeks)
-         (remove (fn [[date att-day]]
-                   (bank-holiday? bank-holidays (tc/to-local-date date))))
-         (into (sorted-map)))))
+(defn find-next-weeks-person-daily-plans [db person-id weeks]
+  (let [to-date (-> (t/today)
+                    (t/plus (t/weeks weeks))
+                    tc/to-date)]
+    (->> (d/q '[:find [(pull ?e [*]) ...]
+                :in $ ?person ?from ?to
+                :where
+                [?e :daily-plan/person ?person]
+                [?e :daily-plan/date ?date]
+                [(<= ?from ?date)]
+                [(<= ?date ?to)]]
+              db person-id (tomorrow) to-date)
+         (sort-by :daily-plan/date))))
 
 (defn- calculate-att-price [price-list months-count days-per-week half-days-count]
   (+ (* months-count (get price-list (keyword "price-list" (str "days-" days-per-week)) 0))
@@ -315,13 +334,6 @@
                   (pos? child-att)
                   (assoc :daily-plan/child-att child-att)))))
           dates)))
-
-(defn make-holiday?-fn [db]
-  (let [bank-holidays (find-where db {:bank-holiday/label nil})
-        school-holidays (find-where db {:school-holiday/label nil})]
-    (fn [ld]
-      (or (bank-holiday? bank-holidays ld)
-          (school-holiday? school-holidays ld)))))
 
 (defn- billing-period-start-end
   "Returns local dates with end exclusive!!"
@@ -462,3 +474,45 @@
     {:lunch-menu (first last-two)
      :previous? (boolean (second last-two))
      :history history}))
+
+(defn find-children-by-person-id [db parent-id]
+  (d/q '[:find [(pull ?e [*]) ...]
+         :in $ ?parent
+         :where
+         [?e :person/parent ?parent]]
+       db parent-id))
+
+(defn- make-can-cancel-lunch?-fn [db]
+  (let [max-lunch-order-date (-> (d/q '[:find (max ?date) .
+                                        :where [_ :lunch-order/date ?date]]
+                                      db)
+                                 tc/to-local-date)]
+    (fn [date]
+      (t/after? (-> date tc/to-local-date) max-lunch-order-date))))
+
+(defn transact-cancellations [conn user-id child-id cancel-dates uncancel-dates]
+  (let [db (d/db conn)
+        can-cancel-lunch?-fn (make-can-cancel-lunch?-fn db)]
+    (if-not  (contains? (->> user-id
+                             (find-children-by-person-id db)
+                             (map :db/id)
+                             set)
+                        child-id)
+      (timbre/error "User" user-id "attempts to change cancellations of child" child-id)
+      (->> (d/q '[:find [(pull ?e [*]) ...]
+                  :in $ ?person [?date ...]
+                  :where
+                  [?e :daily-plan/person ?person]
+                  [?e :daily-plan/date ?date]]
+                db child-id (set/union cancel-dates uncancel-dates #{}))
+           (mapcat (fn [{:keys [:db/id :daily-plan/date]}]
+                     (if (contains? cancel-dates date)
+                       [[:db/add id :daily-plan/att-cancelled? true]
+                        [:db/add id :daily-plan/lunch-cancelled? (can-cancel-lunch?-fn date)]]
+                       [[:db/retract id :daily-plan/att-cancelled? true]
+                        [:db/retract id :daily-plan/lunch-cancelled? true]])))
+           (into [{:db/id (d/tempid :db.part/tx) :tx/person user-id}])
+           (d/transact conn)
+           deref
+           :tx-data
+           count))))

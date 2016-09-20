@@ -37,11 +37,11 @@
             [:a {:href "/"} "Omluvenky"]])
          [:li
           [:a {:href "/jidelni-listek"} "Jídelníček"]]
-         (when (or (roles "admin")
+         #_(when (or (roles "admin")
                    (roles "obedy"))
            [:li
             [:a {:href "/obedy"} "Obědy"]])
-         (when (roles "admin")
+         #_(when (roles "admin")
            [:li
             [:a {:href "/odhlasene-obedy"} "Odhlášené obědy"]])]
         [:ul.nav.navbar-nav.navbar-right
@@ -57,38 +57,42 @@
            {:href "/logout"} "Odhlásit se"]]]]]]
      body-hiccup])))
 
-(defn cancellation-page [users-children selected-child-id child-att-days]
+(defn cancellation-page [users-children selected-child-id child-daily-plans]
   [:div.container
-    [:h3 "Omluvenky"]
+   [:h3 "Omluvenky"]
+   [:div
+    [:div.form-group
+     [:label {:for "child"} "Dítě"]
+     [:form {:method "get"
+             :role "form"}
+      [:select#child.form-control {:name "child-id"
+                                   :onchange "this.form.submit()"}
+       (for [person users-children]
+         [:option {:value (:db/id person)
+                   :selected (= selected-child-id (:db/id person))} (cljc-util/person-fullname person)])]]]
     [:form {:method "post"
             :role "form"}
-     [:div.form-group
-      [:label {:for "child"} "Dítě"]
-      [:select#child.form-control {:name "child-id"}
-       (for [child users-children]
-         [:option {:value (:id child)
-                   :selected (= selected-child-id (:id child))} (:-fullname child)])]]
+     [:input {:type "hidden" :name "child-id" :value selected-child-id}]
      [:div.form-group
       [:label {:for "from"} "Docházka bude (nebo již je) omluvena v označených dnech"]
       [:table.table.table-striped
        [:tbody
-        (for [[date att] child-att-days
-              :let [date-str (time/to-format date time/ddMMyyyy)
-                    cancellation (:cancellation att)]]
+        (for [{:keys [:daily-plan/date :daily-plan/att-cancelled? :daily-plan/lunch-cancelled?]} child-daily-plans
+              :let [date-str (time/to-format date time/ddMMyyyy)]]
           [:tr
            [:td
             [:label
-             (when cancellation
+             (when att-cancelled?
                [:input {:type "hidden" :name "already-cancelled-dates[]" :value date-str}])
              [:input {:type "checkbox" :name "cancel-dates[]"
-                      :value (time/to-format date time/ddMMyyyy)
-                      :checked (boolean cancellation)}] " "
-             (get time/week-days (:day-of-week att)) " "
-             (time/to-format date time/dMyyyy)
-             (when (:lunch-cancelled? cancellation)
-               " včetně oběda")]]])]]]
-     #_(anti-forgery/anti-forgery-field)
-     [:button.btn.btn-danger {:type "submit"} "Uložit"]]])
+                      :value date-str
+                      :checked (boolean att-cancelled?)}] " "
+             (service/format-day-date date)
+             " "
+             (when lunch-cancelled?
+               "(oběd odhlášen)")]]])]]]
+     ;;(anti-forgery/anti-forgery-field)
+     [:button.btn.btn-danger {:type "submit"} "Uložit"]]]])
 
 (def cs-collator (Collator/getInstance (Locale. "CS")))
 
