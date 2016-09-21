@@ -72,7 +72,7 @@
            :width "100px"]
           [re-com/label :label "Osoba"]
           [re-com/single-dropdown
-           :model nil
+           :model (get-in item [:daily-plan/person :db/id])
            :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/person {:db/id %}])
            :choices (->> @persons
                          vals
