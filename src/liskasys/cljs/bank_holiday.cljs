@@ -21,7 +21,7 @@
          :colls [["Název" :bank-holiday/label]
                  ["Měsíc" :bank-holiday/month]
                  ["Den" :bank-holiday/day]
-                 ["+- od Velikonoc" :bank-holiday/easter-delta]
+                 ["+/- dnů od Velikonoc" :bank-holiday/easter-delta]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -63,7 +63,7 @@
            :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/day (util/parse-int %)])
            :validation-regex #"^\d{0,2}$"
            :width "60px"]
-          [re-com/label :label "+- dnů od Velikonoc"]
+          [re-com/label :label "+/- dnů od Velikonoc"]
           [re-com/input-text
            :model (str (:bank-holiday/easter-delta item))
            :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/easter-delta (util/parse-int %)])

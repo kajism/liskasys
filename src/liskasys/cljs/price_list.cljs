@@ -16,9 +16,9 @@
     (fn []
       [re-com/v-box
        :children
-       [[:h3 "Ceníky"]
+       [[:h3 "Ceník"]
         (when-not (seq @price-lists)
-          [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/price-list/e")])
+          [re-com/hyperlink-href :label [re-com/button :label "Vytvořit"] :href (str "#/price-list/e")])
         [data-table
          :table-id :price-lists
          :rows @price-lists
@@ -42,7 +42,7 @@
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])]]])
+                      #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])]]])
                   :csv-export]]]]])))
 
 (defn- from-cents [cents]

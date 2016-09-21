@@ -40,17 +40,16 @@ CLOSED: [2016-09-20 Tue 13:14]
 CLOSED: [2016-09-20 Tue 15:53]
 **** DONE deprecate old DB tables and GUIs
 CLOSED: [2016-09-20 Tue 16:23]
-** upgrade plan
+** DONE upgrade plan 2
+CLOSED: [2016-09-21 Wed 14:16]
 *** stop l2
 *** stop datomic
-*** rm datomic/data/h2
+*** rm datomic/data/db
 *** start datomic
-*** rm l2/liskasys2.db*
-*** stop l
-*** cp l/*db* l2/l2.db*
-*** start l2
-*** check l2
-*** redeploy l2 obedy.listicka.org
+*** stop liskasys
+*** backup db,jar,logfile
+*** truncate log file
+*** redeploy liskasys
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance
