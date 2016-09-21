@@ -111,7 +111,9 @@
                                               v (f row)
                                               v (cond-> v
                                                   (boolean? v)
-                                                  util/boolean->text)]
+                                                  util/boolean->text
+                                                  (= js/Date (type v))
+                                                  (time/to-format (or date-format time/ddMMyyyy)))]
                                           (> (.indexOf (str/lower-case (str v))
                                                        (str/lower-case (get (:search-colls @state) coll-idx)))
                                              -1)))

@@ -42,26 +42,17 @@
     (s/optional-key :person/lunch-pattern) (s/maybe s/Str)
     (s/optional-key :person/att-pattern) (s/maybe s/Str)}))
 
-(def Attendance
+(def DailyPlan
   (merge
    CommonAttrs
-   {(s/optional-key :valid-from) s/Inst
-    (s/optional-key :valid-to) (s/maybe s/Inst)
-    :child-id s/Int
-    (s/optional-key :days) {s/Int {:type (s/maybe s/Int)
-                                   (s/optional-key :lunch?) s/Bool}}}))
-
-(def Cancellation
-  (merge
-   CommonAttrs
-   {(s/optional-key :date) s/Inst
-    (s/optional-key :child-id) s/Int
-    (s/optional-key :-child-fullname) s/Str
-    (s/optional-key :attendance-day-id) s/Int
-    (s/optional-key :user-id) s/Int
-    (s/optional-key :-user-fullname) s/Str
-    (s/optional-key :substitution-date) (s/maybe s/Inst)
-    (s/optional-key :lunch-cancelled?) s/Bool}))
+   {(s/optional-key :daily-plan/date) (s/maybe s/Inst)
+    (s/optional-key :daily-plan/person) (s/maybe {:db/id s/Int})
+    (s/optional-key :daily-plan/bill) (s/maybe {:db/id s/Int})
+    (s/optional-key :daily-plan/child-att) (s/maybe s/Int)
+    (s/optional-key :daily-plan/att-cancelled?) (s/maybe s/Bool)
+    (s/optional-key :daily-plan/lunch-req) (s/maybe s/Int)
+    (s/optional-key :daily-plan/lunch-ord) (s/maybe s/Int)
+    (s/optional-key :daily-plan/lunch-cancelled?) (s/maybe s/Bool)}))
 
 (def BankHoliday
   (merge CommonAttrs
@@ -103,8 +94,7 @@
                           (s/optional-key :info) (s/maybe s/Str)}
    (s/optional-key :entities-where) {s/Keyword s/Any}
    (s/optional-key :person) {(s/maybe s/Int) (s/maybe Person)}
-   (s/optional-key :attendance) {(s/maybe s/Int) Attendance}
-   (s/optional-key :cancellation) {(s/maybe s/Int) Cancellation}
+   (s/optional-key :daily-plan) {(s/maybe s/Int) DailyPlan}
    (s/optional-key :lunch-menu) {(s/maybe s/Int) LunchMenu}
    (s/optional-key :lunch-order) {(s/maybe s/Int) LunchOrder}
    (s/optional-key :lunch-type) {(s/maybe s/Int) LunchType}

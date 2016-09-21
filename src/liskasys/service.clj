@@ -160,15 +160,17 @@
   (d/query (build-query db where-m)))
 
 (def ent-type->attr
-  {:lunch-menu :lunch-menu/from
+  {:bank-holiday :bank-holiday/label
+   :billing-period :billing-period/from-yyyymm
+   :daily-plan :daily-plan/date
+   :lunch-menu :lunch-menu/from
    :lunch-order :lunch-order/date
    :lunch-type :lunch-type/label
-   :bank-holiday :bank-holiday/label
-   :school-holiday :school-holiday/label
    :person :person/firstname
    :price-list :price-list/days-1
-   :billing-period :billing-period/from-yyyymm
-   :person-bill :person-bill/total})
+   :person-bill :person-bill/total
+   :school-holiday :school-holiday/label
+})
 
 (defn find-by-type [db ent-type where-m]
   (let [attr (get ent-type->attr ent-type ent-type)]
