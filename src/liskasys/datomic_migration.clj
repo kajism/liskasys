@@ -181,10 +181,10 @@
                                                                date
                                                                lunch-price
                                                                (service/find-person-daily-plans-with-lunches db date))]
-                     (if (not= total-req total total-proc)
-                       (timbre/fatal date "Total lunch requested" total-req "but ordered" total "but processed" total-proc)
-                       ;; must be transacted after each day due to the :db.fn/cas of :person/lunch-fund
-                       (transact conn (assoc ctx :tx-data tx-data)))))
+                     (when-not (= total-req total total-proc)
+                       (timbre/warn date "Total lunch requested" total-req "but ordered" total "but processed" total-proc))
+                     ;; must be transacted after each day due to the :db.fn/cas of :person/lunch-fund
+                     (transact conn (assoc ctx :tx-data tx-data))))
                  ctx))))
 
 (defn- cancellation [{:keys [db-spec db child-ids] :as ctx}]
