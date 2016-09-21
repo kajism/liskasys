@@ -33,10 +33,10 @@
                                 (get-in %)
                                 (get @persons)
                                 cljc-util/person-fullname)]
-                 ["Docházka" :daily-plan/child-att]
+                 ["Docházka" #(or (:daily-plan/child-att %) 0)]
                  ["Docházka zrušena" (comp util/boolean->text :daily-plan/att-cancelled?)]
-                 ["Oběd požadavek" :daily-plan/lunch-req]
-                 ["Oběd objednáno" :daily-plan/lunch-ord]
+                 ["Oběd požadavek" #(or (:daily-plan/lunch-req %) 0)]
+                 ["Oběd objednáno" #(or (:daily-plan/lunch-ord %) 0)]
                  ["Oběd zrušen" (comp util/boolean->text :daily-plan/lunch-cancelled?)]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
@@ -71,13 +71,17 @@
            :validation-regex #"^\d{0,2}$|^\d{0,2}\.\d{0,2}$|^\d{0,2}\.\d{0,2}\.\d{0,4}$"
            :width "100px"]
           [re-com/label :label "Osoba"]
-          [re-com/input-text
-           :model (->> [:daily-plan/person :db/id]
-                       (get-in item)
-                       (get @persons)
-                       cljc-util/person-fullname)
-           :on-change #()
-           :disabled? true]
+          [re-com/single-dropdown
+           :model nil
+           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/person {:db/id %}])
+           :choices (->> @persons
+                         vals
+                         (filter :person/active?)
+                         (util/sort-by-locale cljc-util/person-fullname))
+           :id-fn :db/id
+           :label-fn cljc-util/person-fullname
+           :filter-box? true
+           :width "250px"]
           [re-com/label :label "Druh docházky"]
           [re-com/input-text
            :model (str (:daily-plan/child-att item))
@@ -116,12 +120,6 @@
 (pages/add-page :daily-plans #'page-daily-plans)
 
 (secretary/defroute #"/daily-plan/(\d*)(e?)" [id edit?]
-  (when-not (util/parse-int id)
-    (re-frame/dispatch [:entity-new :daily-plan {:daily-plan/from (->> (t/today)
-                                                                       (iterate #(t/plus % (t/days 1)))
-                                                                       (drop-while #(not= (t/day-of-week %) 1))
-                                                                       first
-                                                                       tc/to-date)}]))
   (re-frame/dispatch [:entity-set-edit :daily-plan (util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :daily-plan]))
 (pages/add-page :daily-plan #'page-daily-plan)
