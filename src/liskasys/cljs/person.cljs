@@ -75,11 +75,11 @@
              :model (:person/active? item)
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/active? %])]
             [re-com/label :label "Variabilní symbol"]
-            [input-text item :child :person/var-symbol util/parse-int]
+            [input-text item :person :person/var-symbol util/parse-int]
             [re-com/label :label "Dieta"]
             [re-com/single-dropdown
              :model (some-> item :person/lunch-type :db/id)
-             :on-change #(re-frame/dispatch [:entity-change :child (:db/id item) :person/lunch-type {:db/id %}])
+             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-type {:db/id %}])
              :choices (conj (util/sort-by-locale :label (vals @lunch-types)) {:db/id nil :label "běžná"})
              :id-fn :db/id
              :label-fn :lunch-type/label
