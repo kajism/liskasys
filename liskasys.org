@@ -30,16 +30,27 @@ CLOSED: [2016-09-18 Sun 08:47]
 CLOSED: [2016-09-20 Tue 13:08]
 **** vypocitat potrebnou castku do fondu obedu :person/lunch-fund
 *** lunch-order overview (display persons lunch funds from tx)
-*** TODO daily-plan CRUD
+*** DONE daily-plan CRUD
+CLOSED: [2016-09-21 Wed 11:51]
 *** DONE rewrite all code to use datomic
 CLOSED: [2016-09-20 Tue 16:24]
 **** DONE lunch orders
 CLOSED: [2016-09-20 Tue 13:14]
 **** DONE cancellations
 CLOSED: [2016-09-20 Tue 15:53]
-**** lunch and cancellations views
 **** DONE deprecate old DB tables and GUIs
 CLOSED: [2016-09-20 Tue 16:23]
+** upgrade plan
+*** stop l2
+*** stop datomic
+*** rm datomic/data/h2
+*** start datomic
+*** rm l2/liskasys2.db*
+*** stop l
+*** cp l/*db* l2/l2.db*
+*** start l2
+*** check l2
+*** redeploy l2 obedy.listicka.org
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance
