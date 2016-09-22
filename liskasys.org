@@ -3,7 +3,42 @@ LISKASYST
 podpurny informacni system pro lesni materskou skolu Listicka
 
 * TODOs
-** new schema
+** TODO remove jdbc dependencies (hikari, h2, clojure.jdbc ...)
+** v platbe na pristi obdobi zohlednit stav fondu + budouci zrusene obedy
+** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
+** filtry od/do datum na denni plany (postupne nacitani ze serveru)
+** filtr na aktivni osoby + omezeni nacitani ze serveru
+** TODO nahrady
+*** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
+*** schvalovaci email Dance
+*** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
+** zverejneni rozpisu plateb a jednotlive potvrzovani zaplaceni
+** zobrazit rodicum platby a zrusene obedy
+** sobotni akce - potvrzeni/odmitnuti ucasti
+** moznost zobrazit historii zmen entity
+** [#C] zrusit children-count
+** datomic transaction log view
+** log backups
+** form validation!!! clojure.spec
+** tests service/*holiday?, time/from-dMyyyy
+** odchytávání DB constraint exceptions => rozumna hlaska uživateli
+** edit childs at parent (the other direction)
+** moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
+** server side validation without exception (hash-map like on the client
+** omezení počtu chybných přihlášení (+ reset)
+** export dat do csv
+** DONE upgrade plan 2
+CLOSED: [2016-09-21 Wed 14:16]
+*** stop l2
+*** stop datomic
+*** rm datomic/data/db
+*** start datomic
+*** stop liskasys
+*** backup db,jar,logfile
+*** truncate log file
+*** redeploy liskasys
+** DONE new schema
+CLOSED: [2016-09-22 Thu 15:07]
 *** DONE migrate attendance days + lunches to patterns
 CLOSED: [2016-09-02 Fri 16:59]
 *** DONE deactivate users with zero patterns
@@ -40,33 +75,6 @@ CLOSED: [2016-09-20 Tue 13:14]
 CLOSED: [2016-09-20 Tue 15:53]
 **** DONE deprecate old DB tables and GUIs
 CLOSED: [2016-09-20 Tue 16:23]
-** DONE upgrade plan 2
-CLOSED: [2016-09-21 Wed 14:16]
-*** stop l2
-*** stop datomic
-*** rm datomic/data/db
-*** start datomic
-*** stop liskasys
-*** backup db,jar,logfile
-*** truncate log file
-*** redeploy liskasys
-** TODO nahrady
-*** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
-*** schvalovaci email Dance
-*** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
-** zrusit children-count
-** datomic transaction log view
-** log backups
-** form validation!!! clojure.spec
-** tests service/*holiday?, time/from-dMyyyy
-** odchytávání DB constraint exceptions => rozumna hlaska uživateli
-** DB indexes
-** edit childs at parent (the other direction)
-** moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
-** zobrazit rodicum platby a zrusene obedy
-** server side validation without exception (hash-map like on the client
-** omezení počtu chybných přihlášení (+ reset)
-** export dat do csv
 ** DONE datepickery nahradit textovym polem s validaci formatu
 CLOSED: [2016-09-17 Sat 21:26]
 ** DONE promyslet novou koncepci / DB schema dle aktualnich pozadavku
