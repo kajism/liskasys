@@ -1,5 +1,6 @@
 (ns clj-brnolib.cljs.comp.data-table
   (:require [clj-brnolib.time :as time]
+            [clj-brnolib.cljs.pages :as pages]
             [clj-brnolib.cljs.util :as util]
             [clojure.string :as str]
             [cognitect.transit :as transit]
@@ -16,13 +17,13 @@
 
 (re-frame/register-handler
  :table-state-set
- re-frame/debug
+ pages/debug-mw
  (fn [db [_ table-id state]]
    (assoc-in db [:table-states table-id] state)))
 
 (re-frame/register-handler
  :table-state-change
- re-frame/debug
+ pages/debug-mw
  (fn [db [_ table-id key val]]
    ((if (fn? val) update-in assoc-in) db [:table-states table-id key] val)))
 
