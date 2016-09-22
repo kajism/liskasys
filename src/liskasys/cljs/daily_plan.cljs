@@ -101,7 +101,7 @@
           [re-com/label :label "Objednaný počet obědů"]
           [re-com/input-text
            :model (str (:daily-plan/lunch-ord item))
-           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (util/parse-int %)])
+           :on-change #() ;;#(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (util/parse-int %)])
            :disabled? true
            :width "100px"]
           [re-com/checkbox
