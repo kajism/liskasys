@@ -20,7 +20,7 @@
     (fn []
       [re-com/v-box
        :children
-       [[:h3 "Dieta"]
+       [[:h3 "Objednávky obědů"]
         [data-table
          :table-id :lunch-orders
          :rows @lunch-orders
@@ -51,7 +51,7 @@
             errors (:-errors item)]
         [re-com/v-box :gap "5px"
          :children
-         [[:h3 "Diety"]
+         [[:h3 "Objednávka obědů"]
           [re-com/label :label "Datum"]
           [re-com/input-text
            :model (time/to-format (:lunch-order/date item) time/ddMMyyyy)
