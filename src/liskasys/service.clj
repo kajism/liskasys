@@ -267,7 +267,7 @@
                   (-> out
                       (update :tx-data conj
                               [:db.fn/cas (:db/id person) :person/lunch-fund
-                               (:person/lunch-fund person) (- (:person/lunch-fund person)
+                               (:person/lunch-fund person) (- (or (:person/lunch-fund person) 0)
                                                               (* lunch-req lunch-price))])
                       (update :tx-data conj
                               [:db/add id :daily-plan/lunch-ord lunch-req])
@@ -370,19 +370,15 @@
                          lunch-count (->> daily-plans
                                           (keep :daily-plan/lunch-req)
                                           (reduce + 0))
-                         att-price (if (:person/free-att? person)
-                                     0
-                                     (calculate-att-price price-list
-                                                          (- (:billing-period/to-yyyymm billing-period)
-                                                             (:billing-period/from-yyyymm billing-period)
-                                                             -1)
-                                                          (count (->> person :person/att-pattern pattern-map vals (filter (partial = 1))))
-                                                          (->> daily-plans
-                                                               (filter #(-> % :daily-plan/child-att (= 2)))
-                                                               count)))
-                         lunch-price (if (:person/free-lunches? person)
-                                       0
-                                       (:price-list/lunch price-list))
+                         att-price (calculate-att-price price-list
+                                              (- (:billing-period/to-yyyymm billing-period)
+                                                 (:billing-period/from-yyyymm billing-period)
+                                                 -1)
+                                              (count (->> person :person/att-pattern pattern-map vals (filter (partial = 1))))
+                                              (->> daily-plans
+                                                   (filter #(-> % :daily-plan/child-att (= 2)))
+                                                   count))
+                         lunch-price (:price-list/lunch price-list)
                          id (or (when-let [person-bill (get @person-id->bill (:db/id person))]
                                   (swap! person-id->bill dissoc (:db/id person))
                                   (if (:person-bill/paid? person-bill)
@@ -506,10 +502,11 @@
                   [?e :daily-plan/person ?person]
                   [?e :daily-plan/date ?date]]
                 db child-id (set/union cancel-dates uncancel-dates #{}))
-           (mapcat (fn [{:keys [:db/id :daily-plan/date]}]
+           (mapcat (fn [{:keys [:db/id :daily-plan/date :daily-plan/lunch-req]}]
                      (if (contains? cancel-dates date)
-                       [[:db/add id :daily-plan/att-cancelled? true]
-                        [:db/add id :daily-plan/lunch-cancelled? (can-cancel-lunch?-fn date)]]
+                       (cond-> [[:db/add id :daily-plan/att-cancelled? true]]
+                         (and (some? lunch-req) (pos? lunch-req) (can-cancel-lunch?-fn date))
+                         (conj [:db/add id :daily-plan/lunch-cancelled? true]))
                        [[:db/retract id :daily-plan/att-cancelled? true]
                         [:db/retract id :daily-plan/lunch-cancelled? true]])))
            (into [{:db/id (d/tempid :db.part/tx) :tx/person user-id}])
