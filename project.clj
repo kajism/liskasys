@@ -1,6 +1,6 @@
 (defproject liskasys "0.1.0-SNAPSHOT"
-  :description "Simple web information system for a forest kidergarten"
-  :url "http://listicka.org"
+  :description "Web information, attendance and lunch cancelation/ordering system for a forest kidergarten"
+  :url "http://obedy.listicka.org"
   :min-lein-version "2.0.0"
   :jvm-opts ["-Duser.timezone=UTC"]
   :dependencies [[cljs-ajax "0.5.2"]
@@ -80,4 +80,12 @@
                          :port "3000"
                          :datomic-uri "datomic:free://localhost:4334/liskasys"
                          :database-url "jdbc:h2:./liskasys-dev.db"}}
-   :project/test  {}})
+   :project/test  {}}
+  :release-tasks
+  [["vcs" "assert-committed"]
+   ["change" "version" "leiningen.release/bump-version" "release"]
+   ["vcs" "commit"]
+   ["vcs" "tag" "--no-sign"]
+   ["uberjar"]
+   ["change" "version" "leiningen.release/bump-version"]
+   ["vcs" "commit"]])
