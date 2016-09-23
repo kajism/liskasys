@@ -5,6 +5,7 @@
             [clj-brnolib.validation :as validation]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
+            [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.set :as set]
             [clojure.string :as str]
@@ -161,7 +162,15 @@
          (catch Exception e
            (main-hiccup/liskasys-frame
             user
-            (hiccup/user-profile-form params {:type :danger :msg (.getMessage (timbre/spy e))}))))))
+            (hiccup/user-profile-form params {:type :danger :msg (.getMessage (timbre/spy e))})))))
+
+     (GET "/version-info" []
+       (->>
+        (-> (io/resource "META-INF/maven/liskasys/liskasys/pom.properties")
+            slurp
+            (str/split #"\n")
+            (subvec 1 3))
+        (str/join "; " ))))
 
    (context "/admin.app" {{user :user} :session}
      (GET "/" []
