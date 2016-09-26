@@ -29,9 +29,9 @@
 
 (defn main-endpoint [{{conn :conn} :datomic}]
   (routes
-   (context "" {{{children-count :-children-count roles :-roles :as user} :user} :session}
+   (context "" {{{roles :-roles :as user} :user} :session}
      (GET "/" {:keys [params]}
-       (if-not (pos? children-count)
+       (if-not (roles "parent")
          (response/redirect "/jidelni-listek")
          (let [db (d/db conn)
                child-id (edn/read-string (:child-id params))
@@ -102,10 +102,12 @@
                (assoc-in [:session :user]
                          (-> person
                              (select-keys [:db/id :person/lastname :person/firstname :person/email])
-                             (assoc :-roles (->> (str/split (str (:person/roles person)) #",")
+                             (assoc :-roles
+                                    (cond-> (->> (str/split (str (:person/roles person)) #",")
                                                  (map str/trim)
-                                                 set))
-                             (assoc :-children-count (count (:person/_parent person)))))))
+                                                 set)
+                                      (pos? (count (:person/_parent person)))
+                                      (conj "parent")))))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 

@@ -14,7 +14,7 @@
 
 (def system-title "LiškaSys")
 
-(defn liskasys-frame [{children-count :-children-count roles :-roles :as user} body-hiccup]
+(defn liskasys-frame [{roles :-roles :as user} body-hiccup]
   (hiccup/hiccup-response
    (hiccup/hiccup-frame
     system-title
@@ -30,7 +30,7 @@
          [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
        [:div#liskasys-navbar.collapse.navbar-collapse
         [:ul.nav.navbar-nav
-         (when (pos? children-count)
+         (when (roles "parent")
            [:li
             [:a {:href "/"} "Omluvenky"]])
          [:li
