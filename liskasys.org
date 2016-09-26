@@ -5,7 +5,8 @@ podpurny informacni system pro lesni materskou skolu Listicka
 * TODOs
 ** DONE remove jdbc dependencies (hikari, h2, clojure.jdbc ...)
 CLOSED: [2016-09-26 Mon 15:46]
-** TODO v platbe na pristi obdobi zohlednit stav fondu + budouci zrusene obedy
+** DONE v platbe na pristi obdobi zohlednit stav fondu + budouci zrusene obedy
+CLOSED: [2016-09-26 Mon 16:54]
 ** TODO zverejneni rozpisu plateb a jednotlive potvrzovani zaplaceni
 ** TODO zobrazit rodicum platby a zrusene obedy
 ** TODO sobotni akce - potvrzeni/odmitnuti ucasti

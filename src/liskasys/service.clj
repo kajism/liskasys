@@ -365,9 +365,19 @@
              (for [person (->> (find-where db {:person/active? true})
                                (remove zero-patterns?))
                    :let [daily-plans (generate-daily-plans person dates)
-                         lunch-count (->> daily-plans
-                                          (keep :daily-plan/lunch-req)
-                                          (reduce + 0))
+                         lunch-count-next (->> daily-plans
+                                               (keep :daily-plan/lunch-req)
+                                               (reduce + 0))
+                         lunch-count-planned (or (d/q '[:find (sum ?lunch-req) .
+                                                        :with ?e
+                                                        :in $ ?person
+                                                        :where
+                                                        [?e :daily-plan/person ?person]
+                                                        [?e :daily-plan/lunch-req ?lunch-req]
+                                                        (not [?e :daily-plan/lunch-ord])
+                                                        (not [?e :daily-plan/lunch-cancelled?])]
+                                                      db (:db/id person))
+                                                 0)
                          att-price (calculate-att-price price-list
                                               (- (:billing-period/to-yyyymm billing-period)
                                                  (:billing-period/from-yyyymm billing-period)
@@ -388,9 +398,12 @@
                   :person-bill/person (:db/id person)
                   :person-bill/period period-id
                   :person-bill/paid? false
-                  :person-bill/lunch-count lunch-count
+                  :person-bill/lunch-count lunch-count-next
                   :person-bill/att-price att-price
-                  :person-bill/total (+ att-price (* lunch-count lunch-price))}))
+                  :person-bill/total (+ att-price
+                                        (- (* lunch-price
+                                              (+ lunch-count-next lunch-count-planned))
+                                           (or (:person/lunch-fund person) 0)))}))
              (filterv some?))]
     (->> (vals @person-id->bill)
          (map #(vector :db.fn/retractEntity %))
