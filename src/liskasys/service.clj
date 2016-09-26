@@ -1,9 +1,7 @@
 (ns liskasys.service
-  (:require [clj-brnolib.jdbc-common :as jdbc-common]
-            [clj-time.coerce :as tc]
+  (:require [clj-time.coerce :as tc]
             [clj-time.core :as t]
             [clj-time.format :as tf]
-            [clojure.java.jdbc :as jdbc]
             [clojure.set :as s]
             [clojure.string :as str]
             [crypto.password.scrypt :as scrypt]

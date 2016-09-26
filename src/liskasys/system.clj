@@ -6,8 +6,6 @@
             [com.stuartsierra.component :as component]
             [duct.component.endpoint :refer [endpoint-component]]
             [duct.component.handler :refer [handler-component]]
-            [duct.component.hikaricp :refer [hikaricp]]
-            [duct.component.ragtime :refer [ragtime]]
             [duct.middleware.not-found :refer [wrap-not-found]]
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
             [environ.core :refer [env]]
@@ -62,14 +60,11 @@
          :nrepl (nrepl-server (:nrepl-port config))
          :app  (handler-component (:app config))
          :http (jetty-server (:http config))
-         :db   (hikaricp (:db config))
          :datomic (datomic (:datomic config))
          :scheduler (scheduler)
-         :ragtime (ragtime (:ragtime config))
          :main (endpoint-component main-endpoint))
         (component/system-using
          {:http [:app]
           :app  [:main]
-          :ragtime [:db]
           :scheduler [:datomic]
-          :main [:db :datomic]}))))
+          :main [:datomic]}))))

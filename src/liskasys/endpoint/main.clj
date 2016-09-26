@@ -1,6 +1,5 @@
 (ns liskasys.endpoint.main
   (:require [clj-brnolib.hiccup :as hiccup]
-            [clj-brnolib.jdbc-common :as jdbc-common]
             [clj-brnolib.time :as time]
             [clj-brnolib.validation :as validation]
             [clj-time.coerce :as tc]
@@ -16,15 +15,13 @@
             [liskasys.endpoint.main-hiccup :as main-hiccup]
             [liskasys.service :as service]
             [ring.util.response :as response]
-            [taoensso.timbre :as timbre]
-            [taoensso.truss :as truss]))
+            [taoensso.timbre :as timbre]))
 
 (defn- make-date-sets [str-date-seq]
   (when str-date-seq
     (let [yesterday (time/to-date (t/yesterday))]
-      (->> (truss/have sequential? str-date-seq)
-           (map #(truss/have! (fn [d] (.before yesterday d))
-                              (time/from-format % time/ddMMyyyy)))
+      (->> str-date-seq
+           (map #(time/from-format % time/ddMMyyyy))
            set))))
 
 (defn- upload-dir []

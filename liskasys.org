@@ -3,21 +3,22 @@ LISKASYST
 podpurny informacni system pro lesni materskou skolu Listicka
 
 * TODOs
-** TODO remove jdbc dependencies (hikari, h2, clojure.jdbc ...)
-** v platbe na pristi obdobi zohlednit stav fondu + budouci zrusene obedy
-** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
-** filtry od/do datum na denni plany (postupne nacitani ze serveru)
-** filtr na aktivni osoby + omezeni nacitani ze serveru
+** DONE remove jdbc dependencies (hikari, h2, clojure.jdbc ...)
+CLOSED: [2016-09-26 Mon 15:46]
+** TODO v platbe na pristi obdobi zohlednit stav fondu + budouci zrusene obedy
+** TODO zverejneni rozpisu plateb a jednotlive potvrzovani zaplaceni
+** TODO zobrazit rodicum platby a zrusene obedy
+** TODO sobotni akce - potvrzeni/odmitnuti ucasti
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance
 *** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
-** zverejneni rozpisu plateb a jednotlive potvrzovani zaplaceni
-** zobrazit rodicum platby a zrusene obedy
-** sobotni akce - potvrzeni/odmitnuti ucasti
-** moznost zobrazit historii zmen entity
+** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
+** filtry od/do datum na denni plany (postupne nacitani ze serveru)
+** filtr na aktivni osoby + omezeni nacitani ze serveru
 ** [#C] zrusit children-count
-** datomic transaction log view
+** TODO moznost zobrazit historii zmen entity
+** TODO datomic transaction log view
 ** log backups
 ** form validation!!! clojure.spec
 ** tests service/*holiday?, time/from-dMyyyy
