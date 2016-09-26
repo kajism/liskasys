@@ -17,7 +17,6 @@ CLOSED: [2016-09-26 Mon 16:54]
 ** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
 ** filtry od/do datum na denni plany (postupne nacitani ze serveru)
 ** filtr na aktivni osoby + omezeni nacitani ze serveru
-** [#C] zrusit children-count
 ** TODO moznost zobrazit historii zmen entity
 ** TODO datomic transaction log view
 ** log backups
@@ -137,96 +136,8 @@ CLOSED: [2016-05-01 Sun 09:42]
 CLOSED: [2016-08-11 Thu 14:44]
 ** DONE SSL
 CLOSED: [2016-08-11 Thu 14:45]
-* bugs
-** DONE editace dochazky dítěte zobrazuje i so a ne
-CLOSED: [2016-08-24 Wed 12:58]
-** v produkci se neloguji DB chyby?? (ukladani jiz existujici omluvenky)
-** DONE opravit zadavani datumu platnosti dochazky - nastavi o den mene
-CLOSED: [2016-05-01 Sun 09:41]
-
-** DONE prepnuti poctu radku na stranku datatable
-CLOSED: [2016-04-28 Thu 17:32]
 * improvements
-** user children-count => "parent" role
+** DONE user children-count => "parent" role
+CLOSED: [2016-09-26 Mon 17:08]
 ** pouzivat clj-time format pro datum a cas (clj-time.jdbc, transit serializers)
 ** odstranit clj-brnolib
-** main_hiccup - oddelit hiccup od sql/datovych vypoctu (servisni vrstva?)
-** zobrazeni poctu zrusenych obedu pres sql dotaz (nyni naivni a nevykonne)
-
-* dotazy Danka
-
-* připomínky Danka
-** DONE pristup pro kucharku s poctem obedu (normalni, vege, bez laktozy ...)
-CLOSED: [2016-05-01 Sun 22:01]
-** DONE barvy obedu - zluty normalni, vege zeleny, bez laktozy modry, bez obeda cerveny
-CLOSED: [2016-05-01 Sun 22:02]
-** DONE aktualni den - seznam deti a obedu + barvy
-CLOSED: [2016-05-01 Sun 22:02]
-** DONE u ditete volba typ obeda
-CLOSED: [2016-05-01 Sun 09:40]
-** TODO moznost zadat nahradu pro Danku - datum, dite, obed?
-* obědy a platby = první verze po domluvě s Dankou
-** příhlášení email+variabilní symbol
-** možnost zrušit oběd do 10:00 předchozího dne (do nastavení X hodin před polednem tj. 26 hodin)
-** zobrazit platbu na následující období (vypočítat obědy - odhlášené)
-** kontakt na ITka: Milan Vlahovič 776700724 flexa@flexa.cz
-** data
-*** user
-**** firstname
-**** lastname
-**** email
-**** phone
-**** passwd
-**** failed-logins
-**** admin?
-*** child
-**** firstname
-**** lastname
-**** variable-symbol
-*** user-child
-**** id
-**** user-id
-**** child-id
-*** attendance
-**** child-id
-**** valid-from
-**** valid-to
-**** edn
-{:full-days #{:tu :we :th :fr}
- :half-days #{}
- :lunch #{:tu :we :th :fr}}
-|     | none / half / full   | no lunch |
-|-----+----------------------+----------|
-| Mon | o none o half o full | [ ]      |
-| Tue | o none o half x full | [ ]      |
-| Wed | o none o half x full | [ ]      |
-| Thu | o none x half o full | [x]      |
-| Fri | o none o half x full | [ ]      |
-*** cancellation
-**** child-id
-**** date
-**** cancel-lunch?
-**** user-id
-
-* GOALS
-
-** zjednodusit odhlasovani obedu / zaslani omluvenky / aktualni seznam deti na dany den / pocet obedu
-
-** usnadnit praci pri vypocitani platby na dalsi obdobi
-
-** moznost aktualizace kontaktnich udaju 
-
-
-
-* TECHNOLOGY CHOICES
-
-** open source
-** cloud
-** h2database
-** mobile-first design
-** cljs (chrome+safari)
-** SSL
-** backups
-** emails
-** multilanguage (cz+en)
-** local storage for offline contacts / mobile app?
