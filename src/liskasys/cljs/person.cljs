@@ -12,7 +12,7 @@
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [reagent.core :as reagent]
+            [reagent.ratom :as ratom]
             [secretary.core :as secretary]
             [taoensso.timbre :as timbre]))
 
@@ -54,10 +54,26 @@
                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])]]])
                   :none]]]]])))
 
+(re-frame/register-sub
+ ::kids
+ (fn [db [_]]
+   (let [persons (re-frame/subscribe [:entities :person])]
+     (ratom/reaction
+      (->> (vals @persons)
+           (filter :person/parent)
+           (group-by :person/parent)
+           (reduce (fn [out [parent-ids kids]]
+                     (reduce (fn [out {parent-id :db/id}]
+                               (update out parent-id #(util/sort-by-locale cljc-util/person-fullname (into (or % []) kids))))
+                             out
+                             parent-ids))
+                   {}))))))
+
 (defn page-person []
   (let [person (re-frame/subscribe [:entity-edit :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])
-        persons (re-frame/subscribe [:entities :person])]
+        persons (re-frame/subscribe [:entities :person])
+        kids (re-frame/subscribe [::kids])]
     (fn []
       (if-not (and @persons @lunch-types)
         [re-com/throbber]
@@ -93,10 +109,6 @@
                :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-pattern %])
                :validation-regex #"^\d{0,5}$"]
               "poútstčtpá: 0 = bez oběda, 1-9 = požadovaný počet obědů"]]
-            #_[re-com/checkbox
-             :label "obědy zdarma?"
-             :model (:person/free-lunches? item)
-             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/free-lunches? %])]
             [re-com/label :label "Fond obědů"]
             [re-com/h-box :gap "5px"
              :children
@@ -121,10 +133,6 @@
                    :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/att-pattern %])
                    :validation-regex #"^[0-2]{0,5}$"]
                   "poútstčtpá: 0 = bez docházky, 1 = celodenní, 2 = půldenní"]]
-                #_[re-com/checkbox
-                 :label "docházka zdarma?"
-                 :model (:person/free-att? item)
-                 :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/free-att? %])]
                 (when (:db/id item)
                   [re-com/v-box
                    :children
@@ -168,7 +176,13 @@
                 [re-com/h-box :align :center :gap "5px"
                  :children
                  [[input-text item :person :person/roles]
-                  "admin, obedy"]]]])
+                  "admin, obedy"]]
+                (when (seq (get @kids (:db/id item)))
+                  [re-com/v-box
+                   :children
+                   [[:h3 "Děti"]
+                    [:div (str/join ", " (->> (get @kids (:db/id item))
+                                              (map cljc-util/person-fullname)))]]])]])
             [re-com/h-box :align :center :gap "5px"
              :children
              [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person])]
@@ -185,5 +199,3 @@
   (re-frame/dispatch [:set-current-page :person]))
 (pages/add-page :person #'page-person)
 (common/add-kw-url :person "person")
-
-
