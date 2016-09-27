@@ -12,13 +12,15 @@
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
+            [reagent.core :as reagent]
             [reagent.ratom :as ratom]
             [secretary.core :as secretary]
             [taoensso.timbre :as timbre]))
 
 (defn page-persons []
   (let [persons (re-frame/subscribe [:entities :person])
-        lunch-types (re-frame/subscribe [:entities :lunch-type])]
+        lunch-types (re-frame/subscribe [:entities :lunch-type])
+        selected-row (reagent/atom nil)]
     (fn []
       [re-com/v-box
        :children
@@ -26,6 +28,7 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/person/e")]
         [data-table
          :table-id :persons
+         :selected-row selected-row
          :rows @persons
          :colls [["Příjmení" :person/lastname]
                  ["Jméno" :person/firstname]
@@ -43,15 +46,16 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :person])]
                   (fn [row]
-                    [re-com/h-box
-                     :gap "5px"
-                     :children
-                     [[re-com/hyperlink-href
-                       :href (str "#/person/" (:db/id row) "e")
-                       :label [re-com/md-icon-button
-                               :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])]]])
+                    (when (identical? row @selected-row)
+                      [re-com/h-box
+                       :gap "5px"
+                       :children
+                       [[re-com/hyperlink-href
+                         :href (str "#/person/" (:db/id row) "e")
+                         :label [re-com/md-icon-button
+                                 :md-icon-name "zmdi-edit"
+                                 :tooltip "Editovat"]]
+                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])]]]))
                   :none]]]]])))
 
 (re-frame/register-sub

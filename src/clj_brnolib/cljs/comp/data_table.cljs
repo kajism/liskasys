@@ -46,22 +46,20 @@
                   (str (str/join ";" (map #(% row)
                                           (map second colls))) "\n"))))))
 
-(defn table-cell [value date-format row-selected]
+(defn table-cell [value date-format]
   [:td {:class (str #_"text-nowrap" (when (or (number? value) (transit/bigdec? value)) " text-right"))}
    (cond
-     (string? value) value
-     (vector? value) (when row-selected value)
+     (or (string? value) (vector? value)) value
      (= js/Date (type value)) (time/to-format value (or date-format time/ddMMyyyy))
      (number? value) (util/money->text value)
      (transit/bigdec? value) (util/money->text (util/parse-int (.-rep value)))
      (= js/Boolean (type value)) (util/boolean->text value)
      :else (str value))])
 
-(defn table-row []
-  (let [row-selected (reagent/atom false)
-        on-enter #(reset! row-selected true)
-        on-leave #(reset! row-selected false)]
-    (fn [row colls date-format]
+(defn table-row [row colls selected-row date-format]
+  (let [on-enter #(reset! selected-row row)
+        on-leave #(reset! selected-row nil)]
+    (fn [row colls selected-row date-format]
       (let [last-coll-idx (dec (count colls))]
         [:tr {:on-mouse-enter on-enter
               :on-mouse-leave on-leave}
@@ -69,9 +67,19 @@
           (for [[coll-idx [_ f _]] colls
                 :let [value (f row)]]
             ^{:key coll-idx}
-            [table-cell value date-format (or (not= coll-idx last-coll-idx) @row-selected)]))]))))
+            [table-cell value date-format]))]))))
 
-(defn data-table [& {:keys [table-id order-by desc? rows-per-page date-format] :as args}]
+(defn href->str [x]
+  (cond
+    (and (vector? x) (= (first x) re-com/hyperlink-href))
+    (->> x
+         rest
+         (apply hash-map)
+         :label)
+    :else
+    x))
+
+(defn data-table [& {:keys [table-id order-by desc? rows-per-page date-format selected-row] :as args}]
   (let [order-by (or order-by 0)
         init-state {:order-by order-by
                     :desc? (or desc? false)
@@ -82,6 +90,7 @@
         state (if table-id
                 (re-frame/subscribe [:table-state table-id])
                 (reagent/atom init-state))
+        selected-row (or selected-row (atom nil)) ;; non-reactive atom supplied
         table-name (if table-id (name table-id) (str "data-table" (rand-int 1000)))
         all-checked? (reagent/atom false)
         change-state-fn (if table-id
@@ -125,7 +134,7 @@
               sort-fn (if (string? (-> rows first sort-key-fn))
                         util/sort-by-locale
                         sort-by)
-              sorted-rows (cond-> (sort-fn sort-key-fn rows)
+              sorted-rows (cond-> (sort-fn (comp href->str sort-key-fn) rows)
                             (:desc? @state) reverse)
               filtered-by-colls (reduce
                                  (fn [rows coll-idx]
@@ -202,7 +211,7 @@
               (map
                (fn [row]
                  ^{:key (:db/id row)}
-                 [table-row row colls date-format])
+                 [table-row row colls selected-row date-format])
                final-rows))]]
            (when (> (count rows) 5)
              [re-com/h-box :gap "5px" :align :center

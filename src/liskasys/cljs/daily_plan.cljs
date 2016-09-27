@@ -19,7 +19,8 @@
 
 (defn page-daily-plans []
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
-        persons (re-frame/subscribe [:entities :person])]
+        persons (re-frame/subscribe [:entities :person])
+        selected-row (reagent/atom nil)]
     (fn []
       [re-com/v-box
        :children
@@ -27,12 +28,16 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/daily-plan/e")]
         [data-table
          :table-id :daily-plans
+         :selected-row selected-row
          :rows @daily-plans
          :colls [["Datum" :daily-plan/date]
                  ["Jméno" (fn [row]
-                            [re-com/hyperlink-href
-                             :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
-                             :label (->> row :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)])]
+                            (let [label (->> row :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)]
+                              (if (identical? row @selected-row)
+                                [re-com/hyperlink-href
+                                 :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
+                                 :label label]
+                                label)))]
                  ["Docházka" #(or (:daily-plan/child-att %) 0)]
                  ["Docházka zrušena" (comp util/boolean->text :daily-plan/att-cancelled?)]
                  ["Oběd požadavek" #(or (:daily-plan/lunch-req %) 0)]
@@ -43,15 +48,12 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :daily-plan])]
                   (fn [row]
-                    [re-com/h-box
-                     :gap "5px"
-                     :children
-                     [[re-com/hyperlink-href
+                    (when (identical? row @selected-row)
+                      [re-com/hyperlink-href
                        :href (str "#/daily-plan/" (:db/id row) "e")
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]
-                      #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])]]])
+                               :tooltip "Editovat"]]))
                   :csv-export]]
          :desc? true]]])))
 
