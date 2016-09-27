@@ -110,14 +110,9 @@
                :table-id :person-bills
                :rows @person-bills
                :colls [["Jméno" (fn [row]
-                                  [re-com/h-box :gap "5px"
-                                   :children
-                                   [(->> row :person-bill/person :db/id (get @persons) cljc-util/person-fullname)
-                                    [re-com/hyperlink-href
-                                     :href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")
-                                     :label [re-com/md-icon-button
-                                             :md-icon-name "zmdi-edit"
-                                             :tooltip "Editovat"]]]])]
+                                  [re-com/hyperlink-href
+                                   :href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")
+                                   :label (->> row :person-bill/person :db/id (get @persons) cljc-util/person-fullname)])]
                        ["Var symbol" :person/var-symbol]
                        ["Celkem Kč" (comp util/from-cents :person-bill/total)]
                        ["Zaplaceno?" :person-bill/paid?]

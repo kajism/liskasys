@@ -137,35 +137,33 @@
                   [re-com/v-box
                    :children
                    [[:h3 "Rodiče"]
-                    [:table
-                     [:tbody
-                      [:tr
-                       (doall
-                        (for [parent (->> (:person/parent item)
-                                          (map (comp @persons :db/id))
-                                          (util/sort-by-locale cljc-util/person-fullname))]
-                          ^{:key (:db/id parent)}
-                          [:td
-                           [re-com/label :label (cljc-util/person-fullname parent)]
-                           [buttons/delete-button
-                            #(re-frame/dispatch [:common/retract-ref-many :person {:db/id (:db/id item)
-                                                                                   :person/parent (:db/id parent)}])
-                            :below-center]]))]
-                      [:tr
-                       [:td
-                        [re-com/single-dropdown
-                         :model nil
-                         :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/parent (fn [v] (conj v {:db/id %}))])
-                         :choices (->> (apply dissoc @persons (map :db/id (:person/parent item)))
-                                       vals
-                                       (filter :person/active?)
-                                       (remove :person/child?)
-                                       (util/sort-by-locale cljc-util/person-fullname))
-                         :id-fn :db/id
-                         :label-fn cljc-util/person-fullname
-                         :placeholder "Přidat rodiče..."
-                         :filter-box? true
-                         :width "250px"]]]]]]])]]
+                    [:ul
+                     (doall
+                      (for [parent (->> (:person/parent item)
+                                        (map (comp @persons :db/id))
+                                        (util/sort-by-locale cljc-util/person-fullname))]
+                        ^{:key (:db/id parent)}
+                        [:li
+                         [re-com/hyperlink-href
+                          :href (str "#/person/" (:db/id parent) "e")
+                          :label (cljc-util/person-fullname parent)]
+                         [buttons/delete-button
+                          #(re-frame/dispatch [:common/retract-ref-many :person {:db/id (:db/id item)
+                                                                                 :person/parent (:db/id parent)}])
+                          :below-center]]))]
+                    [re-com/single-dropdown
+                     :model nil
+                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/parent (fn [v] (conj v {:db/id %}))])
+                     :choices (->> (apply dissoc @persons (map :db/id (:person/parent item)))
+                                   vals
+                                   (filter :person/active?)
+                                   (remove :person/child?)
+                                   (util/sort-by-locale cljc-util/person-fullname))
+                     :id-fn :db/id
+                     :label-fn cljc-util/person-fullname
+                     :placeholder "Přidat rodiče..."
+                     :filter-box? true
+                     :width "250px"]]])]]
               [re-com/v-box
                :children
                [[re-com/label :label "Email"]
@@ -181,8 +179,15 @@
                   [re-com/v-box
                    :children
                    [[:h3 "Děti"]
-                    [:div (str/join ", " (->> (get @kids (:db/id item))
-                                              (map cljc-util/person-fullname)))]]])]])
+                    [:ul
+                     (doall
+                      (for [kid (get @kids (:db/id item))]
+                        ^{:key (:db/id kid)}
+                        [:li
+                         [re-com/hyperlink-href
+                          :href (str "#/person/" (:db/id kid) "e")
+                          :label (cljc-util/person-fullname kid)]
+                         ]))]]])]])
             [re-com/h-box :align :center :gap "5px"
              :children
              [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person])]

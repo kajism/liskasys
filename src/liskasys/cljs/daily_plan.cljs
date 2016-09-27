@@ -29,10 +29,10 @@
          :table-id :daily-plans
          :rows @daily-plans
          :colls [["Datum" :daily-plan/date]
-                 ["Osoba" #(->> [:daily-plan/person :db/id]
-                                (get-in %)
-                                (get @persons)
-                                cljc-util/person-fullname)]
+                 ["Jméno" (fn [row]
+                            [re-com/hyperlink-href
+                             :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
+                             :label (->> row :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)])]
                  ["Docházka" #(or (:daily-plan/child-att %) 0)]
                  ["Docházka zrušena" (comp util/boolean->text :daily-plan/att-cancelled?)]
                  ["Oběd požadavek" #(or (:daily-plan/lunch-req %) 0)]
