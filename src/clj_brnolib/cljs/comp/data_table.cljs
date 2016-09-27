@@ -46,23 +46,30 @@
                   (str (str/join ";" (map #(% row)
                                           (map second colls))) "\n"))))))
 
-(defn table-cell [value date-format]
+(defn table-cell [value date-format row-selected]
   [:td {:class (str #_"text-nowrap" (when (or (number? value) (transit/bigdec? value)) " text-right"))}
    (cond
-     (or (string? value) (vector? value)) value
+     (string? value) value
+     (vector? value) (when row-selected value)
      (= js/Date (type value)) (time/to-format value (or date-format time/ddMMyyyy))
      (number? value) (util/money->text value)
      (transit/bigdec? value) (util/money->text (util/parse-int (.-rep value)))
      (= js/Boolean (type value)) (util/boolean->text value)
      :else (str value))])
 
-(defn table-row [row colls date-format]
-  [:tr
-   (doall
-    (for [[coll-idx [_ f _]] colls
-          :let [value (f row)]]
-      ^{:key coll-idx}
-      [table-cell value date-format]))])
+(defn table-row []
+  (let [row-selected (reagent/atom false)
+        on-enter #(reset! row-selected true)
+        on-leave #(reset! row-selected false)]
+    (fn [row colls date-format]
+      (let [last-coll-idx (dec (count colls))]
+        [:tr {:on-mouse-enter on-enter
+              :on-mouse-leave on-leave}
+         (doall
+          (for [[coll-idx [_ f _]] colls
+                :let [value (f row)]]
+            ^{:key coll-idx}
+            [table-cell value date-format (or (not= coll-idx last-coll-idx) @row-selected)]))]))))
 
 (defn data-table [& {:keys [table-id order-by desc? rows-per-page date-format] :as args}]
   (let [order-by (or order-by 0)
