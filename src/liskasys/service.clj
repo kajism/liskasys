@@ -97,26 +97,26 @@
 (defn- school-holiday? [school-holidays ld]
   (seq (filter #(*school-holiday? % ld) school-holidays)))
 
-(defn transact-entity [conn user-id ent]
-  (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))
-        tx-data (cond-> [(assoc ent :db/id ent-id)]
+(defn transact [conn user-id tx-data]
+  (let [tx-data (cond-> (vec tx-data)
                   user-id
                   (conj {:db/id (d/tempid :db.part/tx) :tx/person user-id}))
         _ (timbre/info "Transacting" tx-data)
         tx-result @(d/transact conn tx-data)]
     (timbre/debug tx-result)
+    tx-result))
+
+(defn transact-entity [conn user-id ent]
+  (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))
+        tx-result (transact conn user-id [(assoc ent :db/id ent-id)])]
     (d/pull (:db-after tx-result) '[*] (or (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) ent-id)
                                            ent-id))))
 
 (defn retract-entity
   "Returns the number of retracted datoms (attributes)."
   [conn user-id ent-id]
-  (->> [{:db/id (d/tempid :db.part/tx) :tx/person user-id}
-        [:db.fn/retractEntity ent-id]]
-       timbre/spy
-       (d/transact conn)
-       deref
-       timbre/spy
+  (->> [[:db.fn/retractEntity ent-id]]
+       (transact conn user-id)
        :tx-data
        count
        (+ -2)))
@@ -124,13 +124,10 @@
 (defn retract-attr [conn user-id ent]
   (timbre/debug ent)
   "Returns the number of retracted datoms (attributes)."
-  (->> (map (fn [[attr-key attr-val]]
+  (->> (mapv (fn [[attr-key attr-val]]
               [:db/retract (:db/id ent) attr-key attr-val])
             (dissoc ent :db/id))
-       (into [{:db/id (d/tempid :db.part/tx) :tx/person user-id}])
-       (d/transact conn)
-       deref
-       timbre/spy
+       (transact conn user-id)
        :tx-data
        count
        (+ -2)))
@@ -287,7 +284,7 @@
     (if (not= total total-by-type)
       (timbre/fatal "Invalid lunch totals: processed=" total "by-type=" total-by-type " . Operation skipped!")
       (do
-        (d/transact conn tx-data)
+        (transact conn nil tx-data)
         (send-lunch-order-email date
                                 (mapv :person/email (find-persons-with-role db "obedy"))
                                 lunch-counts)))))
@@ -410,11 +407,7 @@
          (into out))))
 
 (defn- transact-period-person-bills [conn user-id period-id tx-data]
-  (let [tx-result @(cond->> tx-data
-                     user-id
-                     (into [{:db/id (d/tempid :db.part/tx) :tx/person user-id}])
-                     true
-                     (d/transact conn))]
+  (let [tx-result (transact conn user-id tx-data)]
     (find-by-type (:db-after tx-result) :person-bill {:person-bill/period period-id})))
 
 (defn re-generate-person-bills [conn user-id period-id]
@@ -520,8 +513,6 @@
                          (conj [:db/add id :daily-plan/lunch-cancelled? true]))
                        [[:db/retract id :daily-plan/att-cancelled? true]
                         [:db/retract id :daily-plan/lunch-cancelled? true]])))
-           (into [{:db/id (d/tempid :db.part/tx) :tx/person user-id}])
-           (d/transact conn)
-           deref
+           (transact conn user-id)
            :tx-data
            count))))
