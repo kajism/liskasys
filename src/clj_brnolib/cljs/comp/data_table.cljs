@@ -46,7 +46,25 @@
                   (str (str/join ";" (map #(% row)
                                           (map second colls))) "\n"))))))
 
-(defn data-table [& {:keys [table-id order-by desc? rows-per-page row-checkboxes? date-format] :as args}]
+(defn table-cell [value date-format]
+  [:td {:class (str #_"text-nowrap" (when (or (number? value) (transit/bigdec? value)) " text-right"))}
+   (cond
+     (or (string? value) (vector? value)) value
+     (= js/Date (type value)) (time/to-format value (or date-format time/ddMMyyyy))
+     (number? value) (util/money->text value)
+     (transit/bigdec? value) (util/money->text (util/parse-int (.-rep value)))
+     (= js/Boolean (type value)) (util/boolean->text value)
+     :else (str value))])
+
+(defn table-row [row colls date-format]
+  [:tr
+   (doall
+    (for [[coll-idx [_ f _]] colls
+          :let [value (f row)]]
+      ^{:key coll-idx}
+      [table-cell value date-format]))])
+
+(defn data-table [& {:keys [table-id order-by desc? rows-per-page date-format] :as args}]
   (let [order-by (or order-by 0)
         init-state {:order-by order-by
                     :desc? (or desc? false)
@@ -104,21 +122,23 @@
                             (:desc? @state) reverse)
               filtered-by-colls (reduce
                                  (fn [rows coll-idx]
-                                   (if (str/blank? (get (:search-colls @state) coll-idx))
-                                     rows
-                                     (filter
-                                      (fn [row]
-                                        (let [f (nth (get colls coll-idx) 1)
-                                              v (f row)
-                                              v (cond-> v
-                                                  (boolean? v)
-                                                  util/boolean->text
-                                                  (= js/Date (type v))
-                                                  (time/to-format (or date-format time/ddMMyyyy)))]
-                                          (> (.indexOf (str/lower-case (str v))
-                                                       (str/lower-case (get (:search-colls @state) coll-idx)))
-                                             -1)))
-                                      rows)))
+                                   (let [search-str (get (:search-colls @state) coll-idx)]
+                                     (if (str/blank? search-str)
+                                       rows
+                                       (let [search-str (str/lower-case search-str)]
+                                         (filter
+                                          (fn [row]
+                                            (let [f (nth (get colls coll-idx) 1)
+                                                  v (f row)
+                                                  v (cond
+                                                      (boolean? v)
+                                                      (util/boolean->text v)
+                                                      (= js/Date (type v))
+                                                      (time/to-format v (or date-format time/ddMMyyyy))
+                                                      :else
+                                                      (str v))]
+                                              (str/index-of (str/lower-case v)  search-str)))
+                                          rows)))))
                                  sorted-rows
                                  (keys colls))
               filtered-rows (if (empty? (:search-all @state))
@@ -133,22 +153,13 @@
            [:table.table.tree-table.table-hover.table-striped
             [:thead
              [:tr
-              (when row-checkboxes?
-                [:th [re-com/checkbox
-                      :model all-checked?
-                      :on-change #(let [new-val (swap! all-checked? not)]
-                                    (change-state-fn :row-states
-                                                     (fn [row-states]
-                                                       (into {} (map (fn [{id :db/id}]
-                                                                       [id (assoc (get row-states id) :checked? new-val)])
-                                                                     rows)))))]])
               (doall
                (for [[coll-idx [label f header-modifier]] colls]
                  ^{:key coll-idx}
                  [:th.text-nowrap
                   (when (or (= :filter header-modifier) (not header-modifier))
                     [:input.form-control {:type "text"
-                             :value (get (:search-colls @state) coll-idx)
+                                          :value (get (:search-colls @state) coll-idx)
                                           :on-change #(on-change-search-colls coll-idx %)}])
                   (when (= :sum header-modifier)
                     [:div.suma [:span {:dangerously-set-inner-HTML {:__html "&Sigma; "}}]
@@ -178,31 +189,13 @@
                                 [re-com/md-icon-button :md-icon-name "zmdi-chevron-up" :tooltip "seřadit opačně" :size :smaller]
                                 [re-com/md-icon-button :md-icon-name "zmdi-chevron-down" :tooltip "seřadit opačně" :size :smaller]))]])
 
-]))]]
+                  ]))]]
             [:tbody
              (doall
-              (map-indexed
-               (fn [idx row]
-                 ^{:key (or (:db/id row) idx)}
-                 [:tr
-                  (when row-checkboxes?
-                    [:td [re-com/checkbox
-                          :model (get-in @state [:row-states (:db/id row) :checked?])
-                          :on-change #(change-state-fn :row-states
-                                                       (fn [row-states]
-                                                         (update row-states (:db/id row) update :checked? not)))]])
-                  (doall
-                   (for [[coll-idx [_ f _]] colls
-                         :let [value (f row)]]
-                     ^{:key (str (or (:db/id row) idx) "-" coll-idx)}
-                     [:td {:class (str #_"text-nowrap" (when (or (number? value) (transit/bigdec? value)) " text-right"))}
-                      (cond
-                        (or (string? value) (vector? value)) value
-                        (= js/Date (type value)) (time/to-format value (or date-format time/ddMMyyyy))
-                        (number? value) (util/money->text value)
-                        (transit/bigdec? value) (util/money->text (util/parse-int (.-rep value)))
-                        (= js/Boolean (type value)) (util/boolean->text value)
-                        :else (str value))]))])
+              (map
+               (fn [row]
+                 ^{:key (:db/id row)}
+                 [table-row row colls date-format])
                final-rows))]]
            (when (> (count rows) 5)
              [re-com/h-box :gap "5px" :align :center
