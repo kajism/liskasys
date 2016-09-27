@@ -37,7 +37,7 @@
                child-id (edn/read-string (:child-id params))
                parents-children (service/find-children-by-person-id db (:db/id user))
                selected-person-id (or child-id (:db/id (first parents-children)))
-               child-daily-plans (service/find-next-weeks-person-daily-plans db selected-person-id 2)]
+               child-daily-plans (service/find-next-weeks-person-daily-plans db selected-person-id 3)]
            (main-hiccup/liskasys-frame
             user
             (main-hiccup/cancellation-page parents-children selected-person-id child-daily-plans)))))
