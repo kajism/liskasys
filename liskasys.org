@@ -3,6 +3,8 @@ LISKASYST
 podpurny informacni system pro lesni materskou skolu Listicka
 
 * TODOs
+** TODO datomic transaction log view
+** TODO moznost zobrazit historii zmen entity
 ** TODO zverejneni rozpisu plateb a jednotlive potvrzovani zaplaceni
 ** TODO zobrazit rodicum platby a zrusene obedy
 ** TODO sobotni akce - potvrzeni/odmitnuti ucasti
@@ -12,8 +14,6 @@ podpurny informacni system pro lesni materskou skolu Listicka
 *** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
 ** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
 ** filtry od/do datum na denni plany (postupne nacitani ze serveru)
-** TODO moznost zobrazit historii zmen entity
-** TODO datomic transaction log view
 ** form validation!!! clojure.spec
 ** server side validation by clojure.spec
 ** tests service/*holiday?, time/from-dMyyyy
