@@ -51,7 +51,7 @@
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])]]])
+                      #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])]]])
                   :csv-export]]
          :desc? true]]])))
 
@@ -105,7 +105,7 @@
            :disabled? true
            :width "100px"]
           [re-com/checkbox
-           :label "Oběd zrušen?"
+           :label "oběd zrušen?"
            :model (:daily-plan/lunch-cancelled? item)
            :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-cancelled? %])]
           [re-com/h-box :align :center :gap "5px"
