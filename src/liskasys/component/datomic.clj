@@ -14,7 +14,9 @@
       (conformity/ensure-conforms conn norms-map)
       (assoc component :conn conn)))
   (stop [component]
-    (timbre/info "Throwing datomic connection away")
+    (when conn
+      (timbre/info "Releasing datomic connection")
+      (d/release conn))
     (assoc component :conn nil)))
 
 (defn datomic [config]
