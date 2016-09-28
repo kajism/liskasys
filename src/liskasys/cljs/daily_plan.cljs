@@ -38,7 +38,7 @@
                                  :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
                                  :label label]
                                 label)))]
-                 ["Docházka" #(or (:daily-plan/child-att %) 0)]
+                 ["Docházka" #(case (:daily-plan/child-att %) 1 "celodenní" 2 "půldenní" "-")]
                  ["Docházka zrušena" (comp util/boolean->text :daily-plan/att-cancelled?)]
                  ["Oběd požadavek" #(or (:daily-plan/lunch-req %) 0)]
                  ["Oběd objednáno" #(or (:daily-plan/lunch-ord %) 0)]
@@ -48,7 +48,8 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :daily-plan])]
                   (fn [row]
-                    (when (identical? row @selected-row)
+                    (when (and (identical? row @selected-row)
+                               (-> (:daily-plan/date row) tc/to-local-date (t/after? (t/today))))
                       [re-com/hyperlink-href
                        :href (str "#/daily-plan/" (:db/id row) "e")
                        :label [re-com/md-icon-button
