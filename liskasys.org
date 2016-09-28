@@ -17,7 +17,6 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** form validation!!! clojure.spec
 ** server side validation by clojure.spec
 ** tests service/*holiday?, time/from-dMyyyy
-** moznost zrusit dochazku na delsi obdobi dopredu (tlacitko dalsi> ?)
 ** filtr na aktivni osoby + omezeni nacitani ze serveru
 ** log backups
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
