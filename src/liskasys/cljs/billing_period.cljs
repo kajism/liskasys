@@ -92,11 +92,16 @@
              [[:h4 "Rozpisy plateb"]
               [re-com/h-box :gap "5px"
                :children
-               [[re-com/button
-                 :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " rozpisy")
-                 :class "btn-danger"
-                 :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "generate"])]
-                (when (pos? (count @person-bills))
+               [(when (or (empty? @person-bills)
+                          (some #(not= (get-in % [:person-bill/status :db/ident]) :person-bill.status/paid) (vals @person-bills)))
+                  [re-com/button
+                   :label (str (if (seq @person-bills)
+                                 "Přegenerovat nezaplacené"
+                                 "Vygenerovat")
+                               " rozpisy")
+                   :class "btn-danger"
+                   :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "generate"])])
+                (when (some #(= (get-in % [:person-bill/status :db/ident]) :person-bill.status/new) (vals @person-bills))
                   [re-com/button
                    :label "Zveřejnit rozpisy"
                    :class "btn-danger"
