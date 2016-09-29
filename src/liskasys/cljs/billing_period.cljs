@@ -13,18 +13,11 @@
             [secretary.core :as secretary]))
 
 (re-frame/register-handler
- ::generate-person-bills
+ ::send-cmd
  common/debug-mw
- (fn [db [_ period-id]]
-   (server-call [:person-bill/generate {:person-bill/period period-id}]
-                [:entities-set [:entities-where :person-bill {:person-bill/period period-id}]])
-   db))
-
-(re-frame/register-handler
- ::publish-all-bills
- common/debug-mw
- (fn [db [_ period-id]]
-   (server-call [:person-bill/publish-all-bills {:person-bill/period period-id}]
+ (fn [db [_ period-id cmd bill-id]]
+   (server-call [(keyword "person-bill" cmd) {:person-bill/period period-id
+                                              :db/id bill-id}]
                 [:entities-set [:entities-where :person-bill {:person-bill/period period-id}]])
    db))
 
@@ -100,32 +93,39 @@
               [re-com/h-box :gap "5px"
                :children
                [[re-com/button
-                 :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " rozpisy plateb")
+                 :label (str (if (pos? (count @person-bills)) "Přegenerovat nezaplacené" "Vygenerovat") " rozpisy")
                  :class "btn-danger"
-                 :on-click #(re-frame/dispatch [::generate-person-bills (:db/id item)])]
+                 :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "generate"])]
                 (when (pos? (count @person-bills))
                   [re-com/button
                    :label "Zveřejnit rozpisy"
                    :class "btn-danger"
-                   :on-click #(re-frame/dispatch [::publish-all-bills (:db/id item)])])]]
+                   :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "publish-all-bills"])])]]
               [data-table
                :table-id :person-bills
                :selected-row selected-row
                :rows @person-bills
                :colls [["Jméno" (fn [row]
                                   (let [label (->> row :person-bill/person :db/id (get @persons) cljc-util/person-fullname)]
-                                    (if (identical? row @selected-row)
+                                    (if (= row @selected-row)
                                       [re-com/hyperlink-href
                                        :href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")
                                        :label label]
                                       label)))]
                        ["Var symbol" :person/var-symbol]
                        ["Celkem Kč" (comp util/from-cents :person-bill/total)]
-                       ["Stav" #(case (get-in % [:person-bill/status :db/ident])
-                                  :person-bill.status/new "nový"
-                                  :person-bill.status/published "zveřejněný"
-                                  :person-bill.status/paid "zaplacený"
-                                  "")]
+                       ["Stav" (fn [row]
+                                 (case (get-in row [:person-bill/status :db/ident])
+                                   :person-bill.status/new "nový"
+                                   :person-bill.status/published
+                                   [:div "zveřejněný"
+                                    (when (= row @selected-row)
+                                      [re-com/button
+                                       :label "Zaplacený"
+                                       :class "btn-danger btn-xs"
+                                       :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "set-bill-as-paid" (:db/id row)])])]
+                                   :person-bill.status/paid "zaplacený"
+                                   ""))]
                        ["Cena za docházku" (comp util/from-cents :person-bill/att-price)]
                        ["Obědy" :person-bill/lunch-count]
                        ["Rozvrh docházky" #(when (not= (:person/att-pattern %) "0000000") (:person/att-pattern %))]

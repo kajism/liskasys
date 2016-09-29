@@ -447,7 +447,27 @@
                  [:db/add id :person-bill/status :person-bill.status/published]))
          (transact-period-person-bills conn user-id period-id))))
 
-(defn all-period-bills-paid [conn user-id period-id]
+(defn set-bill-as-paid [conn user-id bill-id]
+  (let [db (d/db conn)
+        [[period-id {:keys [:person-bill/person :person-bill/total :person-bill/att-price]}]]
+        (d/q '[:find ?period-id (pull ?e [:db/id :person-bill/total :person-bill/att-price
+                                          {:person-bill/person [:db/id :person/lunch-pattern :person/att-pattern :person/lunch-fund]}])
+               :in $ ?e
+               :where
+               [?e :person-bill/period ?period-id]
+               [?e :person-bill/status :person-bill.status/published]]
+             db bill-id)
+        dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end (find-by-id db period-id)))]
+    (->> (generate-daily-plans person dates)
+         (map #(-> % (assoc :db/id (d/tempid :db.part/user)
+                            :daily-plan/bill bill-id)))
+         (into [[:db/add bill-id :person-bill/status :person-bill.status/paid]
+                [:db.fn/cas (:db/id person) :person/lunch-fund
+                 (:person/lunch-fund person) (+ (:person/lunch-fund person)
+                                                (- total att-price))]])
+         (transact-period-person-bills conn user-id period-id))))
+
+#_(defn all-period-bills-paid [conn user-id period-id]
   (let [db (d/db conn)
         billing-period (find-by-id db period-id)
         dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))]
