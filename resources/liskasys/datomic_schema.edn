@@ -319,11 +319,11 @@
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
-          {:db/ident :person-bill/paid?
+          #_{:db/ident :person-bill/paid?
            :db/valueType :db.type/boolean
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
+             :db.install/_attribute :db.part/db}
           {:db/ident :person-bill/lunch-count
            :db/valueType :db.type/long
            :db/cardinality :db.cardinality/one
@@ -333,7 +333,21 @@
            :db/valueType :db.type/long
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}]]}
+           :db.install/_attribute :db.part/db}]
+         [{:db/ident :person-bill/status
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person-bill.status/new
+           :db/id #db/id [:db.part/user]
+           :db/doc "Unpublished bill"}
+          {:db/ident :person-bill.status/published
+           :db/id #db/id [:db.part/user]
+           :db/doc "Published bill"}
+          {:db/ident :person-bill.status/paid
+           :db/id #db/id [:db.part/user]
+           :db/doc "Paid bill"}]]}
  :liskasys/daily-plan
  {:txes [[{:db/ident :daily-plan/person
            :db/valueType :db.type/ref

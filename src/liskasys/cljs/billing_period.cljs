@@ -124,7 +124,11 @@
                                       label)))]
                        ["Var symbol" :person/var-symbol]
                        ["Celkem Kč" (comp util/from-cents :person-bill/total)]
-                       ["Zaplaceno?" :person-bill/paid?]
+                       ["Stav" #(case (get-in % [:person-bill/status :db/ident])
+                                  :person-bill.status/new "nový"
+                                  :person-bill.status/published "zveřejněný"
+                                  :person-bill.status/paid "zaplacený"
+                                  "")]
                        ["Cena za docházku" (comp util/from-cents :person-bill/att-price)]
                        ["Obědy" :person-bill/lunch-count]
                        ["Rozvrh docházky" #(when (not= (:person/att-pattern %) "0000000") (:person/att-pattern %))]

@@ -132,7 +132,7 @@
        count
        (+ -2)))
 
-(defn- build-query [db where-m]
+(defn- build-query [db pull-pattern where-m]
   (reduce (fn [query [where-attr where-val]]
             (let [?where-attr (symbol (str "?" (name where-attr)))]
               (cond-> query
@@ -144,7 +144,7 @@
                                                   ['?e where-attr]))
                 where-val
                 (update-in [:args] conj where-val))))
-          {:query {:find ['[(pull ?e [*]) ...]]
+          {:query {:find [[(list 'pull '?e pull-pattern) '...]]
                    :in ['$]
                    :where []}
            :args [db]
@@ -152,7 +152,7 @@
           where-m))
 
 (defn find-where [db where-m]
-  (d/query (build-query db where-m)))
+  (d/query (build-query db '[*] where-m)))
 
 (def ent-type->attr
   {:bank-holiday :bank-holiday/label
@@ -167,18 +167,37 @@
    :school-holiday :school-holiday/label
 })
 
-(defn find-by-type [db ent-type where-m]
+(defn find-by-type-default [db ent-type where-m]
   (let [attr (get ent-type->attr ent-type ent-type)]
-    (cond->> (find-where db (merge {attr nil} where-m))
-      (= ent-type :person)
-      (map #(-> %
-                (dissoc :person/passwd)))
-      (= ent-type :person-bill)
-      (map #(let [tx (apply max (d/q '[:find [?tx ...] :in $ ?e :where [?e :person-bill/total _ ?tx]] db (:db/id %)))
-                  patterns (d/pull (d/as-of db tx)
-                                   [:person/var-symbol :person/att-pattern :person/lunch-pattern]
-                                   (get-in % [:person-bill/person :db/id]))]
-              (merge % patterns))))))
+    (find-where db (merge {attr nil} where-m))))
+
+(defmulti find-by-type (fn [db ent-type where-m] ent-type))
+
+(defmethod find-by-type :default [db ent-type where-m]
+  (find-by-type-default db ent-type where-m))
+
+(defmethod find-by-type :person [db ent-type where-m]
+  (->> (find-by-type-default db ent-type where-m)
+       (map #(dissoc % :person/passwd))))
+
+(defmethod find-by-type :person-bill [db ent-type where-m]
+  (->> (d/query (build-query db '[* {:person-bill/status [:db/id :db/ident]}] where-m))
+       (map #(let [tx (apply max (d/q '[:find [?tx ...] :in $ ?e :where [?e :person-bill/total _ ?tx]] db (:db/id %)))
+                   patterns (d/pull (d/as-of db tx)
+                                    [:person/var-symbol :person/att-pattern :person/lunch-pattern]
+                                    (get-in % [:person-bill/person :db/id]))]
+               (merge % patterns)))))
+
+(defmethod find-by-type :audit [db ent-type where-m]
+  (timbre/debug where-m)
+  #_(cond
+    (empty? (:search-colls where-m))
+    )
+  #_(d/q '[:find ?tx ?txInstant (pull ?person [:db/id :person/firstname :person/lastname])
+         :where
+         [?tx :db/txInstant ?txInstant]
+         [?tx :tx/person ?person]]
+       db))
 
 (defn find-by-id [db eid]
   (d/pull db '[*] eid))
@@ -357,6 +376,7 @@
                                         db period-id)
                                    (into {})))
         billing-period (find-by-id db period-id)
+        paid-status (d/entid db :person-bill.status/paid)
         dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))
         out (->>
              (for [person (->> (find-where db {:person/active? true})
@@ -386,7 +406,7 @@
                          lunch-price (:price-list/lunch price-list)
                          id (or (when-let [person-bill (get @person-id->bill (:db/id person))]
                                   (swap! person-id->bill dissoc (:db/id person))
-                                  (if (:person-bill/paid? person-bill)
+                                  (if (>= (get-in person-bill [:person-bill/status :db/id]) paid-status)
                                     ::paid
                                     (:db/id person-bill)))
                                 (d/tempid :db.part/user))]]
@@ -394,7 +414,7 @@
                  {:db/id id
                   :person-bill/person (:db/id person)
                   :person-bill/period period-id
-                  :person-bill/paid? false
+                  :person-bill/status :person-bill.status/new
                   :person-bill/lunch-count lunch-count-next
                   :person-bill/att-price att-price
                   :person-bill/total (+ att-price
@@ -423,13 +443,13 @@
                 :in $ ?period-id ?paid?
                 :where
                 [?e :person-bill/period ?period-id]
-                [?e :person-bill/paid? ?paid?]]
+                [?e :person-bill/status :person-bill.status/published]]
               db period-id false)
          (mapcat (fn [{:keys [:db/id :person-bill/person :person-bill/total :person-bill/att-price]}]
                    (->> (generate-daily-plans person dates)
                         (map #(-> % (assoc :db/id (d/tempid :db.part/user)
                                            :daily-plan/bill id)))
-                        (into [[:db/add id :person-bill/paid? true]
+                        (into [[:db/add id :person-bill/status :person-bill.status/paid]
                                [:db.fn/cas (:db/id person) :person/lunch-fund
                                 (:person/lunch-fund person) (+ (:person/lunch-fund person)
                                                                (- total att-price))]]))))
@@ -516,3 +536,16 @@
            (transact conn user-id)
            :tx-data
            count))))
+
+;; what is the entire history of entity e?
+;; (->> (d/q '[:find ?aname ?v ?tx ?inst ?added
+;;             :in $ ?e
+;;             :where
+;;             [?e ?a ?v ?tx ?added]
+;;             [?a :db/ident ?aname]
+;;             [?tx :db/txInstant ?inst]]
+;;           (d/history (d/db conn))
+;;           story)
+;;      seq
+;;      (sort-by #(nth % 2))
+;;      pprint)
