@@ -33,7 +33,7 @@
          :colls [["Datum" :daily-plan/date]
                  ["Jméno" (fn [row]
                             (let [label (->> row :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)]
-                              (if (identical? row @selected-row)
+                              (if (= row @selected-row)
                                 [re-com/hyperlink-href
                                  :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
                                  :label label]
@@ -48,7 +48,7 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :daily-plan])]
                   (fn [row]
-                    (when (and (identical? row @selected-row)
+                    (when (and (= row @selected-row)
                                (-> (:daily-plan/date row) tc/to-local-date (t/after? (t/today))))
                       [re-com/hyperlink-href
                        :href (str "#/daily-plan/" (:db/id row) "e")

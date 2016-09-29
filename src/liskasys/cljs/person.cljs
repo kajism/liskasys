@@ -46,7 +46,7 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :person])]
                   (fn [row]
-                    (when (identical? row @selected-row)
+                    (when (= row @selected-row)
                       [re-com/h-box
                        :gap "5px"
                        :children
