@@ -5,6 +5,7 @@
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
+            liskasys.cljs.audit
             liskasys.cljs.bank-holiday
             liskasys.cljs.billing-period
             liskasys.cljs.daily-plan
@@ -103,8 +104,9 @@
        [:ul.dropdown-menu
         [:li [:a {:href "#/price-lists"} "Ceník"]]
         [:li [:a {:href "#/lunch-types"} "Diety"]]
+        [:li [:a {:href "#/school-holidays"} "Prázdniny"]]
         [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
-        [:li [:a {:href "#/school-holidays"} "Prázdniny"]]]]
+        #_[:li [:a {:href "#/audits"} "Transakce"]]]]
       [:li
        [:a
         {:href "/logout"} "Odhlásit se"]]]]]])
