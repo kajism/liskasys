@@ -13,16 +13,6 @@
           norms-map (conformity/read-resource "liskasys/datomic_schema.edn")]
       (timbre/info "Connected to datomic, going to run conformity")
       (conformity/ensure-conforms conn norms-map)
-      (when-let [person-bills (not-empty (d/q '[:find [(pull ?e [:db/id :person-bill/paid?]) ...]
-                                                :where
-                                                [?e :person-bill/total]
-                                                (not [?e :person-bill/status])]
-                                          (d/db conn)))]
-        (timbre/info "Adding billing status")
-        (->> person-bills
-             (mapv (fn [{:keys [:db/id :person-bill/paid?]}]
-                     [:db/add id :person-bill/status (if paid? :person-bill.status/paid :person-bill.status/new)]))
-             (service/transact conn nil)))
       (assoc component :conn conn)))
   (stop [component]
     (when conn
