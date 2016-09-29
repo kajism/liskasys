@@ -434,6 +434,19 @@
   (->> (generate-person-bills-tx (d/db conn) period-id)
        (transact-period-person-bills conn user-id period-id)))
 
+(defn publish-all-bills [conn user-id period-id]
+  (let [db (d/db conn)
+        billing-period (find-by-id db period-id)]
+    (->> (d/q '[:find [?e ...]
+                :in $ ?period-id
+                :where
+                [?e :person-bill/period ?period-id]
+                [?e :person-bill/status :person-bill.status/new]]
+              db period-id)
+         (mapv (fn [id]
+                 [:db/add id :person-bill/status :person-bill.status/published]))
+         (transact-period-person-bills conn user-id period-id))))
+
 (defn all-period-bills-paid [conn user-id period-id]
   (let [db (d/db conn)
         billing-period (find-by-id db period-id)

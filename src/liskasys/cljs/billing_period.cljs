@@ -21,10 +21,10 @@
    db))
 
 (re-frame/register-handler
- ::all-period-bills-paid
+ ::publish-all-bills
  common/debug-mw
  (fn [db [_ period-id]]
-   (server-call [:person-bill/all-period-bills-paid {:person-bill/period period-id}]
+   (server-call [:person-bill/publish-all-bills {:person-bill/period period-id}]
                 [:entities-set [:entities-where :person-bill {:person-bill/period period-id}]])
    db))
 
@@ -34,8 +34,7 @@
       (str (quot ym 100) "/" (if (<= m 9) "0") m))))
 
 (defn page-billing-periods []
-  (let [billing-periods (re-frame/subscribe [:entities :billing-period])
-        selected-row (reagent/atom nil)]
+  (let [billing-periods (re-frame/subscribe [:entities :billing-period])]
     (fn []
       [re-com/v-box
        :children
@@ -43,7 +42,6 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/billing-period/e")]
         [data-table
          :table-id :billing-periods
-         :selected-row selected-row
          :rows @billing-periods
          :colls [["Od" (comp yyyymm->str :billing-period/from-yyyymm)]
                  ["Do" (comp yyyymm->str :billing-period/to-yyyymm)]
@@ -52,16 +50,15 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :billing-period])]
                   (fn [row]
-                    (when (identical? row @selected-row)
-                      [re-com/h-box
-                       :gap "5px"
-                       :children
-                       [[re-com/hyperlink-href
-                         :href (str "#/billing-period/" (:db/id row) "e")
-                         :label [re-com/md-icon-button
-                                 :md-icon-name "zmdi-edit"
-                                 :tooltip "Editovat"]]
-                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])]]]))
+                    [re-com/h-box
+                     :gap "5px"
+                     :children
+                     [[re-com/hyperlink-href
+                       :href (str "#/billing-period/" (:db/id row) "e")
+                       :label [re-com/md-icon-button
+                               :md-icon-name "zmdi-edit"
+                               :tooltip "Editovat"]]
+                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])]]])
                   :csv-export]]]]])))
 
 (defn page-billing-period []
@@ -108,9 +105,9 @@
                  :on-click #(re-frame/dispatch [::generate-person-bills (:db/id item)])]
                 (when (pos? (count @person-bills))
                   [re-com/button
-                   :label "Vše zaplaceno!"
+                   :label "Zveřejnit rozpisy"
                    :class "btn-danger"
-                   :on-click #(re-frame/dispatch [::all-period-bills-paid (:db/id item)])])]]
+                   :on-click #(re-frame/dispatch [::publish-all-bills (:db/id item)])])]]
               [data-table
                :table-id :person-bills
                :selected-row selected-row
