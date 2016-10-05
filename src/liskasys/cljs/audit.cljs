@@ -1,19 +1,14 @@
 (ns liskasys.cljs.audit
-  (:require [liskasys.cljs.comp.buttons :as buttons]
-            [liskasys.cljs.comp.data-table :refer [data-table]]
-            [liskasys.cljs.comp.input-text :refer [input-text]]
-            [liskasys.cljs.util :as util]
-            [liskasys.cljc.time :as time]
-            [cljs.pprint :refer [pprint]]
-            [clojure.string :as str]
+  (:require [liskasys.cljc.time :as time]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.common :as common]
+            [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [reagent.core :as reagent]
             [reagent.ratom :as ratom]
-            [secretary.core :as secretary]
-            [taoensso.timbre :as timbre]))
+            [secretary.core :as secretary]))
 
 (re-frame/register-sub
  ::audits
@@ -79,7 +74,7 @@
 (pages/add-page :audits #'page-audits)
 
 (secretary/defroute #"/audit/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :audit (util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :audit (cljc-util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :audit]))
 (pages/add-page :audit #'page-audit)
 (common/add-kw-url :audit "audit")

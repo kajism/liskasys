@@ -1,19 +1,13 @@
 (ns liskasys.cljs.lunch-order
-  (:require [liskasys.cljs.comp.buttons :as buttons]
-            [liskasys.cljs.comp.data-table :refer [data-table]]
-            [liskasys.cljs.util :as util]
-            [liskasys.cljc.validation :as validation]
-            [cljs.pprint :refer [pprint]]
+  (:require [liskasys.cljc.time :as time]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.common :as common]
+            [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [secretary.core :as secretary]
-            [taoensso.timbre :as timbre]
-            [reagent.core :as reagent]
-            [clojure.string :as str]
-            [liskasys.cljs.comp.input-text :refer [input-text]]
-            [liskasys.cljc.time :as time]))
+            [secretary.core :as secretary]))
 
 (defn page-lunch-orders []
   (let [lunch-orders (re-frame/subscribe [:entities :lunch-order])]
@@ -71,7 +65,7 @@
 (pages/add-page :lunch-orders #'page-lunch-orders)
 
 (secretary/defroute #"/lunch-order/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :lunch-order (util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :lunch-order (cljc-util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :lunch-order]))
 (pages/add-page :lunch-order #'page-lunch-order)
 (common/add-kw-url :lunch-order "lunch-order")

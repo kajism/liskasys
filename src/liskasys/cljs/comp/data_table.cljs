@@ -1,9 +1,10 @@
 (ns liskasys.cljs.comp.data-table
-  (:require [liskasys.cljc.time :as time]
-            [liskasys.cljs.pages :as pages]
-            [liskasys.cljs.util :as util]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [cognitect.transit :as transit]
+            [liskasys.cljc.time :as time]
+            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljs.common :as common]
+            [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
@@ -17,13 +18,13 @@
 
 (re-frame/register-handler
  :table-state-set
- pages/debug-mw
+ common/debug-mw
  (fn [db [_ table-id state]]
    (assoc-in db [:table-states table-id] state)))
 
 (re-frame/register-handler
  :table-state-change
- pages/debug-mw
+ common/debug-mw
  (fn [db [_ table-id key val]]
    ((if (fn? val) update-in assoc-in) db [:table-states table-id key] val)))
 
@@ -51,9 +52,9 @@
    (cond
      (or (string? value) (vector? value)) value
      (= js/Date (type value)) (time/to-format value (or date-format time/ddMMyyyy))
-     (number? value) (util/money->text value)
-     (transit/bigdec? value) (util/money->text (util/parse-int (.-rep value)))
-     (= js/Boolean (type value)) (util/boolean->text value)
+     (number? value) (cljc-util/money->text value)
+     (transit/bigdec? value) (cljc-util/money->text (cljc-util/parse-int (.-rep value)))
+     (= js/Boolean (type value)) (cljc-util/boolean->text value)
      :else (str value))])
 
 (defn table-row [row colls selected-row date-format]
@@ -148,7 +149,7 @@
                                                   v (f row)
                                                   v (cond
                                                       (boolean? v)
-                                                      (util/boolean->text v)
+                                                      (cljc-util/boolean->text v)
                                                       (= js/Date (type v))
                                                       (time/to-format v (or date-format time/ddMMyyyy))
                                                       :else
@@ -179,7 +180,7 @@
                                           :on-change #(on-change-search-colls coll-idx %)}])
                   (when (= :sum header-modifier)
                     [:div.suma [:span {:dangerously-set-inner-HTML {:__html "&Sigma; "}}]
-                     (util/money->text
+                     (cljc-util/money->text
                       (->> filtered-rows
                            (keep f)
                            (map #(if (transit/bigdec? %)

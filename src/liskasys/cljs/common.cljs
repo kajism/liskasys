@@ -1,12 +1,13 @@
 (ns liskasys.cljs.common
   (:require [liskasys.cljc.schema :as schema]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.ratom :as ratom]
-            [taoensso.timbre :as timbre]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [taoensso.timbre :as timbre]))
 
 (def debug-mw [(when ^boolean goog.DEBUG re-frame/debug)
                (when ^boolean goog.DEBUG (re-frame/after
@@ -105,7 +106,7 @@
          errors (when validation-fn (validation-fn ent))
          file (:-file ent)]
      (if (empty? errors)
-       (server-call (timbre/spy [(keyword (name kw) "save") (util/dissoc-temp-keys ent)])
+       (server-call (timbre/spy [(keyword (name kw) "save") (cljc-util/dissoc-temp-keys ent)])
                     file
                     [:entity-saved kw])
        (timbre/debug "validation errors" errors))

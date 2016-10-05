@@ -2,13 +2,13 @@
   (:require [clj-time.coerce :as tc]
             [clj-time.core :as t]
             [clj-time.format :as tf]
-            [clojure.set :as s]
+            [clojure.set :as set]
             [clojure.string :as str]
             [crypto.password.scrypt :as scrypt]
             [datomic.api :as d]
+            [liskasys.cljc.util :as cljc-util]
             [postal.core :as postal]
-            [taoensso.timbre :as timbre]
-            [clojure.set :as set])
+            [taoensso.timbre :as timbre])
   (:import java.text.Collator
            java.util.Locale))
 
@@ -27,10 +27,6 @@
   (-> (t/today)
       (t/plus (t/days 1))
       tc/to-date))
-
-(defn zero-patterns? [{:keys [:person/lunch-pattern :person/att-pattern] :as person}]
-  (and (or (str/blank? lunch-pattern) (= (set (seq lunch-pattern)) #{\0}))
-       (or (str/blank? att-pattern) (= (set (seq att-pattern)) #{\0}))))
 
 (defn all-work-days-since [ld]
   (->> ld
@@ -180,13 +176,26 @@
   (->> (find-by-type-default db ent-type where-m)
        (map #(dissoc % :person/passwd))))
 
+
+(defn merge-person-bill-facts [db {:person-bill/keys [lunch-count total att-price] :as person-bill}]
+  (let [tx (apply max (d/q '[:find [?tx ...] :in $ ?e :where [?e :person-bill/total _ ?tx]] db (:db/id person-bill)))
+        as-of-db (d/as-of db tx)
+        patterns (d/pull as-of-db
+                         [:person/var-symbol :person/att-pattern :person/lunch-pattern]
+                         (get-in person-bill [:person-bill/person :db/id]))
+        lunch-price (d/q '[:find ?l .
+                           :where [_ :price-list/lunch ?l]]
+                         as-of-db)
+        total-lunch-price (* lunch-price lunch-count)]
+    (-> person-bill
+        (update :person-bill/person merge patterns)
+        (merge {:_lunch-price lunch-price
+                :_total-lunch-price total-lunch-price
+                :_from-previous (- total (+ att-price total-lunch-price))}))))
+
 (defmethod find-by-type :person-bill [db ent-type where-m]
   (->> (d/query (build-query db '[* {:person-bill/status [:db/id :db/ident]}] where-m))
-       (map #(let [tx (apply max (d/q '[:find [?tx ...] :in $ ?e :where [?e :person-bill/total _ ?tx]] db (:db/id %)))
-                   patterns (d/pull (d/as-of db tx)
-                                    [:person/var-symbol :person/att-pattern :person/lunch-pattern]
-                                    (get-in % [:person-bill/person :db/id]))]
-               (merge % patterns)))))
+       (map (partial merge-person-bill-facts db))))
 
 (defmethod find-by-type :audit [db ent-type where-m]
   (timbre/debug where-m)
@@ -380,7 +389,7 @@
         dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))
         out (->>
              (for [person (->> (find-where db {:person/active? true})
-                               (remove zero-patterns?))
+                               (remove cljc-util/zero-patterns?))
                    :let [daily-plans (generate-daily-plans person dates)
                          lunch-count-next (->> daily-plans
                                                (keep :daily-plan/lunch-req)
@@ -503,6 +512,7 @@
                       [(clojure.string/lower-case ?email) ?lower-email2]
                       [(= ?lower-email1 ?lower-email2)]]
                     db (-> username str/trim str/lower-case))]
+    person
     (if (check-person-password person pwd)
       person
       (timbre/warn "User" username "tried to log in." (->> (seq pwd) (map (comp char inc int)) (apply str))))))
@@ -584,3 +594,22 @@
 ;;      seq
 ;;      (sort-by #(nth % 2))
 ;;      pprint)
+
+(defn find-person-bills [db user-id]
+  (->> (d/q '[:find [(pull ?e [* {:person-bill/person [*] :person-bill/period [*]}]) ...]
+              :in $ % ?user
+              :where
+              (find-person-and-childs ?e ?user)
+              (or
+               [?e :person-bill/status :person-bill.status/published]
+               [?e :person-bill/status :person-bill.status/paid])]
+            db
+            '[[(find-person-and-childs ?e ?user)
+               [?e :person-bill/person ?user]]
+              [(find-person-and-childs ?e ?user)
+               [?ch :person/parent ?user]
+               [?e :person-bill/person ?ch]]]
+            user-id)
+       (map (partial merge-person-bill-facts db))
+       (sort-by (comp :db/id :person-bill/period))
+       reverse))

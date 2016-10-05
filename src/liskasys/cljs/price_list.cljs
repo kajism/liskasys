@@ -1,11 +1,12 @@
 (ns liskasys.cljs.price-list
-  (:require [liskasys.cljs.comp.buttons :as buttons]
-            [liskasys.cljs.comp.data-table :refer [data-table]]
-            [liskasys.cljs.util :as util]
+  (:require [clojure.string :as str]
             [liskasys.cljc.time :as time]
-            [clojure.string :as str]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.common :as common]
+            [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
             [liskasys.cljs.pages :as pages]
+            [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [secretary.core :as secretary]
@@ -22,13 +23,13 @@
         [data-table
          :table-id :price-lists
          :rows @price-lists
-         :colls [["5 dní" (comp util/from-cents :price-list/days-5)]
-                 ["4 dny" (comp util/from-cents :price-list/days-4)]
-                 ["3 dny" (comp util/from-cents :price-list/days-3)]
-                 ["2 dny" (comp util/from-cents :price-list/days-2)]
-                 ["1 den" (comp util/from-cents :price-list/days-1)]
-                 ["půlden" (comp util/from-cents :price-list/half-day)]
-                 ["oběd" (comp util/from-cents :price-list/lunch)]
+         :colls [["5 dní" (comp cljc-util/from-cents :price-list/days-5)]
+                 ["4 dny" (comp cljc-util/from-cents :price-list/days-4)]
+                 ["3 dny" (comp cljc-util/from-cents :price-list/days-3)]
+                 ["2 dny" (comp cljc-util/from-cents :price-list/days-2)]
+                 ["1 den" (comp cljc-util/from-cents :price-list/days-1)]
+                 ["půlden" (comp cljc-util/from-cents :price-list/half-day)]
+                 ["oběd" (comp cljc-util/from-cents :price-list/lunch)]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -46,7 +47,7 @@
                   :csv-export]]]]])))
 
 (defn- from-cents [cents]
-  (str (util/from-cents cents)))
+  (str (cljc-util/from-cents cents)))
 
 (defn page-price-list []
   (let [price-list (re-frame/subscribe [:entity-edit :price-list])]
@@ -58,43 +59,43 @@
           [re-com/label :label "5 dní"]
           [re-com/input-text
            :model (from-cents (:price-list/days-5 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-5 (util/to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-5 (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "4 dny"]
           [re-com/input-text
            :model (from-cents (:price-list/days-4 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-4 (util/to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-4 (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "3 dny"]
           [re-com/input-text
            :model (from-cents (:price-list/days-3 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-3 (util/to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-3 (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "2 dny"]
           [re-com/input-text
            :model (from-cents (:price-list/days-2 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-2 (util/to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-2 (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "1 den"]
           [re-com/input-text
            :model (from-cents (:price-list/days-1 item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-1 (util/to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-1 (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "Půldenní"]
           [re-com/input-text
            :model (from-cents (:price-list/half-day item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/half-day (util/to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/half-day (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/label :label "Oběd"]
           [re-com/input-text
            :model (from-cents (:price-list/lunch item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/lunch (util/to-cents %)])
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/lunch (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/h-box :align :center :gap "5px"
@@ -108,7 +109,7 @@
 (pages/add-page :price-lists #'page-price-lists)
 
 (secretary/defroute #"/price-list/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :price-list (util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :price-list (cljc-util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :price-list]))
 (pages/add-page :price-list #'page-price-list)
 (common/add-kw-url :price-list "price-list")

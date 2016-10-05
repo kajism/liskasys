@@ -1,18 +1,15 @@
 (ns liskasys.cljs.lunch-type
-  (:require [liskasys.cljs.comp.buttons :as buttons]
-            [liskasys.cljs.comp.data-table :refer [data-table]]
-            [liskasys.cljs.util :as util]
-            [liskasys.cljc.validation :as validation]
-            [cljs.pprint :refer [pprint]]
+  (:require [clojure.string :as str]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.common :as common]
+            [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.comp.input-text :refer [input-text]]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [secretary.core :as secretary]
-            [taoensso.timbre :as timbre]
-            [reagent.core :as reagent]
-            [clojure.string :as str]
-            [liskasys.cljs.comp.input-text :refer [input-text]]))
+            [taoensso.timbre :as timbre]))
 
 (defn page-lunch-types []
   (let [lunch-types (re-frame/subscribe [:entities :lunch-type])]
@@ -73,7 +70,7 @@
 (pages/add-page :lunch-types #'page-lunch-types)
 
 (secretary/defroute #"/lunch-type/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :lunch-type (util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :lunch-type (cljc-util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :lunch-type]))
 (pages/add-page :lunch-type #'page-lunch-type)
 (common/add-kw-url :lunch-type "lunch-type")

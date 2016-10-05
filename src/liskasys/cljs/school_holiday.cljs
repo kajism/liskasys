@@ -1,11 +1,12 @@
 (ns liskasys.cljs.school-holiday
-  (:require [liskasys.cljs.comp.buttons :as buttons]
-            [liskasys.cljs.comp.data-table :refer [data-table]]
-            [liskasys.cljs.util :as util]
+  (:require [clojure.string :as str]
             [liskasys.cljc.time :as time]
-            [clojure.string :as str]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.common :as common]
+            [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
             [liskasys.cljs.pages :as pages]
+            [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [secretary.core :as secretary]))
@@ -81,7 +82,7 @@
 (pages/add-page :school-holidays #'page-school-holidays)
 
 (secretary/defroute #"/school-holiday/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :school-holiday (util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :school-holiday (cljc-util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :school-holiday]))
 (pages/add-page :school-holiday #'page-school-holiday)
 (common/add-kw-url :school-holiday "school-holiday")

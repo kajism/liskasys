@@ -27,3 +27,7 @@ body {
     font-weight: normal;
     color: #333;
 }
+
+.right {
+    text-align: right;
+}

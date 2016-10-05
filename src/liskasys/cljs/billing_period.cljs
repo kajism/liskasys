@@ -1,11 +1,10 @@
 (ns liskasys.cljs.billing-period
-  (:require [liskasys.cljs.comp.buttons :as buttons]
-            [liskasys.cljs.comp.data-table :refer [data-table]]
-            [liskasys.cljs.util :as util]
-            [cljs-time.core :as t]
+  (:require [cljs-time.core :as t]
             [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
+            [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
@@ -21,11 +20,6 @@
                 [:entities-set [:entities-where :person-bill {:person-bill/period period-id}]])
    db))
 
-(defn yyyymm->str [ym]
-  (when ym
-    (let [m (rem ym 100)]
-      (str (quot ym 100) "/" (if (<= m 9) "0") m))))
-
 (defn page-billing-periods []
   (let [billing-periods (re-frame/subscribe [:entities :billing-period])]
     (fn []
@@ -36,8 +30,8 @@
         [data-table
          :table-id :billing-periods
          :rows @billing-periods
-         :colls [["Od" (comp yyyymm->str :billing-period/from-yyyymm)]
-                 ["Do" (comp yyyymm->str :billing-period/to-yyyymm)]
+         :colls [["Od" (comp cljc-util/yyyymm->text :billing-period/from-yyyymm)]
+                 ["Do" (comp cljc-util/yyyymm->text :billing-period/to-yyyymm)]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -52,7 +46,8 @@
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])]]])
-                  :csv-export]]]]])))
+                  :csv-export]]
+         :desc? true]]])))
 
 (defn page-billing-period []
   (let [item-id (re-frame/subscribe [:entity-edit-id :billing-period])
@@ -70,13 +65,13 @@
            :children
            [[re-com/input-text
              :model (str (:billing-period/from-yyyymm item))
-             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/from-yyyymm (util/parse-int %)])
+             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/from-yyyymm (cljc-util/parse-int %)])
              :validation-regex #"^\d{0,6}$"
              :width "120px"]
             "-"
             [re-com/input-text
              :model (str (:billing-period/to-yyyymm item))
-             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/to-yyyymm (util/parse-int %)])
+             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/to-yyyymm (cljc-util/parse-int %)])
              :validation-regex #"^\d{0,6}$"
              :width "120px"]
             "RRRRMM"]]
@@ -117,8 +112,7 @@
                                        :href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")
                                        :label label]
                                       label)))]
-                       ["Var symbol" :person/var-symbol]
-                       ["Celkem Kč" (comp util/from-cents :person-bill/total)]
+                       ["Var symbol" (comp :person/var-symbol :person-bill/person)]
                        ["Stav" (fn [row]
                                  (case (get-in row [:person-bill/status :db/ident])
                                    :person-bill.status/new "nový"
@@ -131,21 +125,24 @@
                                        :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "set-bill-as-paid" (:db/id row)])])]
                                    :person-bill.status/paid "zaplacený"
                                    ""))]
-                       ["Cena za docházku" (comp util/from-cents :person-bill/att-price)]
-                       ["Obědy" :person-bill/lunch-count]
-                       ["Rozvrh docházky" #(when (not= (:person/att-pattern %) "0000000") (:person/att-pattern %))]
-                       ["Rozvrh obědů" #(when (not= (:person/lunch-pattern %) "0000000") (:person/lunch-pattern %))]]]]])]]))))
+                       ["Celkem Kč" (comp cljc-util/from-cents :person-bill/total)]
+                       ["Cena za docházku" (comp cljc-util/from-cents :person-bill/att-price)]
+                       ["Cena za obědy" (fn [{:person-bill/keys [lunch-count] :keys [_lunch-price _total-lunch-price]}]
+                                             (str lunch-count " x " (cljc-util/cents->text _lunch-price) " = " (cljc-util/from-cents _total-lunch-price)))]
+                       ["Z předch. období" (comp cljc-util/from-cents :_from-previous)]
+                       ["Rozvrh docházky" #(-> % :person-bill/person :person/att-pattern cljc-util/att-pattern->text)]
+                       ["Rozvrh obědů" #(-> % :person-bill/person :person/lunch-pattern cljc-util/lunch-pattern->text)]]]]])]]))))
 
 (secretary/defroute "/billing-periods" []
   (re-frame/dispatch [:set-current-page :billing-periods]))
 (pages/add-page :billing-periods #'page-billing-periods)
 
 (secretary/defroute #"/billing-period/(\d*)(e?)" [id edit?]
-  (when-not (util/parse-int id)
+  (when-not (cljc-util/parse-int id)
     (let [[_ from to] (iterate #(t/plus % (t/months 1)) (t/today))]
       (re-frame/dispatch [:entity-new :billing-period {:billing-period/from-yyyymm (+ (* (t/year from) 100) (t/month from))
                                                        :billing-period/to-yyyymm (+ (* (t/year to) 100) (t/month to))}])))
-  (re-frame/dispatch [:entity-set-edit :billing-period (util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :billing-period (cljc-util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :billing-period]))
 (pages/add-page :billing-period #'page-billing-period)
 (common/add-kw-url :billing-period "billing-period")

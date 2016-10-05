@@ -1,21 +1,16 @@
 (ns liskasys.cljs.daily-plan
-  (:require [liskasys.cljs.comp.buttons :as buttons]
-            [liskasys.cljs.comp.data-table :refer [data-table]]
-            [liskasys.cljs.comp.input-text :refer [input-text]]
-            [liskasys.cljs.util :as util]
-            [liskasys.cljc.time :as time]
-            [cljs-time.coerce :as tc]
+  (:require [cljs-time.coerce :as tc]
             [cljs-time.core :as t]
-            [cljs.pprint :refer [pprint]]
-            [clojure.string :as str]
+            [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.common :as common]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
             [liskasys.cljs.pages :as pages]
+            [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
-            [secretary.core :as secretary]
-            [taoensso.timbre :as timbre]))
+            [secretary.core :as secretary]))
 
 (defn page-daily-plans []
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
@@ -39,10 +34,10 @@
                                  :label label]
                                 label)))]
                  ["Docházka" #(case (:daily-plan/child-att %) 1 "celodenní" 2 "půldenní" "-")]
-                 ["Docházka zrušena" (comp util/boolean->text :daily-plan/att-cancelled?)]
+                 ["Docházka zrušena" (comp cljc-util/boolean->text :daily-plan/att-cancelled?)]
                  ["Oběd požadavek" #(or (:daily-plan/lunch-req %) 0)]
                  ["Oběd objednáno" #(or (:daily-plan/lunch-ord %) 0)]
-                 ["Oběd zrušen" (comp util/boolean->text :daily-plan/lunch-cancelled?)]
+                 ["Oběd zrušen" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
@@ -88,7 +83,7 @@
           [re-com/label :label "Druh docházky"]
           [re-com/input-text
            :model (str (:daily-plan/child-att item))
-           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/child-att (util/parse-int %)])
+           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/child-att (cljc-util/parse-int %)])
            :validation-regex #"^[0-2]{0,1}$"
            :width "100px"]
           [re-com/checkbox
@@ -98,13 +93,13 @@
           [re-com/label :label "Požadovaný počet obědů"]
           [re-com/input-text
            :model (str (:daily-plan/lunch-req item))
-           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-req (util/parse-int %)])
+           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-req (cljc-util/parse-int %)])
            :validation-regex #"^[0-9]{0,1}$"
            :width "100px"]
           [re-com/label :label "Objednaný počet obědů"]
           [re-com/input-text
            :model (str (:daily-plan/lunch-ord item))
-           :on-change #() ;;#(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (util/parse-int %)])
+           :on-change #() ;;#(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (cljc-util/parse-int %)])
            :disabled? true
            :width "100px"]
           [re-com/checkbox
@@ -123,7 +118,7 @@
 (pages/add-page :daily-plans #'page-daily-plans)
 
 (secretary/defroute #"/daily-plan/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :daily-plan (util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :daily-plan (cljc-util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :daily-plan]))
 (pages/add-page :daily-plan #'page-daily-plan)
 (common/add-kw-url :daily-plan "daily-plan")

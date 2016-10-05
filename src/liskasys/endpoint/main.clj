@@ -53,6 +53,12 @@
                                          (set/difference already-cancelled-dates cancel-dates))
          (response/redirect (str (when child-id "/?child-id=") child-id))))
 
+     (GET "/platby" {:keys [params]}
+       (let [person-bills (service/find-person-bills (d/db conn) (:db/id user))]
+         (main-hiccup/liskasys-frame
+          user
+          (main-hiccup/person-bills person-bills))))
+
      (GET "/jidelni-listek" [history]
        (let [history (or (edn/read-string history) 0)
              {:keys [lunch-menu previous? history]} (service/find-last-lunch-menu (d/db conn) history)]
@@ -79,15 +85,6 @@
            (io/make-parents server-file)
            (io/copy (:tempfile upload) (io/file server-file))))
        (response/redirect "/jidelni-listek"))
-
-     #_(GET "/obedy" {:keys [params]}
-       (if-not (or ((:-roles user) "admin")
-                   ((:-roles user) "obedy"))
-         (response/redirect "/")
-         (main-hiccup/lunches db-spec user params)))
-
-     #_(GET "/odhlasene-obedy" {:keys [params]}
-       (main-hiccup/cancelled-lunches db-spec user))
 
      (GET "/login" []
        (hiccup/login-page main-hiccup/system-title))

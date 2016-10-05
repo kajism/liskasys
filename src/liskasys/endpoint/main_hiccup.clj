@@ -35,13 +35,12 @@
             [:a {:href "/"} "Omluvenky"]])
          [:li
           [:a {:href "/jidelni-listek"} "Jídelníček"]]
+         [:li
+          [:a {:href "/platby"} "Platby"]]
          #_(when (or (roles "admin")
                    (roles "obedy"))
            [:li
-            [:a {:href "/obedy"} "Obědy"]])
-         #_(when (roles "admin")
-           [:li
-            [:a {:href "/odhlasene-obedy"} "Odhlášené obědy"]])]
+            [:a {:href "/obedy"} "Obědy"]])]
         [:ul.nav.navbar-nav.navbar-right
          [:li
           [:a {:href "/profile"} (cljc-util/person-fullname user)]]
@@ -205,3 +204,34 @@
             [:td (:-fullname ch)]
             (for [[y m] months]
               [:td (count (get cancellations [(:id ch) y m]))])])]]]])))
+
+(defn- period->text [{:billing-period/keys [from-yyyymm to-yyyymm]}]
+  (str (cljc-util/yyyymm->text from-yyyymm) " - " (cljc-util/yyyymm->text to-yyyymm)))
+
+(defn person-bills [person-bills]
+  [:div.container
+   [:h3 "Rozpisy plateb"]
+   [:table.table.table-striped
+    [:thead
+     [:tr
+      [:th "Období"]
+      [:th "Jméno"]
+      [:th "Variabilní symbol"]
+      [:th "Celkem Kč"]
+      [:th "Cena za docházku"]
+      [:th "Cena za obědy"]
+      [:th "Z předch. období"]
+      [:th "Rozvrh docházky"]
+      [:th "Rozvrh obědů"]]]
+    [:tbody
+     (for [{:person-bill/keys [period person total att-price lunch-count] :keys [_lunch-price _total-lunch-price _from-previous]} person-bills]
+       [:tr
+        [:td (period->text period)]
+        [:td (cljc-util/person-fullname person)]
+        [:td.right (:person/var-symbol person)]
+        [:td.right [:b (cljc-util/cents->text total)]]
+        [:td.right (cljc-util/cents->text att-price)]
+        [:td.right (str lunch-count " x " (cljc-util/cents->text _lunch-price) " = " (cljc-util/cents->text _total-lunch-price))]
+        [:td.right (cljc-util/cents->text _from-previous)]
+        [:td (cljc-util/att-pattern->text (:person/att-pattern person))]
+        [:td (cljc-util/lunch-pattern->text (:person/lunch-pattern person))]])]]])

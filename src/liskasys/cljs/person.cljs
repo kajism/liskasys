@@ -1,20 +1,16 @@
 (ns liskasys.cljs.person
-  (:require [liskasys.cljs.comp.buttons :as buttons]
+  (:require [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljs.common :as common]
+            [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
             [liskasys.cljs.comp.input-text :refer [input-text]]
-            [liskasys.cljs.util :as util]
-            [cljs.pprint :refer [pprint]]
-            [clojure.string :as str]
-            [liskasys.cljc.util :as cljc-util]
-            [liskasys.cljs.ajax :refer [server-call]]
-            [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
+            [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
             [reagent.ratom :as ratom]
-            [secretary.core :as secretary]
-            [taoensso.timbre :as timbre]))
+            [secretary.core :as secretary]))
 
 (defn page-persons []
   (let [persons (re-frame/subscribe [:entities :person])
@@ -33,9 +29,9 @@
                  ["Jméno" :person/firstname]
                  #_["Variabilní symbol" :person/var-symbol]
                  #_["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
-                 ["Fond obědů" #(some-> % :person/lunch-fund util/from-cents)]
-                 ["Rozvrh docházky" #(when (not= (:person/att-pattern %) "0000000") (:person/att-pattern %))]
-                 ["Rozvrh obědů" #(when (not= (:person/lunch-pattern %) "0000000") (:person/lunch-pattern %))]
+                 ["Fond obědů" #(some-> % :person/lunch-fund cljc-util/from-cents)]
+                 ["Rozvrh docházky" (comp cljc-util/att-pattern->text :person/att-pattern)]
+                 ["Rozvrh obědů" (comp cljc-util/lunch-pattern->text :person/lunch-pattern)]
                  ["Email" :person/email]
                  ["Aktivní?" :person/active?]
                  ["Dítě?" :person/child?]
@@ -94,7 +90,7 @@
              :model (:person/active? item)
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/active? %])]
             [re-com/label :label "Variabilní symbol"]
-            [input-text item :person :person/var-symbol util/parse-int]
+            [input-text item :person :person/var-symbol cljc-util/parse-int]
             [re-com/label :label "Dieta"]
             [re-com/single-dropdown
              :model (some-> item :person/lunch-type :db/id)
@@ -116,8 +112,8 @@
             [re-com/h-box :gap "5px"
              :children
              [[re-com/input-text
-               :model (str (util/from-cents (:person/lunch-fund item)))
-               :on-change #() ;; #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-fund (util/to-cents %)])
+               :model (str (cljc-util/from-cents (:person/lunch-fund item)))
+               :on-change #() ;; #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-fund (cljc-util/to-cents %)])
                :validation-regex #"^\d{0,4}$"
                :disabled? (:db/id item)]
               "Kč"]]
@@ -203,7 +199,7 @@
 (pages/add-page :persons #'page-persons)
 
 (secretary/defroute #"/person/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :person (util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :person (cljc-util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :person]))
 (pages/add-page :person #'page-person)
 (common/add-kw-url :person "person")
