@@ -497,10 +497,12 @@
 
 (defn login [db username pwd]
   (let [person (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol]}]) .
-                      :in $ ?email
+                      :in $ ?lower-email1
                       :where
-                      [?e :person/email ?email]]
-                    db username)]
+                      [?e :person/email ?email]
+                      [(clojure.string/lower-case ?email) ?lower-email2]
+                      [(= ?lower-email1 ?lower-email2)]]
+                    db (-> username str/trim str/lower-case))]
     (if (check-person-password person pwd)
       person
       (timbre/warn "User" username "tried to log in." (->> (seq pwd) (map (comp char inc int)) (apply str))))))

@@ -153,7 +153,7 @@
          (service/transact-entity conn (:db/id user) {:db/id (:db/id user)
                                                       :person/firstname firstname
                                                       :person/lastname lastname
-                                                      :person/email email
+                                                      :person/email (str/trim email)
                                                       :person/phone phone})
          (main-hiccup/liskasys-frame
           user
