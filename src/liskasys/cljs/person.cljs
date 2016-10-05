@@ -120,7 +120,7 @@
                :model (str (util/from-cents (:person/lunch-fund item)))
                :on-change #() ;; #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-fund (util/to-cents %)])
                :validation-regex #"^\d{0,4}$"
-               :disabled? true]
+               :disabled? (:db/id item)]
               "Kč"]]
             [re-com/checkbox
              :label "dítě?"
