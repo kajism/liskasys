@@ -1,4 +1,4 @@
-(ns clj-brnolib.component.nrepl-server
+(ns liskasys.component.nrepl-server
   (:require [clojure.tools.nrepl.server :as nrepl]
             [com.stuartsierra.component :as component]))
 

@@ -1,8 +1,8 @@
 (ns liskasys.cljs.price-list
-  (:require [clj-brnolib.cljs.comp.buttons :as buttons]
-            [clj-brnolib.cljs.comp.data-table :refer [data-table]]
-            [clj-brnolib.cljs.util :as util]
-            [clj-brnolib.time :as time]
+  (:require [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.util :as util]
+            [liskasys.cljc.time :as time]
             [clojure.string :as str]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]

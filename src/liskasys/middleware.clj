@@ -1,4 +1,4 @@
-(ns clj-brnolib.middleware
+(ns liskasys.middleware
   (:require [ring.util.response :as response]
             [taoensso.timbre :as timbre]))
 

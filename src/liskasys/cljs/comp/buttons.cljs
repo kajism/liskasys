@@ -1,4 +1,4 @@
-(ns clj-brnolib.cljs.comp.buttons
+(ns liskasys.cljs.comp.buttons
   (:require [reagent.core :as reagent]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]

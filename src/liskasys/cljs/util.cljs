@@ -1,4 +1,4 @@
-(ns clj-brnolib.cljs.util
+(ns liskasys.cljs.util
   (:require [clojure.string :as str]
             [cognitect.transit :as transit]
             [schema.core :as s]))

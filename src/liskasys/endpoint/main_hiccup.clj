@@ -1,6 +1,6 @@
 (ns liskasys.endpoint.main-hiccup
-  (:require [clj-brnolib.hiccup :as hiccup]
-            [clj-brnolib.time :as time]
+  (:require [liskasys.hiccup :as hiccup]
+            [liskasys.cljc.time :as time]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
             [clj-time.format :as tf]

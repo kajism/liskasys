@@ -1,9 +1,8 @@
 (ns liskasys.cljs.person
-  (:require [clj-brnolib.cljs.comp.buttons :as buttons]
-            [clj-brnolib.cljs.comp.data-table :refer [data-table]]
-            [clj-brnolib.cljs.comp.input-text :refer [input-text]]
-            [clj-brnolib.cljs.util :as util]
-            [clj-brnolib.validation :as validation]
+  (:require [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.comp.input-text :refer [input-text]]
+            [liskasys.cljs.util :as util]
             [cljs.pprint :refer [pprint]]
             [clojure.string :as str]
             [liskasys.cljc.util :as cljc-util]

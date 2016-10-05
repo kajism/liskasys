@@ -1,4 +1,4 @@
-(ns clj-brnolib.cljs.comp.input-text
+(ns liskasys.cljs.comp.input-text
   (:require [re-com.core :as re-com]
             [re-frame.core :as re-frame]))
 

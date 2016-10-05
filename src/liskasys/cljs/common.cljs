@@ -1,7 +1,7 @@
 (ns liskasys.cljs.common
   (:require [liskasys.cljc.schema :as schema]
             [liskasys.cljs.ajax :refer [server-call]]
-            [clj-brnolib.cljs.util :as util]
+            [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.ratom :as ratom]

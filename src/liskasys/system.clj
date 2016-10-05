@@ -1,6 +1,6 @@
 (ns liskasys.system
-  (:require [clj-brnolib.component.nrepl-server :refer [nrepl-server]]
-            [clj-brnolib.middleware :as middleware]
+  (:require [liskasys.component.nrepl-server :refer [nrepl-server]]
+            [liskasys.middleware :as middleware]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
             [com.stuartsierra.component :as component]

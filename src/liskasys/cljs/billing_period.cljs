@@ -1,7 +1,7 @@
 (ns liskasys.cljs.billing-period
-  (:require [clj-brnolib.cljs.comp.buttons :as buttons]
-            [clj-brnolib.cljs.comp.data-table :refer [data-table]]
-            [clj-brnolib.cljs.util :as util]
+  (:require [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.util :as util]
             [cljs-time.core :as t]
             [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.ajax :refer [server-call]]

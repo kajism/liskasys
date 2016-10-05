@@ -1,4 +1,4 @@
-(ns clj-brnolib.hiccup
+(ns liskasys.hiccup
   (:require [clojure.pprint :refer [pprint]]
             [hiccup.page :as hiccup]
             [ring.util.anti-forgery :as anti-forgery]

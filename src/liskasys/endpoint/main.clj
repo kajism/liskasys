@@ -1,7 +1,7 @@
 (ns liskasys.endpoint.main
-  (:require [clj-brnolib.hiccup :as hiccup]
-            [clj-brnolib.time :as time]
-            [clj-brnolib.validation :as validation]
+  (:require [liskasys.hiccup :as hiccup]
+            [liskasys.cljc.time :as time]
+            [liskasys.cljc.validation :as validation]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
             [clojure.java.io :as io]

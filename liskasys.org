@@ -140,4 +140,5 @@ CLOSED: [2016-08-11 Thu 14:45]
 ** DONE user children-count => "parent" role
 CLOSED: [2016-09-26 Mon 17:08]
 ** pouzivat clj-time format pro datum a cas (clj-time.jdbc, transit serializers)
-** odstranit clj-brnolib
+** DONE odstranit clj-brnolib
+CLOSED: [2016-10-05 Wed 11:05]

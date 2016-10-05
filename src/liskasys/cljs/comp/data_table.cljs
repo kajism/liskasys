@@ -1,7 +1,7 @@
-(ns clj-brnolib.cljs.comp.data-table
-  (:require [clj-brnolib.time :as time]
-            [clj-brnolib.cljs.pages :as pages]
-            [clj-brnolib.cljs.util :as util]
+(ns liskasys.cljs.comp.data-table
+  (:require [liskasys.cljc.time :as time]
+            [liskasys.cljs.pages :as pages]
+            [liskasys.cljs.util :as util]
             [clojure.string :as str]
             [cognitect.transit :as transit]
             [re-com.core :as re-com]

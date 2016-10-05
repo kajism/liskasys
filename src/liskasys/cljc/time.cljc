@@ -1,4 +1,4 @@
-(ns clj-brnolib.time
+(ns liskasys.cljc.time
   #?@(:clj
        [(:require
          [clj-time.coerce :as tc]

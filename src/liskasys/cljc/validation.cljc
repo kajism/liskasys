@@ -1,4 +1,4 @@
-(ns clj-brnolib.validation
+(ns liskasys.cljc.validation
   (:require [clojure.string :as str]))
 
 (defn valid-name? [name] ;http://stackoverflow.com/questions/3617797/regex-to-match-only-letters

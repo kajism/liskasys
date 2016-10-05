@@ -1,8 +1,8 @@
 (ns liskasys.cljs.lunch-order
-  (:require [clj-brnolib.cljs.comp.buttons :as buttons]
-            [clj-brnolib.cljs.comp.data-table :refer [data-table]]
-            [clj-brnolib.cljs.util :as util]
-            [clj-brnolib.validation :as validation]
+  (:require [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.util :as util]
+            [liskasys.cljc.validation :as validation]
             [cljs.pprint :refer [pprint]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
@@ -12,8 +12,8 @@
             [taoensso.timbre :as timbre]
             [reagent.core :as reagent]
             [clojure.string :as str]
-            [clj-brnolib.cljs.comp.input-text :refer [input-text]]
-            [clj-brnolib.time :as time]))
+            [liskasys.cljs.comp.input-text :refer [input-text]]
+            [liskasys.cljc.time :as time]))
 
 (defn page-lunch-orders []
   (let [lunch-orders (re-frame/subscribe [:entities :lunch-order])]

@@ -1,7 +1,7 @@
 (ns liskasys.cljs.bank-holiday
-  (:require [clj-brnolib.cljs.comp.buttons :as buttons]
-            [clj-brnolib.cljs.comp.data-table :refer [data-table]]
-            [clj-brnolib.cljs.util :as util]
+  (:require [liskasys.cljs.comp.buttons :as buttons]
+            [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.util :as util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
