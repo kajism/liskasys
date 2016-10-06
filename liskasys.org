@@ -3,10 +3,9 @@ LISKASYST
 podpurny informacni system pro lesni materskou skolu Listicka
 
 * TODOs
-** TODO zverejneni rozpisu plateb a jednotlive potvrzovani zaplaceni
-** TODO zobrazit rodicum platby a zrusene obedy
-** TODO datomic transaction log view
 ** TODO moznost zobrazit historii zmen entity
+** TODO zobrazit zrusene obedy
+** TODO datomic transaction log view
 ** TODO nahrady
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** schvalovaci email Dance
@@ -22,6 +21,8 @@ podpurny informacni system pro lesni materskou skolu Listicka
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** export dat do csv
 ** omezení počtu chybných přihlášení (+ reset)
+** DONE zverejneni rozpisu plateb a jednotlive potvrzovani zaplaceni
+CLOSED: [2016-10-05 Wed 16:11]
 ** DONE display kids of parent (the other direction)
 CLOSED: [2016-09-27 Tue 10:17]
 ** DONE v platbe na pristi obdobi zohlednit stav fondu + budouci zrusene obedy

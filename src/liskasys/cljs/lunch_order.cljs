@@ -33,7 +33,7 @@
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-order (:db/id row)])]]])
+                      #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-order (:db/id row)])]]])
                   :csv-export]]
          :desc? true]]])))
 
