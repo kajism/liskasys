@@ -74,8 +74,7 @@
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
                    :env {:dev "true"
                          :port "3000"
-                         :datomic-uri "datomic:free://localhost:4334/liskasys"
-                         :database-url "jdbc:h2:./liskasys-dev.db"}}
+                         :datomic-uri "datomic:free://localhost:4334/liskasys"}}
    :project/test  {}}
   :release-tasks
   [["vcs" "assert-committed"]
