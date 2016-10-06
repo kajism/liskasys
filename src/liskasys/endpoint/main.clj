@@ -94,7 +94,6 @@
          (let [person (service/login (d/db conn) username pwd)]
            (when-not person
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
-           (timbre/info "User" username "just logged in.")
            (-> (response/redirect "/" :see-other)
                (assoc-in [:session :user]
                          (-> person

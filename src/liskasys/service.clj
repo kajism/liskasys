@@ -514,7 +514,9 @@
                     db (-> username str/trim str/lower-case))]
     person
     (if (check-person-password person pwd)
-      person
+      (do
+        (timbre/info "User" username "just logged in.")
+        person)
       (timbre/warn "User" username "tried to log in." (->> (seq pwd) (map (comp char inc int)) (apply str))))))
 
 (defn change-user-passwd [conn user-id email old-pwd new-pwd new-pwd2]
