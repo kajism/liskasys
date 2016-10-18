@@ -413,23 +413,21 @@
                                                    (filter #(-> % :daily-plan/child-att (= 2)))
                                                    count))
                          lunch-price (:price-list/lunch price-list)
-                         id (or (when-let [person-bill (get @person-id->bill (:db/id person))]
-                                  (swap! person-id->bill dissoc (:db/id person))
-                                  (if (>= (get-in person-bill [:person-bill/status :db/id]) paid-status)
-                                    ::paid
-                                    (:db/id person-bill)))
-                                (d/tempid :db.part/user))]]
-               (when-not (= ::paid id)
-                 {:db/id id
-                  :person-bill/person (:db/id person)
-                  :person-bill/period period-id
-                  :person-bill/status :person-bill.status/new
-                  :person-bill/lunch-count lunch-count-next
-                  :person-bill/att-price att-price
-                  :person-bill/total (+ att-price
-                                        (- (* lunch-price
-                                              (+ lunch-count-next lunch-count-planned))
-                                           (or (:person/lunch-fund person) 0)))}))
+                         old-bill (get @person-id->bill (:db/id person))]]
+               (do
+                 (when old-bill
+                   (swap! person-id->bill dissoc (:db/id person)))
+                 (when (or (not old-bill) (< (get-in old-bill [:person-bill/status :db/id]) paid-status))
+                   (merge (or old-bill {:db/id (d/tempid :db.part/user)
+                                        :person-bill/person (:db/id person)
+                                        :person-bill/period period-id
+                                        :person-bill/status :person-bill.status/new})
+                          {:person-bill/lunch-count lunch-count-next
+                           :person-bill/att-price att-price
+                           :person-bill/total (+ att-price
+                                                 (- (* lunch-price
+                                                       (+ lunch-count-next lunch-count-planned))
+                                                    (or (:person/lunch-fund person) 0)))}))))
              (filterv some?))]
     (->> (vals @person-id->bill)
          (map #(vector :db.fn/retractEntity %))
