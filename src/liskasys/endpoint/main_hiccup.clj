@@ -231,7 +231,7 @@
         [:td.right (:person/var-symbol person)]
         [:td.right [:b (cljc-util/cents->text total)]]
         [:td.right (cljc-util/cents->text att-price)]
-        [:td.right (str lunch-count " x " (cljc-util/cents->text _lunch-price) " = " (cljc-util/cents->text _total-lunch-price))]
+        [:td.right (str lunch-count " x " (cljc-util/from-cents _lunch-price) " = " (cljc-util/from-cents _total-lunch-price))]
         [:td.right (cljc-util/cents->text _from-previous)]
         [:td (cljc-util/att-pattern->text (:person/att-pattern person))]
         [:td (cljc-util/lunch-pattern->text (:person/lunch-pattern person))]])]]])
