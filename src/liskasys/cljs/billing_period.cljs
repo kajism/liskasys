@@ -116,7 +116,8 @@
                        ["Var symbol" (comp :person/var-symbol :person-bill/person)]
                        ["Stav" (fn [row]
                                  (case (get-in row [:person-bill/status :db/ident])
-                                   :person-bill.status/new "nový"
+                                   :person-bill.status/new
+                                   "nový"
                                    :person-bill.status/published
                                    [:div "zveřejněný"
                                     (when (= (:db/id row) (:selected-row-id @table-state))
@@ -129,7 +130,7 @@
                        ["Celkem Kč" (comp cljc-util/from-cents :person-bill/total)]
                        ["Cena za docházku" (comp cljc-util/from-cents :person-bill/att-price)]
                        ["Cena za obědy" (fn [{:person-bill/keys [lunch-count] :keys [_lunch-price _total-lunch-price]}]
-                                             (str lunch-count " x " (cljc-util/cents->text _lunch-price) " = " (cljc-util/from-cents _total-lunch-price)))]
+                                          (str lunch-count " x " (cljc-util/cents->text _lunch-price) " = " (cljc-util/from-cents _total-lunch-price)))]
                        ["Z předch. období" (comp cljc-util/from-cents :_from-previous)]
                        ["Rozvrh docházky" #(-> % :person-bill/person :person/att-pattern cljc-util/att-pattern->text)]
                        ["Rozvrh obědů" #(-> % :person-bill/person :person/lunch-pattern cljc-util/lunch-pattern->text)]]]]])]]))))
