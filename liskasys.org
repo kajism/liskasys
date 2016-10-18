@@ -3,14 +3,33 @@ LISKASYST
 podpurny informacni system pro lesni materskou skolu Listicka
 
 * TODOs
+** nepregenerovavat zverejnene entity
+** superadmin edit/delete + edit disabled fields
+** uniqueness of daily plans (date+person)
+** don't save kid with contacts (email)
+** don't save adult with attendance
+** validation + nice error msgs
 ** TODO moznost zobrazit historii zmen entity
-** TODO zobrazit zrusene obedy
-** TODO datomic transaction log view
+** TODO UX
+*** edit ikony na zacatek
+*** prijmeni + jmeno o na stranku lide
+*** vzdy proklik jmena prijmeni
+** TODO lidé přehled
+*** tabulka hlavička po, ut, st, čt, pa
+*** celkem deti      20, 18, 20, 19, 17
+*** seznam deti v kazdem dnu
+** TODO deni prehledovy email Danka, Janka, Misa v 10 na dalsi den
+** TODO moznost dogenerovat denni plany i v prubehu obdobi
+** TODO na Objednavkach obedu zobrazit seznam lidi, kterym se obed odecetl (i dodatecne tx)
 ** TODO nahrady
+*** moznost nahrazovani z aktuaniho a 1 predchoziho obdobi
+*** poradnik nahradniku
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
-*** schvalovaci email Dance
+
 *** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
-** TODO sobotni akce - potvrzeni/odmitnuti ucasti
+** TODO datomic transaction log view
+** TODO zobrazit zrusene obedy rodicum
+** QR kod na platbu
 ** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
 ** filtry od/do datum na denni plany (postupne nacitani ze serveru)
 ** form validation!!! clojure.spec
