@@ -11,7 +11,8 @@
 
 (defn page-lunch-orders []
   (let [lunch-orders (re-frame/subscribe [:entities :lunch-order])
-        table-state (re-frame/subscribe [:table-state lunch-orders])]
+        table-state (re-frame/subscribe [:table-state :lunch-orders])
+        user (re-frame/subscribe [:auth-user])]
     (fn []
       [re-com/v-box
        :children
@@ -35,13 +36,15 @@
                          :label [re-com/md-icon-button
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
-                        #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-order (:db/id row)])]]]))
+                        (when (contains? (:-roles @user) "superadmin")
+                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-order (:db/id row)])])]]))
                   :csv-export]]
          :desc? true]]])))
 
 (defn page-lunch-order []
   (let [lunch-order (re-frame/subscribe [:entity-edit :lunch-order])
-        noop-fn #()]
+        noop-fn #()
+        user (re-frame/subscribe [:auth-user])]
     (fn []
       (let [item @lunch-order
             errors (:-errors item)]
@@ -56,11 +59,18 @@
           [re-com/label :label "Počet obědů"]
           [re-com/input-text
            :model (str (:lunch-order/total item))
-           :disabled? true
+           :disabled? (not (contains? (:-roles @user) "superadmin"))
            :on-change noop-fn]
-          [re-com/h-box :align :center :gap "5px"
-           :children
-           [[re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-orders")]]]]]))))
+          (if (contains? (:-roles @user) "superadmin")
+            [re-com/h-box :align :center :gap "5px"
+             :children
+             [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :lunch-order])]
+              "nebo"
+              [re-com/hyperlink-href :label [re-com/button :label "Nová"] :href (str "#/lunch-order/e")]
+              [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-orders")]]]
+            [re-com/h-box :align :center :gap "5px"
+             :children
+             [[re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-orders")]]])]]))))
 
 (secretary/defroute "/lunch-orders" []
   (re-frame/dispatch [:set-current-page :lunch-orders]))

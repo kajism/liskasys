@@ -46,36 +46,35 @@
                         util/sort-by-locale
                         sort-by)]))
          sorted-rows (ratom/reaction
-                      (timbre/debug "Sorting ...")
+                      #_(timbre/debug "Sorting ...")
                       (let [[sort-key-fn sort-fn]  @sort-fns]
                         (if (and sort-fn sort-key-fn)
-                          (time (sort-fn (comp util/href->str sort-key-fn) @rows))
+                          (sort-fn (comp util/href->str sort-key-fn) @rows)
                           @rows)))
          search-colls (ratom/reaction
                        (:search-colls @state))
          filtered-rows (ratom/reaction
-                        (timbre/debug "Filtering ...")
-                        (time
-                         (reduce
-                          (fn [out coll-idx]
-                            (let [s (some-> (get @search-colls coll-idx) str str/lower-case)
-                                  f (nth (get colls coll-idx) 1)]
-                              (if (str/blank? s)
-                                out
-                                (filter
-                                 (fn [row]
-                                   (let [v (f row)
-                                         v (cond
-                                             (boolean? v)
-                                             (cljc-util/boolean->text v)
-                                             (= js/Date (type v))
-                                             (show-date v)
-                                             :else
-                                             (str v))]
-                                     (-> v str/lower-case (str/index-of s))))
-                                 out))))
-                          @sorted-rows
-                          (keys colls))))
+                        #_(timbre/debug "Filtering ...")
+                        (reduce
+                         (fn [out coll-idx]
+                           (let [s (some-> (get @search-colls coll-idx) str str/lower-case)
+                                 f (nth (get colls coll-idx) 1)]
+                             (if (str/blank? s)
+                               out
+                               (filter
+                                (fn [row]
+                                  (let [v (f row)
+                                        v (cond
+                                            (boolean? v)
+                                            (cljc-util/boolean->text v)
+                                            (= js/Date (type v))
+                                            (show-date v)
+                                            :else
+                                            (str v))]
+                                    (-> v str/lower-case (str/index-of s))))
+                                out))))
+                         @sorted-rows
+                         (keys colls)))
          row-from (ratom/reaction
                    (* (or (:rows-per-page @state) 0) (:page-no @state)))
          row-to (ratom/reaction

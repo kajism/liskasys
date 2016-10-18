@@ -4,6 +4,7 @@
             [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.common :as common]
+            [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
             [liskasys.cljs.pages :as pages]
             [liskasys.cljs.util :as util]
@@ -15,7 +16,8 @@
 (defn page-daily-plans []
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
         persons (re-frame/subscribe [:entities :person])
-        table-state (re-frame/subscribe [:table-state :daily-plans])]
+        table-state (re-frame/subscribe [:table-state :daily-plans])
+        user (re-frame/subscribe [:auth-user])]
     (fn []
       [re-com/v-box
        :children
@@ -42,19 +44,26 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :daily-plan])]
                   (fn [row]
-                    (when (and (= (:db/id row) (:selected-row-id @table-state))
-                               (-> (:daily-plan/date row) tc/to-local-date (t/after? (t/today))))
-                      [re-com/hyperlink-href
-                       :href (str "#/daily-plan/" (:db/id row) "e")
-                       :label [re-com/md-icon-button
-                               :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]))
+                    (when (and (= (:db/id row) (:selected-row-id @table-state)))
+                      [re-com/h-box
+                       :gap "5px"
+                       :children
+                       [(when (or (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))
+                                  (contains? (:-roles @user) "superadmin"))
+                          [re-com/hyperlink-href
+                           :href (str "#/daily-plan/" (:db/id row) "e")
+                           :label [re-com/md-icon-button
+                                   :md-icon-name "zmdi-edit"
+                                   :tooltip "Editovat"]])
+                        (when (contains? (:-roles @user) "superadmin")
+                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])])]]))
                   :csv-export]]
          :desc? true]]])))
 
 (defn page-daily-plan []
   (let [daily-plan (re-frame/subscribe [:entity-edit :daily-plan])
-        persons (re-frame/subscribe [:entities :person])]
+        persons (re-frame/subscribe [:entities :person])
+        user (re-frame/subscribe [:auth-user])]
     (fn []
       (let [item @daily-plan
             errors (:-errors item)]
@@ -99,7 +108,7 @@
           [re-com/input-text
            :model (str (:daily-plan/lunch-ord item))
            :on-change #() ;;#(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (cljc-util/parse-int %)])
-           :disabled? true
+           :disabled? (not (contains? (:-roles @user) "superadmin"))
            :width "100px"]
           [re-com/checkbox
            :label "oběd zrušen?"

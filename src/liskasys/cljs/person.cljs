@@ -71,7 +71,8 @@
   (let [person (re-frame/subscribe [:entity-edit :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])
         persons (re-frame/subscribe [:entities :person])
-        kids (re-frame/subscribe [::kids])]
+        kids (re-frame/subscribe [::kids])
+        user (re-frame/subscribe [:auth-user])]
     (fn []
       (if-not (and @persons @lunch-types)
         [re-com/throbber]
@@ -114,7 +115,7 @@
                :model (str (cljc-util/from-cents (:person/lunch-fund item)))
                :on-change #() ;; #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-fund (cljc-util/to-cents %)])
                :validation-regex #"^\d{0,4}$"
-               :disabled? (:db/id item)]
+               :disabled? (if (contains? (:-roles @user) "superadmin") false (:db/id item))]
               "Kč"]]
             [re-com/checkbox
              :label "dítě?"

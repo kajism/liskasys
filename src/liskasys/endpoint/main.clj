@@ -185,7 +185,7 @@
             "save" (service/transact-entity conn (:db/id user) ?data)
             "delete" (service/retract-entity conn (:db/id user) ?data)
             (case msg-id
-              :user/auth {}
+              :user/auth user
               :entity/retract (service/retract-entity conn (:db/id user) ?data)
               :entity/retract-attr (service/retract-attr conn (:db/id user) ?data)
               :person-bill/generate (service/re-generate-person-bills conn (:db/id user) (:person-bill/period ?data))

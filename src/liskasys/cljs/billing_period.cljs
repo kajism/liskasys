@@ -22,7 +22,8 @@
 
 (defn page-billing-periods []
   (let [billing-periods (re-frame/subscribe [:entities :billing-period])
-        table-state (re-frame/subscribe [:table-state :billing-periods])]
+        table-state (re-frame/subscribe [:table-state :billing-periods])
+        user (re-frame/subscribe [:auth-user])]
     (fn []
       [re-com/v-box
        :children
@@ -47,7 +48,8 @@
                          :label [re-com/md-icon-button
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
-                        #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])]]]))
+                        (when (contains? (:-roles @user) "superadmin")
+                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])])]]))
                   :csv-export]]
          :desc? true]]])))
 
