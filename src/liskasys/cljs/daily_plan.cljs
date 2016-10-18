@@ -23,7 +23,9 @@
       [re-com/v-box
        :children
        [[:h3 "Denní plány"]
-        [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/daily-plan/e")]
+        [re-com/hyperlink-href
+         :href (str "#/daily-plan/e")
+         :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan {}])] ]
         [data-table
          :table-id :daily-plans
          :rows daily-plans

@@ -102,11 +102,30 @@
     (timbre/debug tx-result)
     tx-result))
 
-(defn transact-entity [conn user-id ent]
+(defn- transact-entity* [conn user-id ent]
   (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))
         tx-result (transact conn user-id [(assoc ent :db/id ent-id)])]
     (d/pull (:db-after tx-result) '[*] (or (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) ent-id)
                                            ent-id))))
+
+(defmulti transact-entity (fn [conn user-id ent]
+                            (first (keys (select-keys ent [:daily-plan/date])))))
+
+(defmethod transact-entity :default [conn user-id ent]
+  (transact-entity* conn user-id ent))
+
+(defmethod transact-entity :daily-plan/date [conn user-id ent]
+  (when-let [old-id (d/q '[:find ?e .
+                           :in $ ?date ?pid
+                           :where
+                           [?e :daily-plan/date ?date]
+                           [?e :daily-plan/person ?pid]]
+                         (d/db conn)
+                         (:daily-plan/date ent)
+                         (:db/id (:daily-plan/person ent)))]
+    (when (not= old-id (:db/id ent))
+      (throw (Exception. "Pro tuto osobu a den již v denním plánu existuje záznam."))))
+  (transact-entity* conn user-id ent))
 
 (defn retract-entity
   "Returns the number of retracted datoms (attributes)."
