@@ -10,14 +10,15 @@
             [secretary.core :as secretary]))
 
 (defn page-lunch-orders []
-  (let [lunch-orders (re-frame/subscribe [:entities :lunch-order])]
+  (let [lunch-orders (re-frame/subscribe [:entities :lunch-order])
+        table-state (re-frame/subscribe [:table-state lunch-orders])]
     (fn []
       [re-com/v-box
        :children
        [[:h3 "Objednávky obědů"]
         [data-table
          :table-id :lunch-orders
-         :rows @lunch-orders
+         :rows lunch-orders
          :colls [["Datum" :lunch-order/date]
                  ["Počet obědů" :lunch-order/total]
                  [[re-com/md-icon-button
@@ -25,15 +26,16 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :lunch-order])]
                   (fn [row]
-                    [re-com/h-box
-                     :gap "5px"
-                     :children
-                     [[re-com/hyperlink-href
-                       :href (str "#/lunch-order/" (:db/id row) "e")
-                       :label [re-com/md-icon-button
-                               :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]
-                      #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-order (:db/id row)])]]])
+                    (when (= (:db/id row) (:selected-row-id @table-state))
+                      [re-com/h-box
+                       :gap "5px"
+                       :children
+                       [[re-com/hyperlink-href
+                         :href (str "#/lunch-order/" (:db/id row) "e")
+                         :label [re-com/md-icon-button
+                                 :md-icon-name "zmdi-edit"
+                                 :tooltip "Editovat"]]
+                        #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-order (:db/id row)])]]]))
                   :csv-export]]
          :desc? true]]])))
 

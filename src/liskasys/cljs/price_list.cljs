@@ -22,7 +22,7 @@
           [re-com/hyperlink-href :label [re-com/button :label "Vytvořit"] :href (str "#/price-list/e")])
         [data-table
          :table-id :price-lists
-         :rows @price-lists
+         :rows price-lists
          :colls [["5 dní" (comp cljc-util/from-cents :price-list/days-5)]
                  ["4 dny" (comp cljc-util/from-cents :price-list/days-4)]
                  ["3 dny" (comp cljc-util/from-cents :price-list/days-3)]

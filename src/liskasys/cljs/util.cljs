@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [cognitect.transit :as transit]
             [liskasys.cljc.util :as cljc-util]
+            [re-com.core :as re-com]
             [schema.core :as s]))
 
 (defn sort-by-locale
@@ -28,3 +29,21 @@
 
 (defn bigdec->float [n]
   (parse-float (bigdec->str n)))
+
+(defn href->str [x]
+  (cond
+    (and (vector? x) (= (first x) re-com/hyperlink-href))
+    (->> x
+         rest
+         (apply hash-map)
+         :label)
+    :else
+    x))
+
+(defn hiccup->string [h]
+  (cond
+    (vector? h)
+    (apply str (map hiccup->string h))
+    :else
+    ""))
+

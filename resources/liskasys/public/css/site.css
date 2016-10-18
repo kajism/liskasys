@@ -31,3 +31,8 @@ body {
 .right {
     text-align: right;
 }
+
+.table>tbody>tr>td.buttons {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}

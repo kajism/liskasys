@@ -15,7 +15,7 @@
 (defn page-persons []
   (let [persons (re-frame/subscribe [:entities :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])
-        selected-row (reagent/atom nil)]
+        table-state (re-frame/subscribe [:table-state :persons])]
     (fn []
       [re-com/v-box
        :children
@@ -23,8 +23,7 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/person/e")]
         [data-table
          :table-id :persons
-         :selected-row selected-row
-         :rows @persons
+         :rows persons
          :colls [["Příjmení" :person/lastname]
                  ["Jméno" :person/firstname]
                  #_["Variabilní symbol" :person/var-symbol]
@@ -41,7 +40,7 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :person])]
                   (fn [row]
-                    (when (= row @selected-row)
+                    (when (= (:db/id row) (:selected-row-id @table-state))
                       [re-com/h-box
                        :gap "5px"
                        :children

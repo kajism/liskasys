@@ -12,7 +12,8 @@
             [secretary.core :as secretary]))
 
 (defn page-lunch-menus []
-  (let [lunch-menus (re-frame/subscribe [:entities :lunch-menu])]
+  (let [lunch-menus (re-frame/subscribe [:entities :lunch-menu])
+        table-state (re-frame/subscribe [:table-state :lunch-menus])]
     (fn []
       [re-com/v-box
        :children
@@ -20,7 +21,7 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/lunch-menu/e")]
         [data-table
          :table-id :lunch-menus
-         :rows @lunch-menus
+         :rows lunch-menus
          :colls [["Platný od" :lunch-menu/from]
                  ["Text" #(str (subs (:lunch-menu/text %) 0 100) " ...") ]
                  [[re-com/md-icon-button
@@ -28,15 +29,16 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :lunch-menu])]
                   (fn [row]
-                    [re-com/h-box
-                     :gap "5px"
-                     :children
-                     [[re-com/hyperlink-href
-                       :href (str "#/lunch-menu/" (:db/id row) "e")
-                       :label [re-com/md-icon-button
-                               :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-menu (:db/id row)])]]])
+                    (when (= (:db/id row) (:selected-row-id @table-state))
+                      [re-com/h-box
+                       :gap "5px"
+                       :children
+                       [[re-com/hyperlink-href
+                         :href (str "#/lunch-menu/" (:db/id row) "e")
+                         :label [re-com/md-icon-button
+                                 :md-icon-name "zmdi-edit"
+                                 :tooltip "Editovat"]]
+                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-menu (:db/id row)])]]]))
                   :csv-export]]
          :desc? true]]])))
 

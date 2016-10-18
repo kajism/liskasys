@@ -15,7 +15,7 @@
 (defn page-daily-plans []
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
         persons (re-frame/subscribe [:entities :person])
-        selected-row (reagent/atom nil)]
+        table-state (re-frame/subscribe [:table-state :daily-plans])]
     (fn []
       [re-com/v-box
        :children
@@ -23,12 +23,11 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/daily-plan/e")]
         [data-table
          :table-id :daily-plans
-         :selected-row selected-row
-         :rows @daily-plans
+         :rows daily-plans
          :colls [["Datum" :daily-plan/date]
                  ["Jméno" (fn [row]
                             (let [label (->> row :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)]
-                              (if (= row @selected-row)
+                              (if (= (:db/id row) (:selected-row-id @table-state))
                                 [re-com/hyperlink-href
                                  :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
                                  :label label]
@@ -43,7 +42,7 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :daily-plan])]
                   (fn [row]
-                    (when (and (= row @selected-row)
+                    (when (and (= (:db/id row) (:selected-row-id @table-state))
                                (-> (:daily-plan/date row) tc/to-local-date (t/after? (t/today))))
                       [re-com/hyperlink-href
                        :href (str "#/daily-plan/" (:db/id row) "e")

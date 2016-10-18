@@ -18,7 +18,7 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/bank-holiday/e")]
         [data-table
          :table-id :bank-holidays
-         :rows @bank-holidays
+         :rows bank-holidays
          :colls [["Název" :bank-holiday/label]
                  ["Měsíc" :bank-holiday/month]
                  ["Den" :bank-holiday/day]

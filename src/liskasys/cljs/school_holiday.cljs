@@ -20,7 +20,7 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/school-holiday/e")]
         [data-table
          :table-id :school-holidays
-         :rows @school-holidays
+         :rows school-holidays
          :colls [["Název" :school-holiday/label]
                  ["Od" :school-holiday/from]
                  ["Do" :school-holiday/to]

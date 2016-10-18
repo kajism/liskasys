@@ -21,7 +21,8 @@
    db))
 
 (defn page-billing-periods []
-  (let [billing-periods (re-frame/subscribe [:entities :billing-period])]
+  (let [billing-periods (re-frame/subscribe [:entities :billing-period])
+        table-state (re-frame/subscribe [:table-state :billing-periods])]
     (fn []
       [re-com/v-box
        :children
@@ -29,7 +30,7 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/billing-period/e")]
         [data-table
          :table-id :billing-periods
-         :rows @billing-periods
+         :rows billing-periods
          :colls [["Od" (comp cljc-util/yyyymm->text :billing-period/from-yyyymm)]
                  ["Do" (comp cljc-util/yyyymm->text :billing-period/to-yyyymm)]
                  [[re-com/md-icon-button
@@ -37,15 +38,16 @@
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :billing-period])]
                   (fn [row]
-                    [re-com/h-box
-                     :gap "5px"
-                     :children
-                     [[re-com/hyperlink-href
-                       :href (str "#/billing-period/" (:db/id row) "e")
-                       :label [re-com/md-icon-button
-                               :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]
-                      #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])]]])
+                    (when (= (:db/id row) (:selected-row-id @table-state))
+                      [re-com/h-box
+                       :gap "5px"
+                       :children
+                       [[re-com/hyperlink-href
+                         :href (str "#/billing-period/" (:db/id row) "e")
+                         :label [re-com/md-icon-button
+                                 :md-icon-name "zmdi-edit"
+                                 :tooltip "Editovat"]]
+                        #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])]]]))
                   :csv-export]]
          :desc? true]]])))
 
@@ -54,7 +56,7 @@
         billing-period (re-frame/subscribe [:entity-edit :billing-period])
         person-bills (re-frame/subscribe [:entities-where :person-bill {:person-bill/period @item-id}])
         persons (re-frame/subscribe [:entities :person])
-        selected-row (reagent/atom nil)]
+        table-state (re-frame/subscribe [:table-state :person-bills])]
     (fn []
       (let [item @billing-period]
         [re-com/v-box :gap "5px"
@@ -103,11 +105,10 @@
                    :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "publish-all-bills"])])]]
               [data-table
                :table-id :person-bills
-               :selected-row selected-row
-               :rows @person-bills
+               :rows person-bills
                :colls [["Jméno" (fn [row]
                                   (let [label (->> row :person-bill/person :db/id (get @persons) cljc-util/person-fullname)]
-                                    (if (= row @selected-row)
+                                    (if (= (:db/id row) (:selected-row-id @table-state))
                                       [re-com/hyperlink-href
                                        :href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")
                                        :label label]
@@ -118,7 +119,7 @@
                                    :person-bill.status/new "nový"
                                    :person-bill.status/published
                                    [:div "zveřejněný"
-                                    (when (= row @selected-row)
+                                    (when (= (:db/id row) (:selected-row-id @table-state))
                                       [re-com/button
                                        :label "Zaplacený"
                                        :class "btn-danger btn-xs"

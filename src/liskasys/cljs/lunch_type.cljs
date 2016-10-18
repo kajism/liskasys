@@ -20,7 +20,7 @@
         [re-com/hyperlink-href :label [re-com/button :label "Nová"] :href (str "#/lunch-type/e")]
         [data-table
          :table-id :lunch-types
-         :rows @lunch-types
+         :rows lunch-types
          :colls [["Název" :lunch-type/label]
                  ["Barva" :lunch-type/color]
                  [[re-com/md-icon-button
