@@ -11,7 +11,8 @@
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
-            [secretary.core :as secretary]))
+            [secretary.core :as secretary]
+            [taoensso.timbre :as timbre]))
 
 (defn page-daily-plans []
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
@@ -89,36 +90,45 @@
            :filter-box? true
            :width "250px"]
           [re-com/label :label "Druh docházky"]
-          [re-com/input-text
-           :model (str (:daily-plan/child-att item))
-           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/child-att (cljc-util/parse-int %)])
-           :validation-regex #"^[0-2]{0,1}$"
-           :width "100px"]
-          [re-com/checkbox
-           :label "docházka zrušena?"
-           :model (:daily-plan/att-cancelled? item)
-           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/att-cancelled? %])]
-          [re-com/label :label "Požadovaný počet obědů"]
-          [re-com/input-text
-           :model (str (:daily-plan/lunch-req item))
-           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-req (cljc-util/parse-int %)])
-           :validation-regex #"^[0-9]{0,1}$"
-           :width "100px"]
-          [re-com/label :label "Objednaný počet obědů"]
+          [re-com/h-box :gap "15px" :align :center
+           :children
+           [[re-com/single-dropdown
+             :model (:daily-plan/child-att item)
+             :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/child-att (cljc-util/parse-int %)])
+             :choices [{:id nil :label "žádná"}
+                       {:id 1 :label "celodenní"}
+                       {:id 2 :label "půldenní"}]
+             :placeholder "žádná"
+             :width "100px"]
+            [re-com/checkbox
+             :label "docházka zrušena?"
+             :model (:daily-plan/att-cancelled? item)
+             :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/att-cancelled? %])]]]
+          [re-com/label :label "Požadováno obědů"]
+          [re-com/h-box :gap "15px" :align :center
+           :children
+           [[re-com/input-text
+             :model (str (:daily-plan/lunch-req item))
+             :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-req (cljc-util/parse-int %)])
+             :validation-regex #"^[0-9]{0,1}$"
+             :width "100px"]
+            [re-com/checkbox
+             :label "oběd zrušen?"
+             :model (:daily-plan/lunch-cancelled? item)
+             :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-cancelled? %])]]]
+          [re-com/label :label "Objednáno obědů"]
           [re-com/input-text
            :model (str (:daily-plan/lunch-ord item))
            :on-change #() ;;#(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (cljc-util/parse-int %)])
            :disabled? (not (contains? (:-roles @user) "superadmin"))
            :width "100px"]
-          [re-com/checkbox
-           :label "oběd zrušen?"
-           :model (:daily-plan/lunch-cancelled? item)
-           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-cancelled? %])]
-          [re-com/h-box :align :center :gap "5px"
+          [re-com/h-box :gap "5px" :align :center
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :daily-plan])]
             "nebo"
-            [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/daily-plan/e")]
+            [re-com/hyperlink-href
+             :href (str "#/daily-plan/e")
+             :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan {:daily-plan/person (:daily-plan/person item)}])]]
             [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/daily-plans")]]]]]))))
 
 (secretary/defroute "/daily-plans" []

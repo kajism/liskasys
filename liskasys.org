@@ -8,14 +8,14 @@ CLOSED: [2016-10-18 Tue 15:37]
 ** DONE superadmin edit/delete + edit disabled fields
 CLOSED: [2016-10-18 Tue 16:03]
 ** uniqueness of daily plans (date+person)
-** don't save kid with contacts (email)
-** don't save adult with attendance
-** validation + nice error msgs
-** TODO moznost zobrazit historii zmen entity
 ** TODO UX
 *** edit ikony na zacatek
 *** prijmeni + jmeno o na stranku lide
 *** vzdy proklik jmena prijmeni
+** don't save kid with contacts (email)
+** don't save adult with attendance
+** validation + nice error msgs
+** TODO moznost zobrazit historii zmen entity
 ** TODO lidé přehled
 *** tabulka hlavička po, ut, st, čt, pa
 *** celkem deti      20, 18, 20, 19, 17
