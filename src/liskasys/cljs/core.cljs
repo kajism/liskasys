@@ -94,7 +94,7 @@
       [:li [:a {:href "#/daily-plans"} "Denní plány"]]
       [:li [:a {:href "#/billing-periods"} "Platební období"]]
       [:li [:a {:href "#/lunch-menus"} "Jídelníček"]]
-      [:li [:a {:href "#/lunch-orders"} "Obědnávky"]]]
+      [:li [:a {:href "#/lunch-orders"} "Oběd-návky"]]]
      [:ul.nav.navbar-nav.navbar-right
       #_[:li
        [:a {:target "_parent" :href "/obedy"} "Obědy"]]

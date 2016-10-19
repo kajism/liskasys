@@ -23,14 +23,7 @@
         [data-table
          :table-id :price-lists
          :rows price-lists
-         :colls [["5 dní" (comp cljc-util/from-cents :price-list/days-5)]
-                 ["4 dny" (comp cljc-util/from-cents :price-list/days-4)]
-                 ["3 dny" (comp cljc-util/from-cents :price-list/days-3)]
-                 ["2 dny" (comp cljc-util/from-cents :price-list/days-2)]
-                 ["1 den" (comp cljc-util/from-cents :price-list/days-1)]
-                 ["půlden" (comp cljc-util/from-cents :price-list/half-day)]
-                 ["oběd" (comp cljc-util/from-cents :price-list/lunch)]
-                 [[re-com/md-icon-button
+         :colls [[[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :price-list])]
@@ -44,7 +37,14 @@
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
                       #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])]]])
-                  :csv-export]]]]])))
+                  :none]
+                 ["5 dní" (comp cljc-util/from-cents :price-list/days-5)]
+                 ["4 dny" (comp cljc-util/from-cents :price-list/days-4)]
+                 ["3 dny" (comp cljc-util/from-cents :price-list/days-3)]
+                 ["2 dny" (comp cljc-util/from-cents :price-list/days-2)]
+                 ["1 den" (comp cljc-util/from-cents :price-list/days-1)]
+                 ["půlden" (comp cljc-util/from-cents :price-list/half-day)]
+                 ["oběd" (comp cljc-util/from-cents :price-list/lunch)]]]]])))
 
 (defn- from-cents [cents]
   (str (cljc-util/from-cents cents)))

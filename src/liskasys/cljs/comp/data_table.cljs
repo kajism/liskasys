@@ -122,9 +122,9 @@
                   (str (str/join ";" (map #(% row)
                                           (map second colls))) "\n"))))))
 
-(defn td-comp [value last?]
+(defn td-comp [value buttons?]
   [:td {:class (str #_"text-nowrap"
-                    (when last? " buttons")
+                    (when buttons? " buttons")
                     (when (or (number? value) (transit/bigdec? value)) " text-right"))}
    (cond
      (or (string? value) (vector? value)) value
@@ -135,8 +135,7 @@
      :else (str value))])
 
 (defn tr-comp [colls row change-state-fn]
-  (let [on-enter #(change-state-fn :selected-row-id (:db/id row))
-        last-idx (dec (count colls))]
+  (let [on-enter #(change-state-fn :selected-row-id (:db/id row))]
     [:tr {:on-mouse-enter on-enter}
      #_(when row-checkboxes?
          [:td [re-com/checkbox
@@ -147,11 +146,11 @@
      (doall
       (for [[coll-idx [_ f _]] colls
             :let [value (f row)]]
-        ^{:key (str (:db/id row) "-" coll-idx)}
-        [td-comp value (= coll-idx last-idx)]))]))
+        ^{:key coll-idx}
+        [td-comp value (= 0 coll-idx)]))]))
 
 (defn data-table [& {:keys [table-id order-by desc? rows-per-page row-checkboxes? rows colls] :as args}]
-  (let [order-by (or order-by 0)
+  (let [order-by (or order-by 1)
         colls (into {} (->> colls
                             (keep identity)
                             (map-indexed vector)))
@@ -234,15 +233,16 @@
                          (apply +)
                          int)) " Kč" [:br]])
                 (if (#{:none :csv-export} header-modifier)
-                  [:span
-                   label
-                   (when (= :csv-export header-modifier)
-                     [:a {:id (str "download-" table-name)}
-                      [re-com/md-icon-button :md-icon-name "zmdi-download" :tooltip "Export do CSV"
-                       :on-click (fn []
-                                   (let [anchor (.getElementById js/document (str "download-" table-name))]
-                                     (set! (.-href anchor) (str "data:text/plain;charset=utf-8," (js/encodeURIComponent (make-csv (:filtered-rows @table-rows) colls))))
-                                     (set! (.-download anchor) (str table-name ".csv"))))]])]
+                  [re-com/h-box :gap "5px" :justify :end
+                   :children
+                   [label
+                    (when (= :csv-export header-modifier)
+                      [:a {:id (str "download-" table-name)}
+                       [re-com/md-icon-button :md-icon-name "zmdi-download" :tooltip "Export do CSV"
+                        :on-click (fn []
+                                    (let [anchor (.getElementById js/document (str "download-" table-name))]
+                                      (set! (.-href anchor) (str "data:text/plain;charset=utf-8," (js/encodeURIComponent (make-csv (:filtered-rows @table-rows) colls))))
+                                      (set! (.-download anchor) (str table-name ".csv"))))]])]]
                   [:a {:on-click #(on-click-order-by coll-idx)}
                    [:span label]
                    [:span (if (not= (:order-by @state) coll-idx)

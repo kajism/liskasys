@@ -49,7 +49,29 @@
       [data-table
        :table-id :persons
        :rows rows
-       :colls [["Příjmení" :person/lastname]
+       :colls [[[re-com/h-box :gap "5px" :justify :end
+                 :children
+                 [[re-com/md-icon-button
+                   :md-icon-name "zmdi-plus-square"
+                   :tooltip "Přidat"
+                   :on-click #(do (re-frame/dispatch [:entity-new :person empty-person])
+                                  (set! js/window.location.hash "#/person/e"))]
+                  [re-com/md-icon-button
+                   :md-icon-name "zmdi-refresh"
+                   :tooltip "Přenačíst ze serveru"
+                   :on-click #(re-frame/dispatch [:entities-load :person])]]]
+                (fn [row]
+                  (when (= (:db/id row) (:selected-row-id @table-state))
+                    [re-com/h-box :gap "5px" :justify :end
+                     :children
+                     [[re-com/hyperlink-href
+                       :href (str "#/person/" (:db/id row) "e")
+                       :label [re-com/md-icon-button
+                               :md-icon-name "zmdi-edit"
+                               :tooltip "Editovat"]]
+                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])]]]))
+                :none]
+               ["Příjmení" :person/lastname]
                ["Jméno" :person/firstname]
                ["Rozvrh docházky" (comp cljc-util/att-pattern->text :person/att-pattern)]
                ["Rozvrh obědů" (comp cljc-util/lunch-pattern->text :person/lunch-pattern)]
@@ -59,30 +81,7 @@
                ["Fond obědů" #(some-> % :person/lunch-fund cljc-util/from-cents)]
                #_["Aktivní?" :person/active?]
                #_["Dítě?" :person/child?]
-               #_["Mobilní telefon" :person/phone]
-               [[re-com/h-box :gap "5px"
-                 :children
-                 [[re-com/md-icon-button
-                   :md-icon-name "zmdi-plus-square"
-                   :tooltip "Vytvořit nový záznam"
-                   :on-click #(do (re-frame/dispatch [:entity-new :person empty-person])
-                                  (set! js/window.location.hash "#/person/e"))]
-                  [re-com/md-icon-button
-                   :md-icon-name "zmdi-refresh"
-                   :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :person])]]]
-                (fn [row]
-                  (when (= (:db/id row) (:selected-row-id @table-state))
-                    [re-com/h-box
-                     :gap "5px"
-                     :children
-                     [[re-com/hyperlink-href
-                       :href (str "#/person/" (:db/id row) "e")
-                       :label [re-com/md-icon-button
-                               :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])]]]))
-                :none]]])))
+               #_["Mobilní telefon" :person/phone]]])))
 
 (defn daily-summary [kids]
   (let [kids-by-day (reduce (fn [out day-idx]

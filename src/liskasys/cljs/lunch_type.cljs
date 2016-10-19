@@ -12,7 +12,8 @@
             [taoensso.timbre :as timbre]))
 
 (defn page-lunch-types []
-  (let [lunch-types (re-frame/subscribe [:entities :lunch-type])]
+  (let [lunch-types (re-frame/subscribe [:entities :lunch-type])
+        table-state (re-frame/subscribe [:table-state :lunch-types])]
     (fn []
       [re-com/v-box
        :children
@@ -20,29 +21,29 @@
         [data-table
          :table-id :lunch-types
          :rows lunch-types
-         :colls [["Název" :lunch-type/label]
-                 ["Barva" :lunch-type/color]
-                 [[re-com/h-box :gap "5px"
+         :colls [[[re-com/h-box :gap "5px" :justify :end
                    :children
                    [[re-com/md-icon-button
                      :md-icon-name "zmdi-plus-square"
-                     :tooltip "Vytvořit nový záznam"
+                     :tooltip "Přidat"
                      :on-click #(set! js/window.location.hash "#/lunch-type/e")]
                     [re-com/md-icon-button
                      :md-icon-name "zmdi-refresh"
                      :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :lunch-type])]]]
                   (fn [row]
-                    [re-com/h-box
-                     :gap "5px"
-                     :children
-                     [[re-com/hyperlink-href
-                       :href (str "#/lunch-type/" (:db/id row) "e")
-                       :label [re-com/md-icon-button
-                               :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-type (:db/id row)])]]])
-                  :none]]]]])))
+                    (when (= (:db/id row) (:selected-row-id @table-state))
+                      [re-com/h-box :gap "5px" :justify :end
+                       :children
+                       [[re-com/hyperlink-href
+                         :href (str "#/lunch-type/" (:db/id row) "e")
+                         :label [re-com/md-icon-button
+                                 :md-icon-name "zmdi-edit"
+                                 :tooltip "Editovat"]]
+                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-type (:db/id row)])]]]))
+                  :none]
+                 ["Název" :lunch-type/label]
+                 ["Barva" :lunch-type/color]]]]])))
 
 (defn page-lunch-type []
   (let [lunch-type (re-frame/subscribe [:entity-edit :lunch-type])

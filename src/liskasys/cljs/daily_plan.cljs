@@ -26,7 +26,32 @@
         [data-table
          :table-id :daily-plans
          :rows daily-plans
-         :colls [["Datum" :daily-plan/date]
+         :colls [[[re-com/h-box :gap "5px" :justify :end
+                   :children
+                   [[re-com/md-icon-button
+                     :md-icon-name "zmdi-plus-square"
+                     :tooltip "Přidat"
+                     :on-click #(do (re-frame/dispatch [:entity-new :daily-plan {}])
+                                    (set! js/window.location.hash "#/daily-plan/e"))]
+                    [re-com/md-icon-button
+                     :md-icon-name "zmdi-refresh"
+                     :tooltip "Přenačíst ze serveru"
+                   :on-click #(re-frame/dispatch [:entities-load :daily-plan])]]]
+                  (fn [row]
+                    (when (and (= (:db/id row) (:selected-row-id @table-state)))
+                      [re-com/h-box :gap "5px" :justify :end
+                       :children
+                       [(when (or (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))
+                                  (contains? (:-roles @user) "superadmin"))
+                          [re-com/hyperlink-href
+                           :href (str "#/daily-plan/" (:db/id row) "e")
+                           :label [re-com/md-icon-button
+                                   :md-icon-name "zmdi-edit"
+                                   :tooltip "Editovat"]])
+                        (when (contains? (:-roles @user) "superadmin")
+                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])])]]))
+                  :none]
+                 ["Datum" :daily-plan/date]
                  ["Jméno" (fn [row]
                             (let [label (->> row :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)]
                               (if (= (:db/id row) (:selected-row-id @table-state))
@@ -38,33 +63,7 @@
                  ["Docházka zrušena" (comp cljc-util/boolean->text :daily-plan/att-cancelled?)]
                  ["Oběd požadavek" #(or (:daily-plan/lunch-req %) 0)]
                  ["Oběd objednáno" #(or (:daily-plan/lunch-ord %) 0)]
-                 ["Oběd zrušen" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]
-                 [[re-com/h-box :gap "5px"
-                   :children
-                   [[re-com/md-icon-button
-                     :md-icon-name "zmdi-plus-square"
-                     :tooltip "Vytvořit nový záznam"
-                     :on-click #(do (re-frame/dispatch [:entity-new :daily-plan {}])
-                                    (set! js/window.location.hash "#/daily-plan/e"))]
-                    [re-com/md-icon-button
-                     :md-icon-name "zmdi-refresh"
-                     :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :daily-plan])]]]
-                  (fn [row]
-                    (when (and (= (:db/id row) (:selected-row-id @table-state)))
-                      [re-com/h-box
-                       :gap "5px"
-                       :children
-                       [(when (or (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))
-                                  (contains? (:-roles @user) "superadmin"))
-                          [re-com/hyperlink-href
-                           :href (str "#/daily-plan/" (:db/id row) "e")
-                           :label [re-com/md-icon-button
-                                   :md-icon-name "zmdi-edit"
-                                   :tooltip "Editovat"]])
-                        (when (contains? (:-roles @user) "superadmin")
-                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])])]]))
-                  :none]]
+                 ["Oběd zrušen" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]]
          :desc? true]]])))
 
 (defn page-daily-plan []

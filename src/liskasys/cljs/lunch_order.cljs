@@ -20,16 +20,13 @@
         [data-table
          :table-id :lunch-orders
          :rows lunch-orders
-         :colls [["Datum" :lunch-order/date]
-                 ["Počet obědů" :lunch-order/total]
-                 [[re-com/md-icon-button
+         :colls [[[re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
                    :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :lunch-order])]
                   (fn [row]
                     (when (= (:db/id row) (:selected-row-id @table-state))
-                      [re-com/h-box
-                       :gap "5px"
+                      [re-com/h-box :gap "5px" :justify :end
                        :children
                        [[re-com/hyperlink-href
                          :href (str "#/lunch-order/" (:db/id row) "e")
@@ -38,7 +35,9 @@
                                  :tooltip "Editovat"]]
                         (when (contains? (:-roles @user) "superadmin")
                           [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-order (:db/id row)])])]]))
-                  :csv-export]]
+                  :csv-export]
+                 ["Datum" :lunch-order/date]
+                 ["Počet obědů" :lunch-order/total]]
          :desc? true]]])))
 
 (defn page-lunch-order []

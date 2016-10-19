@@ -21,13 +21,11 @@
         [data-table
          :table-id :lunch-menus
          :rows lunch-menus
-         :colls [["Platný od" :lunch-menu/from]
-                 ["Text" #(str (subs (:lunch-menu/text %) 0 100) " ...") ]
-                 [[re-com/h-box :gap "5px"
+         :colls [[[re-com/h-box :gap "5px" :justify :end
                    :children
                    [[re-com/md-icon-button
                      :md-icon-name "zmdi-plus-square"
-                     :tooltip "Vytvořit nový záznam"
+                     :tooltip "Přidat"
                      :on-click #(set! js/window.location.hash "#/lunch-menu/e")]
                     [re-com/md-icon-button
                      :md-icon-name "zmdi-refresh"
@@ -35,8 +33,7 @@
                    :on-click #(re-frame/dispatch [:entities-load :lunch-menu])]]]
                   (fn [row]
                     (when (= (:db/id row) (:selected-row-id @table-state))
-                      [re-com/h-box
-                       :gap "5px"
+                      [re-com/h-box :gap "5px" :justify :end
                        :children
                        [[re-com/hyperlink-href
                          :href (str "#/lunch-menu/" (:db/id row) "e")
@@ -44,7 +41,9 @@
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
                         [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-menu (:db/id row)])]]]))
-                  :none]]
+                  :none]
+                 ["Platný od" :lunch-menu/from]
+                 ["Text" #(str (subs (:lunch-menu/text %) 0 100) " ...") ]]
          :desc? true]]])))
 
 (defn page-lunch-menu []

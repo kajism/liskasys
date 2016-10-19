@@ -21,7 +21,8 @@ CLOSED: [2016-10-18 Tue 16:47]
 ** don't save adult with attendance
 ** validation + nice error msgs
 ** TODO UX
-*** edit ikony na zacatek
+*** DONE edit ikony na zacatek
+    CLOSED: [2016-10-19 Wed 17:11]
 *** prijmeni + jmeno na stranku lide
 *** vzdy proklik jmena prijmeni
 ** TODO moznost zobrazit historii zmen entity

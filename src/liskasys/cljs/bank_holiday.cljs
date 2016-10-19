@@ -10,7 +10,8 @@
             [secretary.core :as secretary]))
 
 (defn page-bank-holidays []
-  (let [bank-holidays (re-frame/subscribe [:entities :bank-holiday])]
+  (let [bank-holidays (re-frame/subscribe [:entities :bank-holiday])
+        table-state (re-frame/subscribe [:table-state :bank-holidays])]
     (fn []
       [re-com/v-box
        :children
@@ -18,32 +19,32 @@
         [data-table
          :table-id :bank-holidays
          :rows bank-holidays
-         :colls [["Název" :bank-holiday/label]
-                 ["Měsíc" :bank-holiday/month]
-                 ["Den" :bank-holiday/day]
-                 ["+/- dnů od Velikonoc" :bank-holiday/easter-delta]
-                 [[re-com/h-box :gap "5px"
+         :colls [[[re-com/h-box :gap "5px" :justify :end
                    :children
                    [[re-com/md-icon-button
                      :md-icon-name "zmdi-plus-square"
-                     :tooltip "Vytvořit nový záznam"
+                     :tooltip "Přidat"
                      :on-click #(set! js/window.location.hash "#/bank-holiday/e")]
                     [re-com/md-icon-button
                      :md-icon-name "zmdi-refresh"
                      :tooltip "Přenačíst ze serveru"
                    :on-click #(re-frame/dispatch [:entities-load :bank-holiday])]]]
                   (fn [row]
-                    [re-com/h-box
-                     :gap "5px"
-                     :children
-                     [[re-com/hyperlink-href
-                       :href (str "#/bank-holiday/" (:db/id row) "e")
-                       :label [re-com/md-icon-button
-                               :md-icon-name "zmdi-edit"
-                               :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :bank-holiday (:db/id row)])]]])
-                  :none]]
-         :order-by 1]]])))
+                    (when (= (:db/id row) (:selected-row-id @table-state))
+                      [re-com/h-box :gap "5px" :justify :end
+                       :children
+                       [[re-com/hyperlink-href
+                         :href (str "#/bank-holiday/" (:db/id row) "e")
+                         :label [re-com/md-icon-button
+                                 :md-icon-name "zmdi-edit"
+                                 :tooltip "Editovat"]]
+                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :bank-holiday (:db/id row)])]]]))
+                  :none]
+                 ["Název" :bank-holiday/label]
+                 ["Měsíc" :bank-holiday/month]
+                 ["Den" :bank-holiday/day]
+                 ["+/- dnů od Velikonoc" :bank-holiday/easter-delta]]
+         :order-by 2]]])))
 
 (defn page-bank-holiday []
   (let [bank-holiday (re-frame/subscribe [:entity-edit :bank-holiday])]

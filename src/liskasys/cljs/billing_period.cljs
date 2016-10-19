@@ -31,13 +31,11 @@
         [data-table
          :table-id :billing-periods
          :rows billing-periods
-         :colls [["Od" (comp cljc-util/yyyymm->text :billing-period/from-yyyymm)]
-                 ["Do" (comp cljc-util/yyyymm->text :billing-period/to-yyyymm)]
-                 [[re-com/h-box :gap "5px"
+         :colls [[[re-com/h-box :gap "5px" :justify :end
                    :children
                    [[re-com/md-icon-button
                      :md-icon-name "zmdi-plus-square"
-                     :tooltip "Vytvořit nový záznam"
+                     :tooltip "Přidat"
                      :on-click #(set! js/window.location.hash "#/billing-period/e")]
                     [re-com/md-icon-button
                      :md-icon-name "zmdi-refresh"
@@ -45,8 +43,7 @@
                      :on-click #(re-frame/dispatch [:entities-load :billing-period])]]]
                   (fn [row]
                     (when (= (:db/id row) (:selected-row-id @table-state))
-                      [re-com/h-box
-                       :gap "5px"
+                      [re-com/h-box :gap "5px" :justify :end
                        :children
                        [[re-com/hyperlink-href
                          :href (str "#/billing-period/" (:db/id row) "e")
@@ -55,7 +52,9 @@
                                  :tooltip "Editovat"]]
                         (when (contains? (:-roles @user) "superadmin")
                           [buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])])]]))
-                  :none]]
+                  :none]
+                 ["Od" (comp cljc-util/yyyymm->text :billing-period/from-yyyymm)]
+                 ["Do" (comp cljc-util/yyyymm->text :billing-period/to-yyyymm)]]
          :desc? true]]])))
 
 (defn page-billing-period []
@@ -113,6 +112,7 @@
               [data-table
                :table-id :person-bills
                :rows person-bills
+               :order-by 0
                :colls [["Jméno" (fn [row]
                                   (let [label (->> row :person-bill/person :db/id (get @persons) cljc-util/person-fullname)]
                                     (if (= (:db/id row) (:selected-row-id @table-state))
