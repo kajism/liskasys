@@ -10,7 +10,7 @@
             [taoensso.timbre :as timbre]))
 
 (def debug-mw [(when ^boolean goog.DEBUG re-frame/debug)
-               (when ^boolean goog.DEBUG (re-frame/after
+               #_(when ^boolean goog.DEBUG (re-frame/after
                                           #(if-let [res (s/check schema/AppDb %)]
                                              (.error js/console (str "schema problem: " res)))))])
 
