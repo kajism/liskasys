@@ -83,16 +83,16 @@
   (->> pattern
        (keep-indexed (fn [idx ch]
                        (case ch
-                         \0 "-"
+                         \0 "_"
                          \1 (get days idx)
                          \2 (str (get days idx) "*"))))
        (str/join " ")))
 
 (defn lunch-pattern->text [pattern]
   (->> pattern
-       (keep-indexed (fn [idx ch]
+       #_(keep-indexed (fn [idx ch]
                        (case ch
-                         \0 "-"
+                         \0 "_"
                          ch)))
        (str/join " ")))
 
