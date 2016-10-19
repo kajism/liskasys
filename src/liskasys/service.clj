@@ -489,7 +489,7 @@
                             :daily-plan/bill bill-id)))
          (into [[:db/add bill-id :person-bill/status :person-bill.status/paid]
                 [:db.fn/cas (:db/id person) :person/lunch-fund
-                 (:person/lunch-fund person) (+ (:person/lunch-fund person)
+                 (:person/lunch-fund person) (+ (or (:person/lunch-fund person) 0)
                                                 (- total att-price))]])
          (transact-period-person-bills conn user-id period-id))))
 
