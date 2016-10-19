@@ -159,7 +159,7 @@
                     :desc? (or desc? false)
                     :search-all ""
                     :search-colls {}
-                    :rows-per-page (or rows-per-page 100)
+                    :rows-per-page (or rows-per-page 50)
                     :page-no 0}
         state (if table-id
                 (re-frame/subscribe [:table-state table-id])
