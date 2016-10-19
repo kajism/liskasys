@@ -11,6 +11,23 @@
   (swap! pages assoc kw comp-fn))
 
 (re-frame/register-sub
+ :page-state
+ (fn [db [_ page-id]]
+   (ratom/reaction (get-in @db [:page-states page-id]))))
+
+(re-frame/register-handler
+ :page-state-set
+ common/debug-mw
+ (fn [db [_ page-id state]]
+   (assoc-in db [:page-states page-id] state)))
+
+(re-frame/register-handler
+ :page-state-change
+ common/debug-mw
+ (fn [db [_ page-id key val]]
+   ((if (fn? val) update-in assoc-in) db [:page-states page-id key] val)))
+
+(re-frame/register-sub
  :msg
  (fn [db [_ kw]]
    (ratom/reaction (get-in @db [:msg kw]))))

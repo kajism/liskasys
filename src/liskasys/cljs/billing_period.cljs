@@ -120,7 +120,7 @@
                                        :href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")
                                        :label label]
                                       label)))]
-                       ["Var symbol" (comp :person/var-symbol :person-bill/person)]
+                       ["Var symbol" (comp str :person/var-symbol :person-bill/person)]
                        ["Stav" (fn [row]
                                  (case (get-in row [:person-bill/status :db/ident])
                                    :person-bill.status/new

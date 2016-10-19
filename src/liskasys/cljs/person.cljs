@@ -12,46 +12,6 @@
             [reagent.ratom :as ratom]
             [secretary.core :as secretary]))
 
-(defn page-persons []
-  (let [persons (re-frame/subscribe [:entities :person])
-        lunch-types (re-frame/subscribe [:entities :lunch-type])
-        table-state (re-frame/subscribe [:table-state :persons])]
-    (fn []
-      [re-com/v-box
-       :children
-       [[:h3 "Lidé"]
-        [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/person/e")]
-        [data-table
-         :table-id :persons
-         :rows persons
-         :colls [["Příjmení" :person/lastname]
-                 ["Jméno" :person/firstname]
-                 #_["Variabilní symbol" :person/var-symbol]
-                 #_["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
-                 ["Fond obědů" #(some-> % :person/lunch-fund cljc-util/from-cents)]
-                 ["Rozvrh docházky" (comp cljc-util/att-pattern->text :person/att-pattern)]
-                 ["Rozvrh obědů" (comp cljc-util/lunch-pattern->text :person/lunch-pattern)]
-                 ["Email" :person/email]
-                 ["Aktivní?" :person/active?]
-                 ["Dítě?" :person/child?]
-                 #_["Mobilní telefon" :person/phone]
-                 [[re-com/md-icon-button
-                   :md-icon-name "zmdi-refresh"
-                   :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :person])]
-                  (fn [row]
-                    (when (= (:db/id row) (:selected-row-id @table-state))
-                      [re-com/h-box
-                       :gap "5px"
-                       :children
-                       [[re-com/hyperlink-href
-                         :href (str "#/person/" (:db/id row) "e")
-                         :label [re-com/md-icon-button
-                                 :md-icon-name "zmdi-edit"
-                                 :tooltip "Editovat"]]
-                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])]]]))
-                  :none]]]]])))
-
 (re-frame/register-sub
  ::kids
  (fn [db [_]]
@@ -66,6 +26,136 @@
                              out
                              parent-ids))
                    {}))))))
+
+(re-frame/register-sub
+ ::rows
+ (fn [db [_]]
+   (let [persons (re-frame/subscribe [:entities :person])
+         page-state (re-frame/subscribe [:page-state :persons])]
+     (ratom/reaction
+      (cond->> (vals @persons)
+        (some? (:active? @page-state))
+        (filter #(= (:active? @page-state) (boolean (:person/active? %))))
+        (some? (:child? @page-state))
+        (filter #(= (:child? @page-state) (boolean (:person/child? %)))))))))
+
+(def empty-person {:person/active? true
+                   :person/child? true})
+
+(defn table [rows]
+  (let [lunch-types (re-frame/subscribe [:entities :lunch-type])
+        table-state (re-frame/subscribe [:table-state :persons])]
+    (fn [rows]
+      [data-table
+       :table-id :persons
+       :rows rows
+       :colls [["Příjmení" :person/lastname]
+               ["Jméno" :person/firstname]
+               ["Rozvrh docházky" (comp cljc-util/att-pattern->text :person/att-pattern)]
+               ["Rozvrh obědů" (comp cljc-util/lunch-pattern->text :person/lunch-pattern)]
+               ["Variabilní symbol" #(str (:person/var-symbol %))]
+               ["Email" :person/email]
+               ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
+               ["Fond obědů" #(some-> % :person/lunch-fund cljc-util/from-cents)]
+               #_["Aktivní?" :person/active?]
+               #_["Dítě?" :person/child?]
+               #_["Mobilní telefon" :person/phone]
+               [[re-com/h-box :gap "5px"
+                 :children
+                 [[re-com/md-icon-button
+                   :md-icon-name "zmdi-plus-square"
+                   :tooltip "Vytvořit nový záznam"
+                   :on-click #(do (re-frame/dispatch [:entity-new :person empty-person])
+                                  (set! js/window.location.hash "#/person/e"))]
+                  [re-com/md-icon-button
+                   :md-icon-name "zmdi-refresh"
+                   :tooltip "Přenačíst ze serveru"
+                   :on-click #(re-frame/dispatch [:entities-load :person])]]]
+                (fn [row]
+                  (when (= (:db/id row) (:selected-row-id @table-state))
+                    [re-com/h-box
+                     :gap "5px"
+                     :children
+                     [[re-com/hyperlink-href
+                       :href (str "#/person/" (:db/id row) "e")
+                       :label [re-com/md-icon-button
+                               :md-icon-name "zmdi-edit"
+                               :tooltip "Editovat"]]
+                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])]]]))
+                :none]]])))
+
+(defn daily-summary [kids]
+  (let [kids-by-day (reduce (fn [out day-idx]
+                              (assoc out day-idx (->> @kids
+                                                      (remove (fn [{att-pattern :person/att-pattern}]
+                                                                (or (not att-pattern)
+                                                                    (= "0" (nth att-pattern day-idx)))))
+                                                      (util/sort-by-locale cljc-util/person-fullname))))
+                            (sorted-map)
+                            (range 5))]
+    [:table.table.tree-table.table-hover.table-striped
+     [:thead
+      [:tr
+       [:th "pondělí"]
+       [:th "úterý"]
+       [:th "středa"]
+       [:th "čtvrtek"]
+       [:th "pátek"]]]
+     [:tbody
+      [:tr
+       (doall
+        (for [[idx kids] kids-by-day]
+          ^{:key idx}
+          [:td (count kids)]))]
+      [:tr
+       (doall
+        (for [[idx kids]  kids-by-day]
+          ^{:key idx}
+          [:td
+           (doall
+            (for [kid kids]
+              ^{:key (:db/id kid)}
+              [:div
+               [re-com/hyperlink-href
+                :href (str "#/person/" (:db/id kid) "e")
+                :label (cljc-util/person-fullname kid)]]))]))]]]))
+
+(defn page-persons []
+  (let [page-state (re-frame/subscribe [:page-state :persons])
+        rows (re-frame/subscribe [::rows])]
+    (when-not @page-state
+      (re-frame/dispatch [:page-state-set :persons {:active? true
+                                                    :child? true
+                                                    :daily-summary? false}]))
+    (fn []
+      (if-not @page-state
+        [re-com/throbber]
+        [re-com/v-box
+         :children
+         [[re-com/h-box :gap "20px" :align :center
+           :children
+           [[:h3 "Lidé"]
+            [re-com/horizontal-bar-tabs
+             :tabs [{:id true :label "Děti"}
+                    {:id false :label "Dospělí"}
+                    {:id nil :label "Všichni"}]
+             :model (:child? @page-state)
+             :on-change #(re-frame/dispatch [:page-state-change :persons :child? %])]
+            [re-com/horizontal-bar-tabs
+             :tabs [{:id true :label "Aktivní"}
+                    {:id false :label "Neaktivní"}
+                    {:id nil :label "Všichni"}]
+             :model (:active? @page-state)
+             :on-change #(re-frame/dispatch [:page-state-change :persons :active? %])]
+            (when (and (:child? @page-state) (:active? @page-state))
+              [re-com/horizontal-bar-tabs
+               :tabs [{:id false :label "Seznam"}
+                      {:id true :label "Denní souhrn"}]
+               :model (:daily-summary? @page-state)
+               :on-change #(re-frame/dispatch [:page-state-change :persons :daily-summary? %])])]]
+          (if (and (:child? @page-state) (:active? @page-state) (:daily-summary? @page-state))
+            [daily-summary rows]
+            [table rows])]]))))
 
 (defn page-person []
   (let [person (re-frame/subscribe [:entity-edit :person])
@@ -95,7 +185,7 @@
             [re-com/single-dropdown
              :model (some-> item :person/lunch-type :db/id)
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-type {:db/id %}])
-             :choices (conj (util/sort-by-locale :label (vals @lunch-types)) {:db/id nil :label "běžná"})
+             :choices (conj (util/sort-by-locale :label (vals @lunch-types)) {:db/id nil :lunch-type/label "běžná"})
              :id-fn :db/id
              :label-fn :lunch-type/label
              :placeholder "běžná"
@@ -191,7 +281,9 @@
              :children
              [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person])]
               "nebo"
-              [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/person/e")]
+              [re-com/hyperlink-href :href (str "#/person/e")
+               :label [re-com/button :label "Nový"
+                       :on-click #(re-frame/dispatch [:entity-new :person empty-person])]]
               [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/persons")]]]]])))))
 
 (secretary/defroute "/persons" []
