@@ -17,16 +17,21 @@
       [re-com/v-box
        :children
        [[:h3 "Diety"]
-        [re-com/hyperlink-href :label [re-com/button :label "Nová"] :href (str "#/lunch-type/e")]
         [data-table
          :table-id :lunch-types
          :rows lunch-types
          :colls [["Název" :lunch-type/label]
                  ["Barva" :lunch-type/color]
-                 [[re-com/md-icon-button
-                   :md-icon-name "zmdi-refresh"
-                   :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :lunch-type])]
+                 [[re-com/h-box :gap "5px"
+                   :children
+                   [[re-com/md-icon-button
+                     :md-icon-name "zmdi-plus-square"
+                     :tooltip "Vytvořit nový záznam"
+                     :on-click #(set! js/window.location.hash "#/lunch-type/e")]
+                    [re-com/md-icon-button
+                     :md-icon-name "zmdi-refresh"
+                     :tooltip "Přenačíst ze serveru"
+                   :on-click #(re-frame/dispatch [:entities-load :lunch-type])]]]
                   (fn [row]
                     [re-com/h-box
                      :gap "5px"
@@ -37,7 +42,7 @@
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-type (:db/id row)])]]])
-                  :csv-export]]]]])))
+                  :none]]]]])))
 
 (defn page-lunch-type []
   (let [lunch-type (re-frame/subscribe [:entity-edit :lunch-type])

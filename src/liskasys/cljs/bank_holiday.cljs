@@ -15,7 +15,6 @@
       [re-com/v-box
        :children
        [[:h3 "Státní svátky"]
-        [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/bank-holiday/e")]
         [data-table
          :table-id :bank-holidays
          :rows bank-holidays
@@ -23,10 +22,16 @@
                  ["Měsíc" :bank-holiday/month]
                  ["Den" :bank-holiday/day]
                  ["+/- dnů od Velikonoc" :bank-holiday/easter-delta]
-                 [[re-com/md-icon-button
-                   :md-icon-name "zmdi-refresh"
-                   :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :bank-holiday])]
+                 [[re-com/h-box :gap "5px"
+                   :children
+                   [[re-com/md-icon-button
+                     :md-icon-name "zmdi-plus-square"
+                     :tooltip "Vytvořit nový záznam"
+                     :on-click #(set! js/window.location.hash "#/bank-holiday/e")]
+                    [re-com/md-icon-button
+                     :md-icon-name "zmdi-refresh"
+                     :tooltip "Přenačíst ze serveru"
+                   :on-click #(re-frame/dispatch [:entities-load :bank-holiday])]]]
                   (fn [row]
                     [re-com/h-box
                      :gap "5px"
@@ -37,7 +42,7 @@
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :bank-holiday (:db/id row)])]]])
-                  :csv-export]]
+                  :none]]
          :order-by 1]]])))
 
 (defn page-bank-holiday []

@@ -28,16 +28,21 @@
       [re-com/v-box
        :children
        [[:h3 "Platební období"]
-        [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/billing-period/e")]
         [data-table
          :table-id :billing-periods
          :rows billing-periods
          :colls [["Od" (comp cljc-util/yyyymm->text :billing-period/from-yyyymm)]
                  ["Do" (comp cljc-util/yyyymm->text :billing-period/to-yyyymm)]
-                 [[re-com/md-icon-button
-                   :md-icon-name "zmdi-refresh"
-                   :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :billing-period])]
+                 [[re-com/h-box :gap "5px"
+                   :children
+                   [[re-com/md-icon-button
+                     :md-icon-name "zmdi-plus-square"
+                     :tooltip "Vytvořit nový záznam"
+                     :on-click #(set! js/window.location.hash "#/billing-period/e")]
+                    [re-com/md-icon-button
+                     :md-icon-name "zmdi-refresh"
+                     :tooltip "Přenačíst ze serveru"
+                     :on-click #(re-frame/dispatch [:entities-load :billing-period])]]]
                   (fn [row]
                     (when (= (:db/id row) (:selected-row-id @table-state))
                       [re-com/h-box
@@ -50,7 +55,7 @@
                                  :tooltip "Editovat"]]
                         (when (contains? (:-roles @user) "superadmin")
                           [buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])])]]))
-                  :csv-export]]
+                  :none]]
          :desc? true]]])))
 
 (defn page-billing-period []

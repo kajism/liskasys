@@ -17,7 +17,6 @@
       [re-com/v-box
        :children
        [[:h3 "Prázdniny"]
-        [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/school-holiday/e")]
         [data-table
          :table-id :school-holidays
          :rows school-holidays
@@ -25,10 +24,16 @@
                  ["Od" :school-holiday/from]
                  ["Do" :school-holiday/to]
                  ["Každoročně?" :school-holiday/every-year?]
-                 [[re-com/md-icon-button
-                   :md-icon-name "zmdi-refresh"
-                   :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :school-holiday])]
+                 [[re-com/h-box :gap "5px"
+                   :children
+                   [[re-com/md-icon-button
+                     :md-icon-name "zmdi-plus-square"
+                     :tooltip "Vytvořit nový záznam"
+                     :on-click #(set! js/window.location.hash "#/school-holiday/e")]
+                    [re-com/md-icon-button
+                     :md-icon-name "zmdi-refresh"
+                     :tooltip "Přenačíst ze serveru"
+                   :on-click #(re-frame/dispatch [:entities-load :school-holiday])]]]
                   (fn [row]
                     [re-com/h-box
                      :gap "5px"
@@ -39,7 +44,7 @@
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
                       [buttons/delete-button #(re-frame/dispatch [:entity-delete :school-holiday (:db/id row)])]]])
-                  :csv-export]]
+                  :none]]
          :order-by 1]]])))
 
 (defn page-school-holiday []

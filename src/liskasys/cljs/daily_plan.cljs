@@ -23,9 +23,6 @@
       [re-com/v-box
        :children
        [[:h3 "Denní plány"]
-        [re-com/hyperlink-href
-         :href (str "#/daily-plan/e")
-         :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan {}])] ]
         [data-table
          :table-id :daily-plans
          :rows daily-plans
@@ -42,10 +39,17 @@
                  ["Oběd požadavek" #(or (:daily-plan/lunch-req %) 0)]
                  ["Oběd objednáno" #(or (:daily-plan/lunch-ord %) 0)]
                  ["Oběd zrušen" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]
-                 [[re-com/md-icon-button
-                   :md-icon-name "zmdi-refresh"
-                   :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :daily-plan])]
+                 [[re-com/h-box :gap "5px"
+                   :children
+                   [[re-com/md-icon-button
+                     :md-icon-name "zmdi-plus-square"
+                     :tooltip "Vytvořit nový záznam"
+                     :on-click #(do (re-frame/dispatch [:entity-new :daily-plan {}])
+                                    (set! js/window.location.hash "#/daily-plan/e"))]
+                    [re-com/md-icon-button
+                     :md-icon-name "zmdi-refresh"
+                     :tooltip "Přenačíst ze serveru"
+                   :on-click #(re-frame/dispatch [:entities-load :daily-plan])]]]
                   (fn [row]
                     (when (and (= (:db/id row) (:selected-row-id @table-state)))
                       [re-com/h-box
@@ -60,7 +64,7 @@
                                    :tooltip "Editovat"]])
                         (when (contains? (:-roles @user) "superadmin")
                           [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])])]]))
-                  :csv-export]]
+                  :none]]
          :desc? true]]])))
 
 (defn page-daily-plan []
