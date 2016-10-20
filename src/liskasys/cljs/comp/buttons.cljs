@@ -35,7 +35,7 @@
   "Delete button with confirmation"
   [delete-evt position]
   (let [showing? (reagent/atom false)
-        position (or position :below-left)]
+        position (or position :below-right)]
     (fn []
       [re-com/popover-anchor-wrapper
        :showing? showing?
