@@ -16,6 +16,10 @@ CLOSED: [2016-10-18 Tue 16:47]
 *** [#B] seznam deti v kazdem dnu
 ** DONE filtr na aktivni osoby
    CLOSED: [2016-10-19 Wed 16:07]
+** DONE nepregenerovavat zverejnene
+   CLOSED: [2016-10-20 Thu 21:42]
+** TODO moznost odzverejnit / odzaplatit
+** TODO barevne oznacit zaplacene/nezaplacene platby
 ** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
 ** don't save kid with contacts (email)
 ** don't save adult with attendance

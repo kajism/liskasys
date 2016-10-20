@@ -8,7 +8,8 @@
             [datomic.api :as d]
             [liskasys.cljc.util :as cljc-util]
             [postal.core :as postal]
-            [taoensso.timbre :as timbre])
+            [taoensso.timbre :as timbre]
+            [clojure.pprint :refer [pprint]])
   (:import java.text.Collator
            java.util.Locale))
 
@@ -394,6 +395,40 @@
                      (t/before? ld to)))
        (remove holiday?-fn)))
 
+(comment
+  (def period-id 17592186046603)
+  (def current-bills (d/q '[:find [(pull ?e [*]) ...]
+                            :in $ ?period-id
+                            :where
+                            [?e :person-bill/period ?period-id]]
+                          (user/db)
+                          period-id))
+  (def db (d/as-of (user/db) #inst "2016-10-07"))
+  (def first-bills (generate-person-bills-tx db period-id))
+  (def first-bills-by-person-id (->> first-bills
+                                     (map (juxt (comp :db/id :person-bill/person) identity))
+                                     (into {})))
+
+  (def diff (->> current-bills
+                 (keep (fn [cb]
+                         (let [person-id (get-in cb [:person-bill/person :db/id])
+                               ob (get first-bills-by-person-id person-id)]
+                           (when (and ob (not= (:person-bill/total cb) (:person-bill/total ob)))
+                             (let [diff (clojure.data/diff cb ob)
+                                   id (:db/id (nth diff 2))
+                                   new-total (:person-bill/total (second diff))
+                                   curr-lunch-fund (:person/lunch-fund (d/entity (user/db) person-id))
+                                   lunch-fond-diff (- new-total
+                                                      (:person-bill/total (first diff)))]
+                               (-> [(d/pull (user/db) '[:person/lastname :person/firstname] person-id)]
+                                   (into diff)
+                                   (conj (cond-> [{:db/id id
+                                                   :person-bill/total new-total}]
+                                           (:person-bill/status (first diff))
+                                           (conj [:db.fn/cas person-id :person/lunch-fund curr-lunch-fund (+ curr-lunch-fund lunch-fond-diff)])))))))))))
+  )
+
+
 (defn- generate-person-bills-tx [db period-id]
   (let [price-list (find-price-list db)
         person-id->bill (atom (->> (d/q '[:find ?person-id (pull ?bill-id [*])
@@ -404,7 +439,7 @@
                                         db period-id)
                                    (into {})))
         billing-period (find-by-id db period-id)
-        paid-status (d/entid db :person-bill.status/paid)
+        published-status (d/entid db :person-bill.status/published)
         dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))
         out (->>
              (for [person (->> (find-where db {:person/active? true})
@@ -436,7 +471,7 @@
                (do
                  (when old-bill
                    (swap! person-id->bill dissoc (:db/id person)))
-                 (when (or (not old-bill) (< (get-in old-bill [:person-bill/status :db/id]) paid-status))
+                 (when (or (not old-bill) (< (get-in old-bill [:person-bill/status :db/id]) published-status))
                    (merge (or old-bill {:db/id (d/tempid :db.part/user)
                                         :person-bill/person (:db/id person)
                                         :person-bill/period period-id

@@ -99,7 +99,7 @@
                           (some #(not= (get-in % [:person-bill/status :db/ident]) :person-bill.status/paid) (vals @person-bills)))
                   [re-com/button
                    :label (str (if (seq @person-bills)
-                                 "Přegenerovat nezaplacené"
+                                 "Přegenerovat nezveřejněné"
                                  "Vygenerovat")
                                " rozpisy")
                    :class "btn-danger"
