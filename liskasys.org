@@ -18,8 +18,12 @@ CLOSED: [2016-10-18 Tue 16:47]
    CLOSED: [2016-10-19 Wed 16:07]
 ** DONE nepregenerovavat zverejnene
    CLOSED: [2016-10-20 Thu 21:42]
+** DONE stav "zverejneny, nezaplaceny" (odliseni zaplacene/nezaplacene platby)
+   CLOSED: [2016-10-21 Fri 10:56]
+** TODO moznost zobrazit historii zmen entity
+** TODO datomic transaction log view
+** odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** TODO moznost odzverejnit / odzaplatit
-** TODO barevne oznacit zaplacene/nezaplacene platby
 ** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
 ** don't save kid with contacts (email)
 ** don't save adult with attendance
@@ -29,7 +33,6 @@ CLOSED: [2016-10-18 Tue 16:47]
     CLOSED: [2016-10-19 Wed 17:11]
 *** prijmeni + jmeno na stranku lide
 *** vzdy proklik jmena prijmeni
-** TODO moznost zobrazit historii zmen entity
 ** TODO denni prehledovy email Danka, Janka, Misa v 10 na dalsi den
 ** TODO moznost dogenerovat denni plany i v prubehu obdobi
 ** TODO na Objednavkach obedu zobrazit seznam lidi, kterym se obed odecetl (i dodatecne tx)
@@ -38,7 +41,6 @@ CLOSED: [2016-10-18 Tue 16:47]
 *** poradnik nahradniku
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
-** TODO datomic transaction log view
 ** TODO zobrazit zrusene obedy rodicum
 ** QR kod na platbu
 ** filtry od/do datum na denni plany (postupne nacitani ze serveru)
@@ -46,7 +48,6 @@ CLOSED: [2016-10-18 Tue 16:47]
 ** server side validation by clojure.spec
 ** tests service/*holiday?, time/from-dMyyyy
 ** log backups
-** odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** export dat do csv
 ** omezení počtu chybných přihlášení (+ reset)
 ** DONE zverejneni rozpisu plateb a jednotlive potvrzovani zaplaceni

@@ -44,6 +44,8 @@
   (cond
     (vector? h)
     (apply str (map hiccup->string h))
+    (string? h)
+    h
     :else
     ""))
 

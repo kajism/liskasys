@@ -124,16 +124,18 @@
                        ["Stav" (fn [row]
                                  (case (get-in row [:person-bill/status :db/ident])
                                    :person-bill.status/new
-                                   "nový"
+                                   [:div "nový"]
                                    :person-bill.status/published
-                                   [:div "zveřejněný"
-                                    (when (= (:db/id row) (:selected-row-id @table-state))
-                                      [re-com/button
-                                       :label "Zaplacený"
-                                       :class "btn-danger btn-xs"
-                                       :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "set-bill-as-paid" (:db/id row)])])]
-                                   :person-bill.status/paid "zaplacený"
-                                   ""))]
+                                   [:div "zveřejněný, "
+                                    [:b
+                                     (if-not (= (:db/id row) (:selected-row-id @table-state))
+                                       "nezaplacený"
+                                       [:a {:title "Označit jako zaplacený"
+                                            :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "set-bill-as-paid" (:db/id row)])
+                                            :class "btn-danger btn-xs"}
+                                        "nezaplacený"])]]
+                                   :person-bill.status/paid
+                                   [:div "zaplacený"] ""))]
                        ["Celkem Kč" (comp cljc-util/from-cents :person-bill/total)]
                        ["Cena za docházku" (comp cljc-util/from-cents :person-bill/att-price)]
                        ["Cena za obědy" (fn [{:person-bill/keys [lunch-count] :keys [_lunch-price _total-lunch-price]}]
