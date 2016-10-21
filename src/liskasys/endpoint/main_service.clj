@@ -132,15 +132,12 @@
          (sort-by :daily-plan/date))))
 
 (defn find-person-substs [db person-id]
-  (let [today nil
-        periods nil ;; this and previous
-        bills nil;; for periods
-        canc-plans (d/q '[]) ;; cancelled and substituted plans for bills
-        subst-plans (d/q '[])
-        dates nil ;; between (inc max lunch-order-date) (max daily-plan-date + 7) - all holidays - my plans
-        substs-by-date (d/q '[]) ;; substs without existing plan
+  (let [date-from nil ;; begining of previous period
+        date-to nil ;; (max person daily-plan-date + 7)
+        date-insertion nil ;; (inc max lunch-order-date)
+        person-plans nil ;; all plans in date range
         ]
-    {:canc-plans canc-plans
+    #_{:canc-plans canc-plans
      :subst-plans subst-plans
      :can-subst-max (min 2 (- (count canc-plans) (count subst-plans) (count substs-by-date)))
      :dates dates

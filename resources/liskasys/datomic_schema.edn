@@ -390,33 +390,13 @@
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}
-          {:db/ident :daily-plan/substituted-by ;; renamed to :subst/daily-plan below
+          #_{:db/ident :daily-plan/substituted-by
            :db/valueType :db.type/ref
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}]]}
- :liskasys/substitution
- {:requires [:liskasys/daily-plan]
-  :txes [[{:db/ident :subst/person
-           :db/valueType :db.type/ref
-           :db/cardinality :db.cardinality/one
-           :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
-          {:db/ident :subst/date
+             :db.install/_attribute :db.part/db}]
+         [{:db/ident :daily-plan/subst-req-on
            :db/valueType :db.type/instant
            :db/cardinality :db.cardinality/one
-           :db/index true
            :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
-          {:db/ident :subst/child-att
-           :db/valueType :db.type/long
-           :db/cardinality :db.cardinality/one
-           :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}
-          {:db/ident :subst/lunch-req
-           :db/valueType :db.type/long
-           :db/cardinality :db.cardinality/one
-           :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}]
-         [{:db/id :daily-plan/substituted-by
-           :db/ident :subst/daily-plan}]]}}
+           :db.install/_attribute :db.part/db}]]}}
