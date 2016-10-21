@@ -116,9 +116,8 @@
                :colls [["Jméno" (fn [row]
                                   (let [label (->> row :person-bill/person :db/id (get @persons) cljc-util/person-fullname)]
                                     (if (= (:db/id row) (:selected-row-id @table-state))
-                                      [re-com/hyperlink-href
-                                       :href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")
-                                       :label label]
+                                      [:a {:href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")}
+                                       label]
                                       label)))]
                        ["Var symbol" (comp str :person/var-symbol :person-bill/person)]
                        ["Stav" (fn [row]
