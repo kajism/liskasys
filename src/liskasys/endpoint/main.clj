@@ -1,18 +1,18 @@
 (ns liskasys.endpoint.main
-  (:require [liskasys.hiccup :as hiccup]
-            [liskasys.cljc.time :as time]
-            [liskasys.cljc.validation :as validation]
-            [clj-time.coerce :as tc]
+  (:require [clj-time.coerce :as tc]
             [clj-time.core :as t]
-            [clojure.java.io :as io]
             [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as str]
-            [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
             [datomic.api :as d]
             [environ.core :refer [env]]
+            [liskasys.cljc.time :as time]
+            [liskasys.cljc.validation :as validation]
             [liskasys.endpoint.main-hiccup :as main-hiccup]
+            [liskasys.endpoint.main-service :as main-service]
+            [liskasys.hiccup :as hiccup]
             [liskasys.service :as service]
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]))
@@ -27,6 +27,11 @@
 (defn- upload-dir []
   (or (:upload-dir env) "./uploads/"))
 
+(defn- user-children-data [db user-id selected-id]
+  (let [user-children (main-service/find-children-by-person-id db user-id)]
+    {:user-children user-children
+     :selected-id (or (edn/read-string selected-id) (:db/id (first user-children)))}))
+
 (defn main-endpoint [{{conn :conn} :datomic}]
   (routes
    (context "" {{{roles :-roles :as user} :user} :session}
@@ -34,43 +39,49 @@
        (if-not (roles "parent")
          (response/redirect "/jidelni-listek")
          (let [db (d/db conn)
-               child-id (edn/read-string (:child-id params))
-               parents-children (service/find-children-by-person-id db (:db/id user))
-               selected-person-id (or child-id (:db/id (first parents-children)))
-               child-daily-plans (service/find-next-weeks-person-daily-plans db selected-person-id 3)]
+               ucd (user-children-data db (:db/id user) (:child-id params))
+               child-daily-plans (main-service/find-next-weeks-person-daily-plans db (:selected-id ucd) 3)]
            (main-hiccup/liskasys-frame
             user
-            (main-hiccup/cancellation-page parents-children selected-person-id child-daily-plans)))))
+            (main-hiccup/cancellation-page ucd child-daily-plans)))))
 
      (POST "/" {:keys [params]}
        (let [cancel-dates (make-date-sets (:cancel-dates params))
              already-cancelled-dates (make-date-sets (:already-cancelled-dates params))
              child-id (edn/read-string (:child-id params))]
-         (service/transact-cancellations conn
-                                         (:db/id user)
-                                         child-id
-                                         (set/difference cancel-dates already-cancelled-dates)
-                                         (set/difference already-cancelled-dates cancel-dates))
+         (main-service/transact-cancellations conn
+                                              (:db/id user)
+                                              child-id
+                                              (set/difference cancel-dates already-cancelled-dates)
+                                              (set/difference already-cancelled-dates cancel-dates))
          (response/redirect (str (when child-id "/?child-id=") child-id))))
 
+     (GET "/nahrady" {:keys [params]}
+       (let [db (d/db conn)
+             ucd (user-children-data db (:db/id user) (:child-id params))
+             substs (main-service/find-person-substs db (:selected-id ucd))]
+         (main-hiccup/liskasys-frame
+          user
+          (main-hiccup/substitutions ucd substs))))
+
      (GET "/platby" {:keys [params]}
-       (let [person-bills (service/find-person-bills (d/db conn) (:db/id user))]
+       (let [person-bills (main-service/find-person-bills (d/db conn) (:db/id user))]
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/person-bills person-bills))))
 
      (GET "/jidelni-listek" [history]
        (let [history (or (edn/read-string history) 0)
-             {:keys [lunch-menu previous? history]} (service/find-last-lunch-menu (d/db conn) history)]
+             {:keys [lunch-menu previous? history]} (main-service/find-last-lunch-menu (d/db conn) history)]
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/lunch-menu lunch-menu previous? history))))
 
      #_(GET "/jidelni-listek/:id" [id :<< as-int]
-       (let [lunch-menu (first (jdbc-common/select db-spec :lunch-menu {:id id}))]
-         (-> (response/file-response (str (upload-dir) "lunch-menu/" (:id lunch-menu) ".dat") {:root "."})
-             (response/content-type (:content-type lunch-menu))
-             (response/header "Content-Disposition" (str "inline; filename=" (:orig-filename lunch-menu))))))
+         (let [lunch-menu (first (jdbc-common/select db-spec :lunch-menu {:id id}))]
+           (-> (response/file-response (str (upload-dir) "lunch-menu/" (:id lunch-menu) ".dat") {:root "."})
+               (response/content-type (:content-type lunch-menu))
+               (response/header "Content-Disposition" (str "inline; filename=" (:orig-filename lunch-menu))))))
 
      (POST "/jidelni-listek" [menu upload]
        (let [id (service/transact-entity conn (:db/id user) {:lunch-menu/text menu
@@ -78,12 +89,12 @@
                                                              ;; :orig-filename (not-empty (:filename upload))
                                                              ;; :content-type (when (not-empty (:filename upload))
                                                              ;;                 (:content-type upload))
-                                                             })
+})
              ;;server-file (str (upload-dir) "lunch-menu/" id ".dat")
-             ]
+]
          #_(when (not-empty (:filename upload))
-           (io/make-parents server-file)
-           (io/copy (:tempfile upload) (io/file server-file))))
+             (io/make-parents server-file)
+             (io/copy (:tempfile upload) (io/file server-file))))
        (response/redirect "/jidelni-listek"))
 
      (GET "/login" []
@@ -91,7 +102,7 @@
 
      (POST "/login" [username pwd :as req]
        (try
-         (let [person (service/login (d/db conn) username pwd)]
+         (let [person (main-service/login (d/db conn) username pwd)]
            (when-not person
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (-> (response/redirect "/" :see-other)
@@ -118,7 +129,7 @@
 
      (POST "/passwd" [old-pwd new-pwd new-pwd2]
        (try
-         (service/change-user-passwd conn (:db/id user) (:person/email user) old-pwd new-pwd new-pwd2)
+         (main-service/change-user-passwd conn (:db/id user) (:person/email user) old-pwd new-pwd new-pwd2)
          (main-hiccup/liskasys-frame
           user
           (hiccup/passwd-form {:type :success :msg "Heslo bylo změněno"}))
@@ -165,7 +176,7 @@
             slurp
             (str/split #"\n")
             (subvec 1 3))
-        (str/join "; " ))))
+        (str/join "; "))))
 
    (context "/admin.app" {{user :user} :session}
      (GET "/" []
@@ -178,7 +189,7 @@
              ent-type (keyword (namespace msg-id))
              action (name msg-id)]
          (when-not ((:-roles user) "admin")
-             (throw (Exception. "Not authorized")))
+           (throw (Exception. "Not authorized")))
          (response/response
           (case action
             "select" (service/find-by-type (d/db conn) ent-type ?data)

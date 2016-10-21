@@ -20,6 +20,27 @@ CLOSED: [2016-10-18 Tue 16:47]
    CLOSED: [2016-10-20 Thu 21:42]
 ** DONE stav "zverejneny, nezaplaceny" (odliseni zaplacene/nezaplacene platby)
    CLOSED: [2016-10-21 Fri 10:56]
+** TODO nahrady
+*** podminky
+**** moznost nahrazovani z aktuaniho a 1 predchoziho obdobi
+**** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
+**** moznost nahradit ve dnech, kdy nema dite regulerni dochazku
+**** nadchazejici nahrady na maximalne 2 terminy, pokud mam potrebne omluvenky
+**** priorita prihlasenych dle casu (bezna fronta)
+*** DONE datomic attrs
+    CLOSED: [2016-10-21 Fri 15:39]
+**** subst/date
+**** subst/person
+**** subst/lunch-req
+**** subs/child-att
+*** zobrazovat volnou kapacitu v nadchazejicich dnech kdy nemam dochazku
+**** vyber ditete (jako u omluvenek)
+**** pocet omluvenek - pocet nahrad => pocet moznych nahrad
+**** moznost zaskrtnout max 2 checkboxy
+*** zpracovani v 10 hodin predchoziho dne (spolecne s obedy)
+**** zaradit do denniho planu => objednat obed pro nahradniky
+**** denni prehledovy email Danka, Janka, Misa s uvedenim nahradiku
+**** potvrzujici email nahradnikum s info o objednani obeda
 ** TODO moznost zobrazit historii zmen entity
 ** TODO datomic transaction log view
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
@@ -33,14 +54,8 @@ CLOSED: [2016-10-18 Tue 16:47]
     CLOSED: [2016-10-19 Wed 17:11]
 *** prijmeni + jmeno na stranku lide
 *** vzdy proklik jmena prijmeni
-** TODO denni prehledovy email Danka, Janka, Misa v 10 na dalsi den
 ** TODO moznost dogenerovat denni plany i v prubehu obdobi
 ** TODO na Objednavkach obedu zobrazit seznam lidi, kterym se obed odecetl (i dodatecne tx)
-** TODO nahrady
-*** moznost nahrazovani z aktuaniho a 1 predchoziho obdobi
-*** poradnik nahradniku
-*** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
-*** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
 ** TODO zobrazit zrusene obedy rodicum
 ** QR kod na platbu
 ** filtry od/do datum na denni plany (postupne nacitani ze serveru)
