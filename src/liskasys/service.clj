@@ -106,11 +106,50 @@
     (timbre/debug tx-result)
     tx-result))
 
+(def tempid? map?)
+
+(defn- coll->tx-data [eid k v old]
+  (timbre/debug k v old)
+  (let [vs (set v)
+        os (set old)]
+    (concat
+     (map
+      #(vector :db/add eid k (if (and (map? %) (not (tempid? (:db/id %))))
+                               (:db/id %)
+                               %))
+      (set/difference vs os))
+     (map
+      #(vector :db/retract eid k (if (map? %)
+                                   (:db/id %)
+                                   %))
+      (set/difference os vs)))))
+
+(defn- entity->tx-data [db ent]
+  (let [eid (:db/id ent)
+        old (when-not (tempid? eid) (d/pull db '[*] eid))]
+    (mapcat (fn [[k v]]
+              (if (or (nil? v) (= v {:db/id nil}))
+                (when-let [old-v (get old k)]
+                  (list [:db/retract eid k (if (map? old-v)
+                                             (:db/id old-v)
+                                             old-v)]))
+                (when-not (= v (get old k))
+                  (if (and (coll? v) (not (map? v)))
+                    (coll->tx-data eid k v (get old k))
+                    (list [:db/add eid k (if (and (map? v) (not (tempid? (:db/id v))))
+                                           (:db/id v)
+                                           v)])))))
+            (dissoc ent :db/id))))
+
 (defn- transact-entity* [conn user-id ent]
-  (let [ent-id (or (:db/id ent) (d/tempid :db.part/user))
-        tx-result (transact conn user-id [(assoc ent :db/id ent-id)])]
-    (d/pull (:db-after tx-result) '[*] (or (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) ent-id)
-                                           ent-id))))
+  (let [id (:db/id ent)
+        ent (cond-> ent
+              (not id)
+              (assoc :db/id (d/tempid :db.part/user)))
+        tx-result (when-let [tx-data (not-empty (entity->tx-data (d/db conn) ent))]
+                    (transact conn user-id tx-data))
+        db (or (:db-after tx-result) (d/db conn))]
+    (d/pull db '[*] (or id (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id ent))))))
 
 (defmulti transact-entity (fn [conn user-id ent]
                             (first (keys (select-keys ent [:daily-plan/date])))))
