@@ -14,6 +14,8 @@
                                           #(if-let [res (s/check schema/AppDb %)]
                                              (.error js/console (str "schema problem: " res)))))])
 
+(timbre/set-level! (if ^boolean goog.DEBUG :debug :info))
+
 (defonce kw->url (atom {}))
 
 (defn add-kw-url [kw url]
