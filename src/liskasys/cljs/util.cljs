@@ -30,23 +30,27 @@
 (defn bigdec->float [n]
   (parse-float (bigdec->str n)))
 
-(defn hiccup->string [x]
+(defn hiccup->val [x]
   (cond
-    (vector? x)
-    (apply str (map hiccup->string x))
-    (string? x)
-    x
-    :else
-    ""))
-
-(defn href->str [x]
-  (cond
-    (and (vector? x) (= (first x) re-com/hyperlink-href))
+    (and (vector? x) (fn? (first x)))
     (->> x
          rest
          (apply hash-map)
          :label)
     (vector? x)
-    (apply str (map hiccup->string x))
+    (let [out (keep hiccup->val x)]
+      (if (> (count out) 1)
+        (apply str out)
+        (first out)))
+    (map? x)
+    nil
+    (fn? x)
+    nil
+    (symbol? x)
+    nil
+    (keyword? x)
+    nil
+    (transit/bigdec? x)
+    (parse-float (.-rep x))
     :else
     x))

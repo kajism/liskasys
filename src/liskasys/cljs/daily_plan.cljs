@@ -14,6 +14,12 @@
             [secretary.core :as secretary]
             [taoensso.timbre :as timbre]))
 
+(defn child-att->str [child-att]
+  (case child-att
+    1 "celodenní"
+    2 "půldenní"
+    "-"))
+
 (defn page-daily-plans []
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
         persons (re-frame/subscribe [:entities :person])
@@ -36,34 +42,37 @@
                     [re-com/md-icon-button
                      :md-icon-name "zmdi-refresh"
                      :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :daily-plan])]]]
+                     :on-click #(re-frame/dispatch [:entities-load :daily-plan])]]]
                   (fn [row]
-                    (when (and (= (:db/id row) (:selected-row-id @table-state)))
-                      [re-com/h-box :gap "5px" :justify :end
-                       :children
-                       [(when (or (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))
-                                  (contains? (:-roles @user) "superadmin"))
-                          [re-com/hyperlink-href
-                           :href (str "#/daily-plan/" (:db/id row) "e")
-                           :label [re-com/md-icon-button
-                                   :md-icon-name "zmdi-edit"
-                                   :tooltip "Editovat"]])
-                        (when (contains? (:-roles @user) "superadmin")
-                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])])]]))
+                     (when (and (= (:db/id row) (:selected-row-id @table-state)))
+                       [re-com/h-box :gap "5px" :justify :end
+                        :children
+                        [(when (or (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))
+                                   (contains? (:-roles @user) "superadmin"))
+                           [re-com/hyperlink-href
+                            :href (str "#/daily-plan/" (:db/id row) "e")
+                            :label [re-com/md-icon-button
+                                    :md-icon-name "zmdi-edit"
+                                    :tooltip "Editovat"]])
+                         (when (contains? (:-roles @user) "superadmin")
+                           [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])])]]))
                   :none]
                  ["Datum" :daily-plan/date]
                  ["Jméno" (fn [row]
-                            (let [label (->> row :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)]
-                              (if (= (:db/id row) (:selected-row-id @table-state))
+                         (let [label (->> row :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)]
+                           (if (= (:db/id row) (:selected-row-id @table-state))
                                 [re-com/hyperlink-href
                                  :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
                                  :label label]
                                 label)))]
                  ["Docházka" #(case (:daily-plan/child-att %) 1 "celodenní" 2 "půldenní" "-")]
-                 ["Docházka zrušena" (comp cljc-util/boolean->text :daily-plan/att-cancelled?)]
-                 ["Oběd požadavek" #(or (:daily-plan/lunch-req %) 0)]
-                 ["Oběd objednáno" #(or (:daily-plan/lunch-ord %) 0)]
-                 ["Oběd zrušen" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]]
+                 ["Omluvena?" (fn [row]
+                           (if (->> row :daily-plan/person :db/id (get @persons) :person/child?)
+                             (-> row  :daily-plan/att-cancelled? cljc-util/boolean->text)
+                                         "-"))]
+                 ["Obědy: Požadováno ks" #(or (:daily-plan/lunch-req %) 0)]
+                 ["Odhlášen?" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]
+                 ["Objednáno ks" #(or (:daily-plan/lunch-ord %) 0)]]
          :desc? true]]])))
 
 (defn page-daily-plan []
@@ -94,21 +103,25 @@
            :label-fn cljc-util/person-fullname
            :filter-box? true
            :width "250px"]
-          [re-com/label :label "Druh docházky"]
-          [re-com/h-box :gap "15px" :align :center
-           :children
-           [[re-com/single-dropdown
-             :model (:daily-plan/child-att item)
-             :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/child-att (cljc-util/parse-int %)])
-             :choices [{:id nil :label "žádná"}
-                       {:id 1 :label "celodenní"}
-                       {:id 2 :label "půldenní"}]
-             :placeholder "žádná"
-             :width "100px"]
-            [re-com/checkbox
-             :label "docházka zrušena?"
-             :model (:daily-plan/att-cancelled? item)
-             :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/att-cancelled? %])]]]
+          (when (->> item :daily-plan/person :db/id (get @persons) :person/child?)
+            (re-com/v-box
+             :gap "5px"
+             :children
+             [[re-com/label :label "Druh docházky"]
+              [re-com/h-box :gap "15px" :align :center
+               :children
+               [[re-com/single-dropdown
+                 :model (:daily-plan/child-att item)
+                 :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/child-att (cljc-util/parse-int %)])
+                 :choices [{:id nil :label "žádná"}
+                           {:id 1 :label "celodenní"}
+                           {:id 2 :label "půldenní"}]
+                 :placeholder "žádná"
+                 :width "100px"]
+                [re-com/checkbox
+                 :label "docházka omluvena?"
+                 :model (:daily-plan/att-cancelled? item)
+                 :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/att-cancelled? %])]]]]))
           [re-com/label :label "Požadováno obědů"]
           [re-com/h-box :gap "15px" :align :center
            :children
@@ -118,7 +131,7 @@
              :validation-regex #"^[0-9]{0,1}$"
              :width "100px"]
             [re-com/checkbox
-             :label "oběd zrušen?"
+             :label "oběd odhlášen?"
              :model (:daily-plan/lunch-cancelled? item)
              :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-cancelled? %])]]]
           [re-com/label :label "Objednáno obědů"]

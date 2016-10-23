@@ -40,7 +40,7 @@
                                          (transit/bigdec? (some-> @rows first (@sort-key-fn*)))
                                          (comp util/parse-float #(when % (.-rep %)))
                                          (vector? (some-> @rows first (@sort-key-fn*)))
-                                         (comp util/hiccup->string)))]
+                                         (comp util/hiccup->val)))]
                      [sort-key-fn
                       (if (and sort-key-fn (string? (some-> @rows first sort-key-fn)))
                         util/sort-by-locale
@@ -49,7 +49,7 @@
                       #_(timbre/debug "Sorting ...")
                       (let [[sort-key-fn sort-fn]  @sort-fns]
                         (if (and sort-fn sort-key-fn)
-                          (sort-fn (comp util/href->str sort-key-fn) @rows)
+                          (sort-fn (comp util/hiccup->val sort-key-fn) @rows)
                           @rows)))
          search-colls (ratom/reaction
                        (:search-colls @state))
