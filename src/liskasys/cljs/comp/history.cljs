@@ -63,7 +63,11 @@
            [:h4 "Historie úprav"]
            [data-table/data-table
             :table-id :history
-            :colls [["Kdy" #(time/to-format (first %) time/ddMMyyyyHHmmss)]
+            :colls [{:header "Kdy"
+                     :val-fn first
+                     :td-comp (fn [& {:keys [value]}]
+                                [:td
+                                 (time/to-format value time/ddMMyyyyHHmmss)])}
                     ["Kdo" #(->> % second (get @persons) cljc-util/person-fullname)]
                     ["Atribut" #(nth % 2)]
                     {:header "Hodnota"
