@@ -24,7 +24,9 @@
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
         persons (re-frame/subscribe [:entities :person])
         table-state (re-frame/subscribe [:table-state :daily-plans])
-        user (re-frame/subscribe [:auth-user])]
+        user (re-frame/subscribe [:auth-user])
+        row->person-fullname (fn [row persons]
+                               (->> row :daily-plan/person :db/id (get persons) cljc-util/person-fullname))]
     (fn []
       [re-com/v-box
        :children
@@ -45,31 +47,33 @@
                      :on-click #(re-frame/dispatch [:entities-load :daily-plan])]]]
                   (fn [row]
                      (when (and (= (:db/id row) (:selected-row-id @table-state)))
-                       [re-com/h-box :gap "5px" :justify :end
-                        :children
-                        [(when (or (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))
-                                   (contains? (:-roles @user) "superadmin"))
-                           [re-com/hyperlink-href
-                            :href (str "#/daily-plan/" (:db/id row) "e")
-                            :label [re-com/md-icon-button
-                                    :md-icon-name "zmdi-edit"
-                                    :tooltip "Editovat"]])
-                         (when (contains? (:-roles @user) "superadmin")
-                           [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])])]]))
+                              [re-com/h-box :gap "5px" :justify :end
+                               :children
+                               [(when (or (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))
+                                          (contains? (:-roles @user) "superadmin"))
+                                  [re-com/hyperlink-href
+                                   :href (str "#/daily-plan/" (:db/id row) "e")
+                                   :label [re-com/md-icon-button
+                                           :md-icon-name "zmdi-edit"
+                                           :tooltip "Editovat"]])
+                                (when (contains? (:-roles @user) "superadmin")
+                                  [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])])]]))
                   :none]
                  ["Datum" :daily-plan/date]
-                 ["Jméno" (fn [row]
-                         (let [label (->> row :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)]
-                           (if (= (:db/id row) (:selected-row-id @table-state))
+                 {:header "Jméno"
+                  :val-fn #(row->person-fullname % @persons)
+                  :td-comp (fn [& {:keys [value row row-state]}]
+                             [:td
+                              (if (:selected? row-state)
                                 [re-com/hyperlink-href
                                  :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
-                                 :label label]
-                                label)))]
+                                 :label value]
+                                value)])}
                  ["Docházka" #(case (:daily-plan/child-att %) 1 "celodenní" 2 "půldenní" "-")]
                  ["Omluvena?" (fn [row]
-                           (if (->> row :daily-plan/person :db/id (get @persons) :person/child?)
-                             (-> row  :daily-plan/att-cancelled? cljc-util/boolean->text)
-                                         "-"))]
+                                (if (->> row :daily-plan/person :db/id (get @persons) :person/child?)
+                                  (-> row  :daily-plan/att-cancelled? cljc-util/boolean->text)
+                                  "-"))]
                  ["Obědy: Požadováno ks" #(or (:daily-plan/lunch-req %) 0)]
                  ["Odhlášen?" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]
                  ["Objednáno ks" #(or (:daily-plan/lunch-ord %) 0)]]

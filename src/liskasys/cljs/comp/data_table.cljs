@@ -33,7 +33,7 @@
                    identity)
                  orig-rows))
          sort-key-fn* (ratom/reaction
-                       (nth (get colls (:order-by @state)) 1))
+                       (:val-fn (get colls (:order-by @state))))
          sort-fns (ratom/reaction
                    (let [sort-key-fn (when @sort-key-fn*
                                        (cond->> @sort-key-fn*
@@ -58,7 +58,7 @@
                         (reduce
                          (fn [out coll-idx]
                            (let [s (some-> (get @search-colls coll-idx) str str/lower-case)
-                                 f (nth (get colls coll-idx) 1)]
+                                 f (:val-fn (get colls coll-idx))]
                              (if (str/blank? s)
                                out
                                (filter
@@ -116,13 +116,13 @@
   (let [colls (->> (vals colls)
                    (remove (fn [[label f modifier]]
                              (#{:none :csv-export} modifier))))]
-    (str (str/join ";" (map first colls)) "\n"
+    (str (str/join ";" (map :header colls)) "\n"
          (apply str
                 (for [row rows]
                   (str (str/join ";" (map #(% row)
-                                          (map second colls))) "\n"))))))
+                                          (map :val-fn colls))) "\n"))))))
 
-(defn td-comp [value buttons?]
+(defn td-comp* [value buttons?]
   [:td {:class (str #_"text-nowrap"
                     (when buttons? " buttons")
                     (when (or (number? value) (transit/bigdec? value)) " text-right"))}
@@ -134,7 +134,7 @@
      (= (type value) js/Boolean) (cljc-util/boolean->text value)
      :else (str value))])
 
-(defn tr-comp [colls row change-state-fn]
+(defn tr-comp [colls row change-state-fn selected?]
   (let [on-enter #(change-state-fn :selected-row-id (:db/id row))]
     [:tr {:on-mouse-enter on-enter}
      #_(when row-checkboxes?
@@ -144,15 +144,34 @@
                                             (fn [row-states]
                                               (update row-states (:db/id row) update :checked? not)))]])
      (doall
-      (for [[coll-idx [_ f _]] colls
-            :let [value (f row)]]
-        ^{:key coll-idx}
-        [td-comp value (= 0 coll-idx)]))]))
+      (for [[coll-idx {:keys [val-fn td-comp]}] colls
+            :let [value (val-fn row)]]
+        (if td-comp
+          ^{:key coll-idx}
+          [td-comp :value value :row row :row-state {:selected? selected?}]
+          ^{:key coll-idx}
+          [td-comp* value (= 0 coll-idx)])))]))
+
+(defn vector-coll->map [[header val-fn header-modifier]]
+  {:header header
+   :val-fn val-fn
+   :header-modifier header-modifier})
+
+#_{:label
+ :val-fn
+ :td-comp
+ :class
+ :locale-compare?
+ :header-modifier
+ }
 
 (defn data-table [& {:keys [table-id order-by desc? rows-per-page row-checkboxes? rows colls] :as args}]
   (let [order-by (or order-by 1)
         colls (into {} (->> colls
                             (keep identity)
+                            (map #(if (vector? %)
+                                    (vector-coll->map %)
+                                    %))
                             (map-indexed vector)))
         init-state {:order-by order-by
                     :desc? (or desc? false)
@@ -211,7 +230,7 @@
                                                                        [id (assoc (get row-states id) :checked? new-val)])
                                                                      rows)))))]])
             (doall
-             (for [[coll-idx [label f header-modifier]] colls]
+             (for [[coll-idx {:keys [header val-fn header-modifier]}] colls]
                ^{:key coll-idx}
                [:th.text-nowrap
                 (when (or (= :filter header-modifier) (not header-modifier))
@@ -226,7 +245,7 @@
                   [:div.suma [:span {:dangerously-set-inner-HTML {:__html "&Sigma; "}}]
                    (cljc-util/money->text
                     (->> (:filtered-rows @table-rows)
-                         (keep f)
+                         (keep val-fn)
                          (map #(if (transit/bigdec? %)
                                  (util/parse-float (.-rep %))
                                  %))
@@ -235,7 +254,7 @@
                 (if (#{:none :csv-export} header-modifier)
                   [re-com/h-box :gap "5px" :justify :end
                    :children
-                   [label
+                   [header
                     (when (= :csv-export header-modifier)
                       [:a {:id (str "download-" table-name)}
                        [re-com/md-icon-button :md-icon-name "zmdi-download" :tooltip "Export do CSV"
@@ -244,7 +263,7 @@
                                       (set! (.-href anchor) (str "data:text/plain;charset=utf-8," (js/encodeURIComponent (make-csv (:filtered-rows @table-rows) colls))))
                                       (set! (.-download anchor) (str table-name ".csv"))))]])]]
                   [:a {:on-click #(on-click-order-by coll-idx)}
-                   [:span label]
+                   [:span header]
                    [:span (if (not= (:order-by @state) coll-idx)
                             ""
                             (if (:desc? @state)
@@ -255,7 +274,7 @@
             (map-indexed
              (fn [idx row]
                ^{:key (or (:db/id row) idx)}
-               [tr-comp colls row change-state-fn])
+               [tr-comp colls row change-state-fn (= (:db/id row) (:selected-row-id @state))])
              (:final-rows @table-rows)))]]
          (when (> (count @rows) 5)
            [:div

@@ -62,7 +62,18 @@
         billing-period (re-frame/subscribe [:entity-edit :billing-period])
         person-bills (re-frame/subscribe [:entities-where :person-bill {:person-bill/period @item-id}])
         persons (re-frame/subscribe [:entities :person])
-        table-state (re-frame/subscribe [:table-state :person-bills])]
+        table-state (re-frame/subscribe [:table-state :person-bills])
+        row->person-fullname (fn [row persons]
+                               (->> row :person-bill/person :db/id (get persons) cljc-util/person-fullname))
+        row->status (fn [row]
+                      (case (get-in row [:person-bill/status :db/ident])
+                        :person-bill.status/new
+                        "nový"
+                        :person-bill.status/published
+                        [:span "zveřejněný, " [:b "nezaplacený"]]
+                        :person-bill.status/paid
+                        "zaplacený"
+                        ""))]
     (fn []
       (let [item @billing-period]
         [re-com/v-box :gap "5px"
@@ -113,28 +124,28 @@
                :table-id :person-bills
                :rows person-bills
                :order-by 0
-               :colls [["Jméno" (fn [row]
-                                  (let [label (->> row :person-bill/person :db/id (get @persons) cljc-util/person-fullname)]
-                                    (if (= (:db/id row) (:selected-row-id @table-state))
+               :colls [{:header "Jméno"
+                        :val-fn #(row->person-fullname % @persons)
+                        :td-comp (fn [& {:keys [value row row-state]}]
+                                   [:td
+                                    (if (:selected? row-state)
                                       [:a {:href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")}
-                                       label]
-                                      label)))]
+                                       value]
+                                      value)])}
                        ["Var symbol" (comp str :person/var-symbol :person-bill/person)]
-                       ["Stav" (fn [row]
-                                 (case (get-in row [:person-bill/status :db/ident])
-                                   :person-bill.status/new
-                                   [:div "nový"]
-                                   :person-bill.status/published
-                                   [:div "zveřejněný, "
-                                    [:b
-                                     (if-not (= (:db/id row) (:selected-row-id @table-state))
-                                       "nezaplacený"
-                                       [:a {:title "Označit jako zaplacený"
-                                            :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "set-bill-as-paid" (:db/id row)])
-                                            :class "btn-danger btn-xs"}
-                                        "nezaplacený"])]]
-                                   :person-bill.status/paid
-                                   [:div "zaplacený"] ""))]
+                       {:header "Stav"
+                        :val-fn #(row->status %)
+                        :td-comp (fn [& {:keys [value row row-state]}]
+                                   [:td
+                                    (if-not (and (:selected? row-state)
+                                                 (= :person-bill.status/published (get-in row [:person-bill/status :db/ident])))
+                                      value
+                                      [:div
+                                       "zveřejněný, "
+                                       [re-com/button
+                                        :label "Zaplaceno!"
+                                        :class "btn-danger btn-xs"
+                                        :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "set-bill-as-paid" (:db/id row)])]])])}
                        ["Celkem Kč" (comp cljc-util/from-cents :person-bill/total)]
                        ["Cena za docházku" (comp cljc-util/from-cents :person-bill/att-price)]
                        ["Cena za obědy" (fn [{:person-bill/keys [lunch-count] :keys [_lunch-price _total-lunch-price]}]
