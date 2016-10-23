@@ -20,7 +20,8 @@ CLOSED: [2016-10-18 Tue 16:47]
    CLOSED: [2016-10-20 Thu 21:42]
 ** DONE stav "zverejneny, nezaplaceny" (odliseni zaplacene/nezaplacene platby)
    CLOSED: [2016-10-21 Fri 10:56]
-** TODO moznost zobrazit historii zmen entity
+** DONE moznost zobrazit historii zmen entity
+   CLOSED: [2016-10-23 Sun 16:38]
 ** TODO datomic transaction log view
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** TODO moznost odzverejnit / odzaplatit

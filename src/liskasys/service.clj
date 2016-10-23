@@ -707,3 +707,17 @@
        (map (partial merge-person-bill-facts db))
        (sort-by (comp :db/id :person-bill/period))
        reverse))
+
+(defn entity-history [db ent-id]
+  (->>
+   (d/q '[:find ?tx ?aname ?v ?added
+          :in $ ?e
+          :where
+          [?e ?a ?v ?tx ?added]
+          [?a :db/ident ?aname]]
+        (d/history db)
+        ent-id)
+   (map (fn [[txid a v added?]]
+          (let [tx (d/pull db '[:db/txInstant :tx/person] txid)]
+            [(:db/txInstant tx) (get-in tx [:tx/person :db/id]) a v added?])))
+   (sort-by last)))

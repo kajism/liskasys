@@ -6,6 +6,7 @@
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.comp.history :as history]
             [liskasys.cljs.pages :as pages]
             [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
@@ -151,7 +152,8 @@
             [re-com/hyperlink-href
              :href (str "#/daily-plan/e")
              :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan {:daily-plan/person (:daily-plan/person item)}])]]
-            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/daily-plans")]]]]]))))
+            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/daily-plans")]]]
+          [history/view (:db/id item)]]]))))
 
 (secretary/defroute "/daily-plans" []
   (re-frame/dispatch [:set-current-page :daily-plans]))

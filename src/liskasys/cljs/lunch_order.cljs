@@ -4,6 +4,7 @@
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.comp.history :as history]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
@@ -69,7 +70,8 @@
               [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-orders")]]]
             [re-com/h-box :align :center :gap "5px"
              :children
-             [[re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-orders")]]])]]))))
+             [[re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-orders")]]])
+          [history/view (:db/id item)]]]))))
 
 (secretary/defroute "/lunch-orders" []
   (re-frame/dispatch [:set-current-page :lunch-orders]))

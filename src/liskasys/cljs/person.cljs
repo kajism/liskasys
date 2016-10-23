@@ -3,6 +3,7 @@
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.comp.history :as history]
             [liskasys.cljs.comp.input-text :refer [input-text]]
             [liskasys.cljs.pages :as pages]
             [liskasys.cljs.util :as util]
@@ -283,7 +284,8 @@
               [re-com/hyperlink-href :href (str "#/person/e")
                :label [re-com/button :label "Nový"
                        :on-click #(re-frame/dispatch [:entity-new :person empty-person])]]
-              [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/persons")]]]]])))))
+              [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/persons")]]]
+            [history/view (:db/id item)]]])))))
 
 (secretary/defroute "/persons" []
   (re-frame/dispatch [:set-current-page :persons]))

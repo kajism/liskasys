@@ -188,6 +188,7 @@
               :user/auth user
               :entity/retract (service/retract-entity conn (:db/id user) ?data)
               :entity/retract-attr (service/retract-attr conn (:db/id user) ?data)
+              :entity/history (service/entity-history (d/db conn) ?data)
               :person-bill/generate (service/re-generate-person-bills conn (:db/id user) (:person-bill/period ?data))
               :person-bill/publish-all-bills (service/publish-all-bills conn (:db/id user) (:person-bill/period ?data))
               :person-bill/set-bill-as-paid (service/set-bill-as-paid conn (:db/id user) (:db/id ?data))
