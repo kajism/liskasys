@@ -20,7 +20,7 @@
   (time/to-format value time/ddMMyyyy)
   #_(let [s (time/to-format value time/ddMMyyyyHHmm)]
     (cond-> s
-      (str/ends-with? s " 00:00")
+      (or (str/ends-with? s " 00:00") (str/ends-with? s " 12:00"))
       (subs 0 (- (count s) 6)))))
 
 (re-frame/register-sub

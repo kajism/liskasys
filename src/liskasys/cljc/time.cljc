@@ -42,20 +42,19 @@
          #?(:cljs t/to-default-time-zone)
          (tf/unparse formatter))))
 
-#?(:cljs
+(defn format-with-time? [format-str]
+  (str/index-of format-str "H"))
 
-   (defn adjust-time-zone [format-str dt]
-     (cond-> dt
-       (str/index-of format-str "H")
-       t/from-default-time-zone))
-
-)
+(defn- adjust-time [date format-str]
+  (if-not (format-with-time? format-str)
+    (t/plus date (t/hours 12)) ;; to enlarge the distance from UTC avoiding yesterday dates
+    #?(:cljs (t/from-default-time-zone date)
+       :clj date)))
 
 (defn from-format [s formatter]
   (when-not (str/blank? s)
-    (->> s
-         (tf/parse formatter)
-         #?(:cljs (adjust-time-zone (:format-str formatter)))
+    (->> (tf/parse formatter s)
+         (adjust-time (:format-str formatter))
          to-date)))
 
 (defn from-dMyyyy [s]
