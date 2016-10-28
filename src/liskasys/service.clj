@@ -723,3 +723,19 @@
                  :v (:v datom)
                  :added? (:added datom)}))
          (sort-by :added?))))
+
+(defn last-txes
+  ([conn]
+   (last-txes conn 0))
+  ([conn from-idx]
+   (last-txes conn from-idx 50))
+  ([conn from-idx n]
+   (let [db (d/db conn)]
+     (->> (some-> (d/log conn) (d/tx-range nil nil))
+          reverse
+          (filter #(> (count (:data %)) 1))
+          (drop from-idx)
+          (take n)
+          (map (fn [row]
+                 (-> (d/pull db '[*] (-> row :t d/t->tx))
+                     (assoc :datom-count (count (:data row))))))))))
