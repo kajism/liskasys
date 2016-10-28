@@ -533,7 +533,7 @@
                                                         [?e :daily-plan/person ?person]
                                                         [?e :daily-plan/lunch-req ?lunch-req]
                                                         (not [?e :daily-plan/lunch-ord])
-                                                        (not [?e :daily-plan/lunch-cancelled?])]
+                                                        (not [?e :daily-plan/lunch-cancelled? true])]
                                                       db (:db/id person))
                                                  0)
                          att-price (calculate-att-price price-list
