@@ -33,6 +33,7 @@ CLOSED: [2016-10-18 Tue 16:47]
 *** poradnik nahradniku
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
+** TODO neumoznit smazat platbu u skonceneho obdobi
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
 ** don't save kid with contacts (email)
