@@ -18,8 +18,20 @@
  (fn [db [_ period-id cmd bill-id]]
    (server-call [(keyword "person-bill" cmd) {:person-bill/period period-id
                                               :db/id bill-id}]
-                [:entities-set [:entities-where :person-bill {:person-bill/period period-id}]])
+                [::cmd-results period-id bill-id])
    db))
+
+(re-frame/register-handler
+ ::cmd-results
+ common/debug-mw
+ (fn [db [_ period-id bill-id results]]
+   (if bill-id
+     (let [bill (first results)]
+       (re-frame/dispatch [:entities-load :person {:db/id (get-in bill [:person-bill/person :db/id])}])
+       (re-frame/dispatch [:entities-load :daily-plan {:daily-plan/bill (:db/id bill)}])
+       (assoc-in db [:person-bill (:db/id bill)] bill))
+     (do (re-frame/dispatch [:entities-set :person-bill [:entities-where :person-bill {:person-bill/period period-id}] results])
+         db))))
 
 (defn page-billing-periods []
   (let [billing-periods (re-frame/subscribe [:entities :billing-period])

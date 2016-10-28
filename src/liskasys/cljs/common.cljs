@@ -33,10 +33,12 @@
 (re-frame/register-sub
  :entities-where
  (fn [db [_ kw where-m]]
-   (let [out (ratom/reaction (get-in @db [:entities-where kw where-m]))]
-     (when (nil? @out)
+   (let [ents (ratom/reaction (get @db kw))
+         ids (ratom/reaction (get-in @db [:entities-where kw where-m]))]
+     (when (nil? @ids)
        (re-frame/dispatch [:entities-load kw where-m true]))
-     out)))
+     (ratom/reaction
+      (select-keys @ents @ids)))))
 
 (re-frame/register-sub
  :entity-edit-id
@@ -62,23 +64,29 @@
  :entities-load
  debug-mw
  (fn [db [_ kw where-m missing-only?]]
-   (if (and missing-only? (if (not-empty where-m)
-                            (get-in db [:entities-where kw where-m])
-                            (get db kw)))
+   (if (and missing-only? (get-in db (if (not-empty where-m)
+                                       [:entities-where kw where-m]
+                                       [kw])))
      db
      (do
        (server-call [(keyword (name kw) "select") (or where-m {})]
-                    [:entities-set (if (not-empty where-m)
-                                     [:entities-where kw where-m]
-                                     [kw])])
-       (assoc db kw {})))))
+                    [:entities-set kw (if (not-empty where-m)
+                                        [:entities-where kw where-m]
+                                        [kw])])
+       (assoc db (if (not-empty where-m)
+                   [:entities-where kw where-m]
+                   [kw]) {})))))
 
 (re-frame/register-handler
  :entities-set
  debug-mw
- (fn [db [_ path v]]
-   (assoc-in db path (into {} (map (juxt :db/id identity)
-                                   v)))))
+ (fn [db [_ kw path v]]
+   (let [ent-by-id (into {} (map (juxt :db/id identity) v))]
+     (if (= :entities-where (first path))
+       (-> db
+           (assoc-in path (set (map :db/id v)))
+           (update kw #(merge % ent-by-id)))
+       (assoc db kw ent-by-id)))))
 
 (re-frame/register-handler
  :entity-set-edit
@@ -141,7 +149,7 @@
        (update-in [:entities-where kw] (fn [wm]
                                          (reduce
                                           (fn [out [k v]]
-                                            (assoc out k (dissoc v id)))
+                                            (assoc out k (disj v id)))
                                           wm
                                           wm))))))
 

@@ -63,7 +63,8 @@
                          :label [re-com/md-icon-button
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
-                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :person-bill (:db/id row)])]]]))
+                        (when (contains? (:-roles @user) "superadmin")
+                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :person-bill (:db/id row)])])]]))
                   :none]
                  {:header "Jméno"
                   :val-fn #(row->person-fullname % @persons)

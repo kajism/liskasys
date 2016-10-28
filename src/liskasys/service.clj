@@ -234,21 +234,24 @@
               (cond-> query
                 where-val
                 (update-in [:query :in] conj ?where-attr)
-                true
+                (not= '?id ?where-attr)
                 (update-in [:query :where] conj (if where-val
-                                                  ['?e where-attr ?where-attr]
-                                                  ['?e where-attr]))
+                                                  ['?id where-attr ?where-attr]
+                                                  ['?id where-attr]))
                 where-val
                 (update-in [:args] conj where-val))))
-          {:query {:find [[(list 'pull '?e pull-pattern) '...]]
+          {:query {:find [[(list 'pull '?id pull-pattern) '...]]
                    :in ['$]
                    :where []}
            :args [db]
            :timeout 2000}
           where-m))
 
-(defn find-where [db where-m]
-  (d/query (build-query db '[*] where-m)))
+(defn find-where
+  ([db where-m]
+   (find-where db where-m '[*]))
+  ([db where-m pull-pattern]
+   (d/query (build-query db pull-pattern where-m))))
 
 (def ent-type->attr
   {:bank-holiday :bank-holiday/label
@@ -263,9 +266,12 @@
    :school-holiday :school-holiday/label
 })
 
-(defn find-by-type-default [db ent-type where-m]
-  (let [attr (get ent-type->attr ent-type ent-type)]
-    (find-where db (merge {attr nil} where-m))))
+(defn find-by-type-default
+  ([db ent-type where-m]
+   (find-by-type-default db ent-type where-m '[*]))
+  ([db ent-type where-m pull-pattern]
+   (let [attr (get ent-type->attr ent-type ent-type)]
+     (find-where db (merge {attr nil} where-m) pull-pattern))))
 
 (defmulti find-by-type (fn [db ent-type where-m] ent-type))
 
@@ -297,7 +303,7 @@
                 :_from-previous (- total (+ att-price total-lunch-price))}))))
 
 (defmethod find-by-type :person-bill [db ent-type where-m]
-  (->> (d/query (build-query db '[* {:person-bill/status [:db/id :db/ident]}] where-m))
+  (->> (find-by-type-default db ent-type where-m '[* {:person-bill/status [:db/id :db/ident]}])
        (map (partial merge-person-bill-facts db))))
 
 (defn find-by-id [db eid]
@@ -592,15 +598,16 @@
              db bill-id)
         order-date (tc/to-local-date (max-lunch-order-date db))
         dates (->> (apply period-dates (make-holiday?-fn db) (billing-period-start-end (find-by-id db period-id)))
-                   (drop-while #(not (t/after? (tc/to-local-date %) order-date))))]
-    (->> (generate-daily-plans person dates)
-         (map #(-> % (assoc :db/id (d/tempid :db.part/user)
-                            :daily-plan/bill bill-id)))
-         (into [[:db/add bill-id :person-bill/status :person-bill.status/paid]
-                [:db.fn/cas (:db/id person) :person/lunch-fund
-                 (:person/lunch-fund person) (+ (or (:person/lunch-fund person) 0)
-                                                (- total att-price))]])
-         (transact-period-person-bills conn user-id period-id))))
+                   (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
+        tx-result (->> (generate-daily-plans person dates)
+                       (map #(-> % (assoc :db/id (d/tempid :db.part/user)
+                                          :daily-plan/bill bill-id)))
+                       (into [[:db/add bill-id :person-bill/status :person-bill.status/paid]
+                              [:db.fn/cas (:db/id person) :person/lunch-fund
+                               (:person/lunch-fund person) (+ (or (:person/lunch-fund person) 0)
+                                                              (- total att-price))]])
+                       (transact conn user-id))]
+    (find-by-type (:db-after tx-result) :person-bill {:db/id bill-id})))
 
 #_(defn all-period-bills-paid [conn user-id period-id]
   (let [db (d/db conn)
