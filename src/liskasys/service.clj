@@ -256,17 +256,6 @@
   (->> (d/query (build-query db '[* {:person-bill/status [:db/id :db/ident]}] where-m))
        (map (partial merge-person-bill-facts db))))
 
-(defmethod find-by-type :audit [db ent-type where-m]
-  (timbre/debug where-m)
-  #_(cond
-    (empty? (:search-colls where-m))
-    )
-  #_(d/q '[:find ?tx ?txInstant (pull ?person [:db/id :person/firstname :person/lastname])
-         :where
-         [?tx :db/txInstant ?txInstant]
-         [?tx :tx/person ?person]]
-       db))
-
 (defn find-by-id [db eid]
   (d/pull db '[*] eid))
 
@@ -718,6 +707,19 @@
         (d/history db)
         ent-id)
    (map (fn [[txid a v added?]]
-          (let [tx (d/pull db '[:db/txInstant :tx/person] txid)]
-            [(:db/txInstant tx) (get-in tx [:tx/person :db/id]) a v added?])))
+          (let [tx (d/pull db '[:db/id :db/txInstant :tx/person] txid)]
+            {:a a
+             :v v
+             :tx tx
+             :added? added?})))
    (sort-by last)))
+
+(defn tx-datoms [conn t]
+  (let [db (d/db conn)]
+    (->> (some-> (d/log conn) (d/tx-range t nil) first :data)
+         (map (fn [datom]
+                {:e (:e datom)
+                 :a (d/ident db (:a datom))
+                 :v (:v datom)
+                 :added? (:added datom)}))
+         (sort-by :added?))))

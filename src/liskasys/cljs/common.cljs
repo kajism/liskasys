@@ -62,11 +62,12 @@
  :entities-load
  debug-mw
  (fn [db [_ kw where-m]]
-   (server-call [(keyword (name kw) "select") (or where-m {})]
-                [:entities-set (if-not where-m
-                                 [kw]
-                                 [:entities-where kw where-m])])
-   db))
+   (when-not (get db kw)
+     (server-call [(keyword (name kw) "select") (or where-m {})]
+                  [:entities-set (if-not where-m
+                                   [kw]
+                                   [:entities-where kw where-m])]))
+   (assoc db kw [])))
 
 (re-frame/register-handler
  :entities-set

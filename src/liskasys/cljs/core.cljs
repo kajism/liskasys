@@ -15,6 +15,7 @@
             liskasys.cljs.person
             liskasys.cljs.price-list
             liskasys.cljs.school-holiday
+            liskasys.cljs.transaction
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]

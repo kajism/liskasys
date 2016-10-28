@@ -38,15 +38,14 @@
         persons (re-frame/subscribe [:entities :person])]
     (fn [& {:keys [row]}]
       [:td
-       (let [[_ _ a v] row]
-         (case a
-           :person/lunch-type
-           (:lunch-type/label (get @lunch-types v))
-           (:person/parent :daily-plan/person)
-           (cljc-util/person-fullname (get @persons v))
-           (if (inst? v)
-             (time/to-format v time/ddMMyyyyHHmmss)
-             (str v))))])))
+       (case (:a row)
+         :person/lunch-type
+         (:lunch-type/label (get @lunch-types (:v row)))
+         (:person/parent :daily-plan/person)
+         (cljc-util/person-fullname (get @persons (:v row)))
+         (if (inst? (:v row))
+           (time/to-format (:v row) time/ddMMyyyyHHmmss)
+           (str (:v row))))])))
 
 (defn view [ent-id]
   (let [history (re-frame/subscribe [::entity-history])
@@ -64,16 +63,17 @@
            [data-table/data-table
             :table-id :history
             :colls [{:header "Kdy"
-                     :val-fn first
-                     :td-comp (fn [& {:keys [value]}]
+                     :val-fn (comp :db/txInstant :tx)
+                     :td-comp (fn [& {:keys [value row]}]
                                 [:td
-                                 (time/to-format value time/ddMMyyyyHHmmss)])}
-                    ["Kdo" #(->> % second (get @persons) cljc-util/person-fullname)]
-                    ["Atribut" #(nth % 2)]
+                                 [:a {:href (str "#/transaction/" (-> row :tx :db/id))}
+                                  (time/to-format value time/ddMMyyyyHHmmss)]])}
+                    ["Kdo" #(->> % :tx :tx/person :db/id (get @persons) cljc-util/person-fullname)]
+                    ["Atribut" :a]
                     {:header "Hodnota"
-                     :val-fn (constantly nil)
+                     :val-fn :v
                      :td-comp get-value}
-                    ["Smazano?" #(not (nth % 4))]]
+                    ["Smazano?" (complement :added?)]]
             :rows datoms
             :order-by 0
             :desc? true]])))))
