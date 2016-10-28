@@ -13,7 +13,7 @@ CLOSED: [2016-10-18 Tue 16:47]
    CLOSED: [2016-10-19 Wed 16:07]
 *** tabulka hlavička po, ut, st, čt, pa
 *** celkem deti      20, 18, 20, 19, 17
-*** [#B] seznam deti v kazdem dnu
+*** seznam deti v kazdem dnu
 ** DONE filtr na aktivni osoby
    CLOSED: [2016-10-19 Wed 16:07]
 ** DONE nepregenerovavat zverejnene
@@ -22,8 +22,8 @@ CLOSED: [2016-10-18 Tue 16:47]
    CLOSED: [2016-10-21 Fri 10:56]
 ** DONE moznost zobrazit historii zmen entity
    CLOSED: [2016-10-23 Sun 16:38]
-** TODO datomic transaction log view
-** odchytávání DB constraint exceptions => rozumna hlaska uživateli
+** DONE datomic transaction log view
+   CLOSED: [2016-10-28 Fri 20:41]
 ** DONE moznost odzverejnit / odzaplatit
    CLOSED: [2016-10-28 Fri 15:55]
 ** DONE refresh persons & plans after deleted bill
@@ -33,6 +33,7 @@ CLOSED: [2016-10-18 Tue 16:47]
 *** poradnik nahradniku
 *** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
 *** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
+** odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
 ** don't save kid with contacts (email)
 ** don't save adult with attendance

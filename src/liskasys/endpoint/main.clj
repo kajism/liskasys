@@ -193,4 +193,5 @@
               :person-bill/publish-all-bills (service/publish-all-bills conn (:db/id user) (:person-bill/period ?data))
               :person-bill/set-bill-as-paid (service/set-bill-as-paid conn (:db/id user) (:db/id ?data))
               :tx/datoms (service/tx-datoms conn ?data)
+              :tx/range (service/last-txes conn (:from-idx ?data) (:n ?data))
               (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))

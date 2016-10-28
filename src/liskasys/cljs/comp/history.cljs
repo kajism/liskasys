@@ -68,7 +68,11 @@
                                 [:td
                                  [:a {:href (str "#/transaction/" (-> row :tx :db/id))}
                                   (time/to-format value time/ddMMyyyyHHmmss)]])}
-                    ["Kdo" #(->> % :tx :tx/person :db/id (get @persons) cljc-util/person-fullname)]
+                    {:header "Kdo"
+                     :val-fn #(->> % :tx :tx/person :db/id (get @persons) cljc-util/person-fullname)
+                     :td-comp (fn [& {:keys [value row]}]
+                                [:td
+                                 [:a {:href (str "#/person/" (-> row :tx :tx/person :db/id))} value]])}
                     ["Atribut" :a]
                     {:header "Hodnota"
                      :val-fn :v

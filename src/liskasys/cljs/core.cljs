@@ -107,7 +107,7 @@
         [:li [:a {:href "#/lunch-types"} "Diety"]]
         [:li [:a {:href "#/school-holidays"} "Prázdniny"]]
         [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
-        #_[:li [:a {:href "#/audits"} "Transakce"]]]]
+        [:li [:a {:href "#/transactions"} "Transakce"]]]]
       [:li
        [:a
         {:href "/logout"} "Odhlásit se"]]]]]])

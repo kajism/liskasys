@@ -73,9 +73,9 @@
                     [:entities-set kw (if (not-empty where-m)
                                         [:entities-where kw where-m]
                                         [kw])])
-       (assoc db (if (not-empty where-m)
-                   [:entities-where kw where-m]
-                   [kw]) {})))))
+       (assoc-in db (if (not-empty where-m)
+                      [:entities-where kw where-m]
+                      [kw]) {})))))
 
 (re-frame/register-handler
  :entities-set
