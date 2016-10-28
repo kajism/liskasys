@@ -27,7 +27,7 @@
  (fn [db [_ kw]]
    (let [out (ratom/reaction (get @db kw))]
      (when (nil? @out)
-       (re-frame/dispatch [:entities-load kw]))
+       (re-frame/dispatch [:entities-load kw {} true]))
      out)))
 
 (re-frame/register-sub
@@ -35,7 +35,7 @@
  (fn [db [_ kw where-m]]
    (let [out (ratom/reaction (get-in @db [:entities-where kw where-m]))]
      (when (nil? @out)
-       (re-frame/dispatch [:entities-load kw where-m]))
+       (re-frame/dispatch [:entities-load kw where-m true]))
      out)))
 
 (re-frame/register-sub
@@ -61,13 +61,17 @@
 (re-frame/register-handler
  :entities-load
  debug-mw
- (fn [db [_ kw where-m]]
-   (when-not (get db kw)
-     (server-call [(keyword (name kw) "select") (or where-m {})]
-                  [:entities-set (if-not where-m
-                                   [kw]
-                                   [:entities-where kw where-m])]))
-   (assoc db kw [])))
+ (fn [db [_ kw where-m missing-only?]]
+   (if (and missing-only? (if (not-empty where-m)
+                            (get-in db [:entities-where kw where-m])
+                            (get db kw)))
+     db
+     (do
+       (server-call [(keyword (name kw) "select") (or where-m {})]
+                    [:entities-set (if (not-empty where-m)
+                                     [:entities-where kw where-m]
+                                     [kw])])
+       (assoc db kw {})))))
 
 (re-frame/register-handler
  :entities-set
@@ -132,7 +136,14 @@
  (fn [db [_ kw id]]
    (when id
      (server-call [(keyword (name kw) "delete") id] nil nil db))
-   (update db kw #(dissoc % id))))
+   (-> db
+       (update kw #(dissoc % id))
+       (update-in [:entities-where kw] (fn [wm]
+                                         (reduce
+                                          (fn [out [k v]]
+                                            (assoc out k (dissoc v id)))
+                                          wm
+                                          wm))))))
 
 (re-frame/register-handler
  :file-delete

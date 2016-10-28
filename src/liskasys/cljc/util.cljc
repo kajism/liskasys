@@ -77,6 +77,9 @@
     (let [m (rem ym 100)]
       (str (quot ym 100) "/" (if (<= m 9) "0") m))))
 
+(defn period->text [{:billing-period/keys [from-yyyymm to-yyyymm]}]
+  (str (yyyymm->text from-yyyymm) " - " (yyyymm->text to-yyyymm)))
+
 (def days ["po" "út" "st" "čt" "pá"])
 
 (defn att-pattern->text [pattern]

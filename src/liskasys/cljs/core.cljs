@@ -5,7 +5,6 @@
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.pages :as pages]
-            liskasys.cljs.audit
             liskasys.cljs.bank-holiday
             liskasys.cljs.billing-period
             liskasys.cljs.daily-plan
@@ -13,6 +12,7 @@
             liskasys.cljs.lunch-order
             liskasys.cljs.lunch-type
             liskasys.cljs.person
+            liskasys.cljs.person-bill
             liskasys.cljs.price-list
             liskasys.cljs.school-holiday
             liskasys.cljs.transaction

@@ -24,7 +24,14 @@ CLOSED: [2016-10-18 Tue 16:47]
    CLOSED: [2016-10-23 Sun 16:38]
 ** TODO datomic transaction log view
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
-** TODO moznost odzverejnit / odzaplatit
+** DONE moznost odzverejnit / odzaplatit
+   CLOSED: [2016-10-28 Fri 15:55]
+** TODO refresh persons & plans after payed bill
+** TODO nahrady
+*** moznost nahrazovani z aktuaniho a 1 predchoziho obdobi
+*** poradnik nahradniku
+*** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
+*** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
 ** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
 ** don't save kid with contacts (email)
 ** don't save adult with attendance
@@ -37,11 +44,6 @@ CLOSED: [2016-10-18 Tue 16:47]
 ** TODO denni prehledovy email Danka, Janka, Misa v 10 na dalsi den
 ** TODO moznost dogenerovat denni plany i v prubehu obdobi
 ** TODO na Objednavkach obedu zobrazit seznam lidi, kterym se obed odecetl (i dodatecne tx)
-** TODO nahrady
-*** moznost nahrazovani z aktuaniho a 1 predchoziho obdobi
-*** poradnik nahradniku
-*** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
-*** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
 ** TODO zobrazit zrusene obedy rodicum
 ** QR kod na platbu
 ** filtry od/do datum na denni plany (postupne nacitani ze serveru)

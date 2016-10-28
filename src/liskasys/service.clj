@@ -167,7 +167,7 @@
       (throw (Exception. "Pro tuto osobu a den již v denním plánu existuje záznam."))))
   (transact-entity* conn user-id ent))
 
-(defn retract-entity
+(defn retract-entity*
   "Returns the number of retracted datoms (attributes)."
   [conn user-id ent-id]
   (->> [[:db.fn/retractEntity ent-id]]
@@ -175,6 +175,47 @@
        :tx-data
        count
        (+ -2)))
+
+(defmulti retract-entity (fn [conn user-id ent-id]
+                           (first (keys (select-keys (d/pull (d/db conn) '[*] ent-id)
+                                                     [:person-bill/person])))))
+
+(defmethod retract-entity :default [conn user-id ent-id]
+  (retract-entity* conn user-id ent-id))
+
+(declare merge-person-bill-facts find-by-type)
+
+(defn max-lunch-order-date [db]
+  (d/q '[:find (max ?date) .
+         :where [_ :lunch-order/date ?date]]
+       db))
+
+(defmethod retract-entity :person-bill/person [conn user-id ent-id]
+  (let [db (d/db conn)
+        bill (merge-person-bill-facts
+              db
+              (d/pull db '[* {:person-bill/status [:db/ident]}] ent-id))
+        daily-plans (d/q '[:find [?e ...]
+                           :in $ ?bill ?min-date
+                           :where
+                           [?e :daily-plan/bill ?bill]
+                           (not [?e :daily-plan/lunch-ord])
+                           [?e :daily-plan/date ?date]
+                           [(> ?date ?min-date)]]
+                         db ent-id (max-lunch-order-date db))
+        person (d/pull db '[*] (get-in bill [:person-bill/person :db/id]))]
+    (timbre/info "retracting bill" bill "with" (count daily-plans) "plans of person" person)
+
+    (->> daily-plans
+         (map (fn [dp-id]
+                [:db.fn/retractEntity dp-id]))
+         (into [[:db.fn/retractEntity ent-id]
+                [:db.fn/cas (:db/id person) :person/lunch-fund (:person/lunch-fund person)
+                 (- (:person/lunch-fund person) (:_total-lunch-price bill))]])
+         (transact conn user-id)
+         :tx-data
+         count
+         (+ -2))))
 
 (defn retract-attr [conn user-id ent]
   (timbre/debug ent)
@@ -235,9 +276,12 @@
   (->> (find-by-type-default db ent-type where-m)
        (map #(dissoc % :person/passwd))))
 
-
 (defn merge-person-bill-facts [db {:person-bill/keys [lunch-count total att-price] :as person-bill}]
-  (let [tx (apply max (d/q '[:find [?tx ...] :in $ ?e :where [?e :person-bill/total _ ?tx]] db (:db/id person-bill)))
+  (let [tx (apply max (d/q '[:find [?tx ...]
+                             :in $ ?e
+                             :where
+                             [?e :person-bill/total _ ?tx]]
+                           db (:db/id person-bill)))
         as-of-db (d/as-of db tx)
         patterns (d/pull as-of-db
                          [:person/var-symbol :person/att-pattern :person/lunch-pattern]
@@ -546,7 +590,9 @@
                [?e :person-bill/period ?period-id]
                [?e :person-bill/status :person-bill.status/published]]
              db bill-id)
-        dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end (find-by-id db period-id)))]
+        order-date (tc/to-local-date (max-lunch-order-date db))
+        dates (->> (apply period-dates (make-holiday?-fn db) (billing-period-start-end (find-by-id db period-id)))
+                   (drop-while #(not (t/after? (tc/to-local-date %) order-date))))]
     (->> (generate-daily-plans person dates)
          (map #(-> % (assoc :db/id (d/tempid :db.part/user)
                             :daily-plan/bill bill-id)))
@@ -632,12 +678,9 @@
        db parent-id))
 
 (defn- make-can-cancel-lunch?-fn [db]
-  (let [max-lunch-order-date (-> (d/q '[:find (max ?date) .
-                                        :where [_ :lunch-order/date ?date]]
-                                      db)
-                                 tc/to-local-date)]
-    (fn [date]
-      (t/after? (-> date tc/to-local-date) max-lunch-order-date))))
+  (fn [date]
+    (t/after? (tc/to-local-date date)
+              (tc/to-local-date (max-lunch-order-date db)))))
 
 (defn transact-cancellations [conn user-id child-id cancel-dates uncancel-dates]
   (let [db (d/db conn)
@@ -647,7 +690,7 @@
                              (map :db/id)
                              set)
                         child-id)
-      (timbre/error "User" user-id "attempts to change cancellations of child" child-id)
+      (timbre/warn "User" user-id "attempts to change cancellations of child" child-id)
       (->> (d/q '[:find [(pull ?e [*]) ...]
                   :in $ ?person [?date ...]
                   :where
@@ -664,19 +707,6 @@
            (transact conn user-id)
            :tx-data
            count))))
-
-;; what is the entire history of entity e?
-;; (->> (d/q '[:find ?aname ?v ?tx ?inst ?added
-;;             :in $ ?e
-;;             :where
-;;             [?e ?a ?v ?tx ?added]
-;;             [?a :db/ident ?aname]
-;;             [?tx :db/txInstant ?inst]]
-;;           (d/history (d/db conn))
-;;           story)
-;;      seq
-;;      (sort-by #(nth % 2))
-;;      pprint)
 
 (defn find-person-bills [db user-id]
   (->> (d/q '[:find [(pull ?e [* {:person-bill/person [*] :person-bill/period [*]}]) ...]

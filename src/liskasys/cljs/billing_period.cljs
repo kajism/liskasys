@@ -6,6 +6,7 @@
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
             [liskasys.cljs.pages :as pages]
+            [liskasys.cljs.person-bill :as person-bill]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
@@ -60,20 +61,7 @@
 (defn page-billing-period []
   (let [item-id (re-frame/subscribe [:entity-edit-id :billing-period])
         billing-period (re-frame/subscribe [:entity-edit :billing-period])
-        person-bills (re-frame/subscribe [:entities-where :person-bill {:person-bill/period @item-id}])
-        persons (re-frame/subscribe [:entities :person])
-        table-state (re-frame/subscribe [:table-state :person-bills])
-        row->person-fullname (fn [row persons]
-                               (->> row :person-bill/person :db/id (get persons) cljc-util/person-fullname))
-        row->status (fn [row]
-                      (case (get-in row [:person-bill/status :db/ident])
-                        :person-bill.status/new
-                        "nový"
-                        :person-bill.status/published
-                        [:span "zveřejněný, " [:b "nezaplacený"]]
-                        :person-bill.status/paid
-                        "zaplacený"
-                        ""))]
+        person-bills (re-frame/subscribe [:entities-where :person-bill {:person-bill/period @item-id}])]
     (fn []
       (let [item @billing-period]
         [re-com/v-box :gap "5px"
@@ -101,58 +89,19 @@
             [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/billing-period/e")]
             [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/billing-periods")]]]
           (when (:db/id item)
-            [re-com/v-box :gap "5px"
-             :children
-             [[:h4 "Rozpisy plateb"]
-              [re-com/h-box :gap "5px"
-               :children
-               [(when (or (empty? @person-bills)
-                          (some #(not= (get-in % [:person-bill/status :db/ident]) :person-bill.status/paid) (vals @person-bills)))
-                  [re-com/button
-                   :label (str (if (seq @person-bills)
-                                 "Přegenerovat nezveřejněné"
-                                 "Vygenerovat")
-                               " rozpisy")
-                   :class "btn-danger"
-                   :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "generate"])])
-                (when (some #(= (get-in % [:person-bill/status :db/ident]) :person-bill.status/new) (vals @person-bills))
-                  [re-com/button
-                   :label "Zveřejnit rozpisy"
-                   :class "btn-danger"
-                   :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "publish-all-bills"])])]]
-              [data-table
-               :table-id :person-bills
-               :rows person-bills
-               :order-by 0
-               :colls [{:header "Jméno"
-                        :val-fn #(row->person-fullname % @persons)
-                        :td-comp (fn [& {:keys [value row row-state]}]
-                                   [:td
-                                    (if (:selected? row-state)
-                                      [:a {:href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")}
-                                       value]
-                                      value)])}
-                       ["Var symbol" (comp str :person/var-symbol :person-bill/person)]
-                       {:header "Stav"
-                        :val-fn #(row->status %)
-                        :td-comp (fn [& {:keys [value row row-state]}]
-                                   [:td
-                                    (if-not (and (:selected? row-state)
-                                                 (= :person-bill.status/published (get-in row [:person-bill/status :db/ident])))
-                                      value
-                                      [:div
-                                       "zveřejněný, "
-                                       [re-com/button
-                                        :label "Zaplaceno!"
-                                        :class "btn-danger btn-xs"
-                                        :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "set-bill-as-paid" (:db/id row)])]])])}
-                       ["Celkem Kč" (comp cljc-util/from-cents :person-bill/total)]
-                       ["Cena za docházku" (comp cljc-util/from-cents :person-bill/att-price)]
-                       ["Cena za obědy" (fn [{:person-bill/keys [lunch-count] :keys [_lunch-price _total-lunch-price]}]
-                                          (str lunch-count " x " (cljc-util/cents->text _lunch-price) " = " (cljc-util/from-cents _total-lunch-price)))]
-                       ["Z předch. období" (comp cljc-util/from-cents :_from-previous)]
-                       ["Rozvrh docházky" #(-> % :person-bill/person :person/att-pattern cljc-util/att-pattern->text)]
-                       ["Rozvrh obědů" #(-> % :person-bill/person :person/lunch-pattern cljc-util/lunch-pattern->text)]]]]])]]))))
+            [:div
+             [re-com/h-box :gap "5px"
+              :children
+              [[re-com/button
+                :label "Vygenerovat rozpisy"
+                :class "btn-danger"
+                :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "generate"])]
+               (when (some #(= (get-in % [:person-bill/status :db/ident]) :person-bill.status/new) (vals @person-bills))
+                 [re-com/button
+                  :label "Zveřejnit rozpisy"
+                  :class "btn-danger"
+                  :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "publish-all-bills"])])]]
+             [person-bill/person-bills person-bills]])]]))))
 
 (secretary/defroute "/billing-periods" []
   (re-frame/dispatch [:set-current-page :billing-periods]))
