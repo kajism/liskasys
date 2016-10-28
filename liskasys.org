@@ -26,7 +26,8 @@ CLOSED: [2016-10-18 Tue 16:47]
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** DONE moznost odzverejnit / odzaplatit
    CLOSED: [2016-10-28 Fri 15:55]
-** TODO refresh persons & plans after payed bill
+** DONE refresh persons & plans after deleted bill
+   CLOSED: [2016-10-28 Fri 20:08]
 ** TODO nahrady
 *** moznost nahrazovani z aktuaniho a 1 predchoziho obdobi
 *** poradnik nahradniku

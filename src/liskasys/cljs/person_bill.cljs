@@ -11,19 +11,23 @@
             [reagent.core :as reagent]
             [secretary.core :as secretary]))
 
-;; (re-frame/register-handler
-;;  ::re-generate-bill-and-plans
-;;  common/debug-mw
-;;  (fn [db [_ bill-id]]
-;;    (server-call [:person-bill/re-generate-bill-and-plans bill-id]
-;;                 [::set-results])
-;;    db))
+(re-frame/register-handler
+ ::delete-bill
+ common/debug-mw
+ (fn [db [_ bill]]
+   (re-frame/dispatch [:entity-delete :person-bill (:db/id bill) [::after-delete-bill bill]])
+   db))
 
-;; (re-frame/register-handler
-;;  ::set-results
-;;  common/debug-mw
-;;  (fn [db [_ results]]
-;;    db))
+(re-frame/register-handler
+ ::after-delete-bill
+ common/debug-mw
+ (fn [db [_ bill]]
+   (re-frame/dispatch [:entities-load :person {:db/id (get-in bill [:person-bill/person :db/id])}])
+   (update db :daily-plan #(reduce (fn [out [k v]]
+                                     (if (= (:db/id bill) (get-in v [:daily-plan/bill :db/id]))
+                                       (dissoc out k)
+                                       out))
+                                   % %))))
 
 (defn- row->person-fullname [row persons]
   (->> row :person-bill/person :db/id (get persons) cljc-util/person-fullname))
@@ -63,8 +67,7 @@
                          :label [re-com/md-icon-button
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
-                        (when (contains? (:-roles @user) "superadmin")
-                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :person-bill (:db/id row)])])]]))
+                        [buttons/delete-button #(re-frame/dispatch [::delete-bill row])]]]))
                   :none]
                  {:header "Jméno"
                   :val-fn #(row->person-fullname % @persons)

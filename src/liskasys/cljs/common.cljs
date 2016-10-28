@@ -141,9 +141,9 @@
 (re-frame/register-handler
  :entity-delete
  debug-mw
- (fn [db [_ kw id]]
+ (fn [db [_ kw id after-delete]]
    (when id
-     (server-call [(keyword (name kw) "delete") id] nil nil db))
+     (server-call [(keyword (name kw) "delete") id] nil after-delete db))
    (-> db
        (update kw #(dissoc % id))
        (update-in [:entities-where kw] (fn [wm]
