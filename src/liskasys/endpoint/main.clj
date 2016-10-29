@@ -18,11 +18,9 @@
             [taoensso.timbre :as timbre]))
 
 (defn- make-date-sets [str-date-seq]
-  (when str-date-seq
-    (let [yesterday (time/to-date (t/yesterday))]
-      (->> str-date-seq
+  (some->> str-date-seq
            (map #(time/from-format % time/ddMMyyyy))
-           set))))
+           set))
 
 (defn- upload-dir []
   (or (:upload-dir env) "./uploads/"))
@@ -54,7 +52,7 @@
                                               child-id
                                               (set/difference cancel-dates already-cancelled-dates)
                                               (set/difference already-cancelled-dates cancel-dates))
-         (response/redirect (str (when child-id "/?child-id=") child-id))))
+         (response/redirect (str "/" (when child-id (str "?child-id=" child-id))))))
 
      (GET "/nahrady" {:keys [params]}
        (let [db (d/db conn)
@@ -63,6 +61,26 @@
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/substitutions ucd substs))))
+
+     (POST "/nahrady" {:keys [params]}
+           (let [child-id (edn/read-string (:child-id params))
+                 subst-req-date (-> params
+                                    :subst-request
+                                    ffirst
+                                    (time/from-format time/ddMMyyyy))
+                 subst-remove-id  (-> params
+                                      :subst-remove
+                                      ffirst
+                                      edn/read-string)]
+             (timbre/debug params subst-req-date subst-remove-id)
+             (cond
+               subst-remove-id
+               (service/retract-entity conn (:db/id user) subst-remove-id)
+               subst-req-date
+               (main-service/request-substitution conn (:db/id user) child-id subst-req-date)
+               :else
+               (timbre/error "Invalid post to /nahrady without req-date or remove-id"))
+             (response/redirect (str "/nahrady" (when child-id (str "?child-id=" child-id))))))
 
      (GET "/platby" {:keys [params]}
        (let [person-bills (main-service/find-person-bills (d/db conn) (:db/id user))]

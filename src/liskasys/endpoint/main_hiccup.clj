@@ -78,10 +78,10 @@
              " "
              (when lunch-cancelled?
                "(oběd odhlášen)")]]])]]]
-     ;;(anti-forgery/anti-forgery-field)
+     #_(anti-forgery/anti-forgery-field)
      [:button.btn.btn-danger {:type "submit"} "Uložit"]]]])
 
-(defn substitutions [user-children-data {:keys [canc-plans subst-plans dates substs-by-date]}]
+(defn substitutions [user-children-data {:keys [dp-gap-days  can-subst?]}]
   [:div.container
    [:h3 "Náhrady"]
    [:div
@@ -97,7 +97,7 @@
     [:form {:method "post"
             :role "form"}
      [:input {:type "hidden" :name "child-id" :value (:selected-id user-children-data)}]
-     [:table.table.table-striped
+     #_[:table.table.table-striped
       [:thead
        [:tr
         [:th "Omluvených dnů"]
@@ -107,22 +107,46 @@
         [:td (count canc-plans)]
         [:td (count subst-plans)]]]]
      [:div.form-group
-      [:label {:for "from"} "Označte dny, kdy máte zájem nahradit docházku"]
+      [:label {:for "from"} "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem (a oběd objednán) den předem po 10. hodině."]
       [:table.table.table-striped
+       [:thead
+        [:tr
+         [:th "Datum"]
+         [:th "Počet volných míst"]
+         [:th "Náhradníci"]]]
        [:tbody
-        (for [{:keys [date subst? lunch?]} dates
-              :let [date-str (time/to-format date time/ddMMyyyy)]]
-          [:tr
-           [:td
-            [:label
-             (when subst?
-               [:input {:type "hidden" :name "already-subst-dates[]" :value date-str}])
-             [:input {:type "checkbox" :name "subst-dates[]"
-                      :value date-str
-                      :checked (boolean subst?)}] " "
-             (service/format-day-date date)]]])]]]
-     ;;(anti-forgery/anti-forgery-field)
-     [:button.btn.btn-danger {:type "submit"} "Uložit"]]]])
+        (if-not (seq dp-gap-days)
+          [:h3 "Nebyl nalezen žádný den kdy nemáte řádnou docházku."]
+          (for [[date plans] dp-gap-days
+                :let [date-str (time/to-format date time/ddMMyyyy)
+                      my-subst (->> plans
+                                    (filter #(= (:selected-id user-children-data) (get-in % [:daily-plan/person :db/id])))
+                                    first)]]
+            [:tr
+             [:td [:label (service/format-day-date date)]]
+             [:td (- 19 (count plans))]
+             [:td (let [substs (->> plans
+                                    (filter #(:daily-plan/subst-req-on %))
+                                    (sort-by :daily-plan/subst-req-on))]
+                    (str (when my-subst
+                           (str (inc (reduce (fn [_ [idx x]]
+                                               (when (= x my-subst)
+                                                 (reduced idx)))
+                                             nil
+                                             (map-indexed vector substs)))
+                                ". z celkem "))
+                         (count substs)))]
+             [:td (if my-subst
+                    [:input.btn.btn-danger.btn-xs
+                     {:type "submit"
+                      :name (str "subst-remove[" (:db/id my-subst) "]")
+                      :value "Zrušit zájem"}]
+                    (when can-subst?
+                      [:input.btn.btn-success.btn-xs
+                       {:type "submit"
+                        :name (str "subst-request[" date-str "]")
+                        :value "Mám zájem"}]))]]))]]]
+     #_(anti-forgery/anti-forgery-field)]]])
 
 (defn lunch-menu [lunch-menu previous? history]
   [:div.container

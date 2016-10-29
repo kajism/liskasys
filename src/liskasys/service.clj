@@ -687,11 +687,14 @@
           [(<= ?date ?date-to)]]
         db person-id date-from date-to))
 
-(defn find-daily-plans [db date-from date-to]
+(defn find-att-daily-plans [db date-from date-to]
   (d/q '[:find [(pull ?e [*]) ...]
          :in $ ?date-from ?date-to
          :where
+         (or [?e :daily-plan/child-att 1]
+             [?e :daily-plan/child-att 2])
          [?e :daily-plan/date ?date]
          [(<= ?date-from ?date)]
          [(<= ?date ?date-to)]]
        db date-from date-to))
+
