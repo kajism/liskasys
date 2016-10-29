@@ -1,6 +1,10 @@
 (ns liskasys.cljc.util
   (:require [clojure.string :as str]
-            #?@(:clj [[clojure.edn :as edn]])))
+            #?@(:clj [[clojure.edn :as edn]
+                      [clj-time.core :as t]]
+                :cljs
+                [[cljs-time.core :as t]
+                 [cljs.tools.reader.edn :as edn]])))
 
 (defn person-fullname [{:keys [:person/lastname :person/firstname]}]
   (str lastname " " firstname))
@@ -76,6 +80,13 @@
   (when ym
     (let [m (rem ym 100)]
       (str (quot ym 100) "/" (if (<= m 9) "0") m))))
+
+(defn period-start-end
+  "Returns local dates with end exclusive!!"
+  [{:keys [:billing-period/from-yyyymm :billing-period/to-yyyymm] :as period}]
+  [(t/local-date (quot from-yyyymm 100) (rem from-yyyymm 100) 1)
+   (t/plus (t/local-date (quot to-yyyymm 100) (rem to-yyyymm 100) 1)
+           (t/months 1))])
 
 (defn period->text [{:billing-period/keys [from-yyyymm to-yyyymm]}]
   (str (yyyymm->text from-yyyymm) " - " (yyyymm->text to-yyyymm)))

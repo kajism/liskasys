@@ -7,7 +7,8 @@
             [datomic.api :as d]
             [liskasys.cljc.util :as cljc-util]
             [liskasys.service :as service]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [liskasys.cljc.time :as time]))
 
 (defn check-person-password [{:keys [:db/id :person/passwd :person/_parent]} pwd]
   (if passwd
@@ -132,13 +133,24 @@
          (sort-by :daily-plan/date))))
 
 (defn find-person-substs [db person-id]
-  (let [date-from nil ;; begining of previous period
-        date-to nil ;; (max person daily-plan-date + 7)
-        date-insertion nil ;; (inc max lunch-order-date)
-        person-plans nil ;; all plans in date range
-        ]
-    #_{:canc-plans canc-plans
-     :subst-plans subst-plans
-     :can-subst-max (min 2 (- (count canc-plans) (count subst-plans) (count substs-by-date)))
-     :dates dates
-     :substs-by-date substs-by-date}))
+  (let [date-from (-> (if-let [prev-period (last (service/find-previous-periods db))]
+                        (let [[from _] (cljc-util/period-start-end prev-period)]
+                          from)
+                        (let [[from _] (cljc-util/period-start-end (service/find-current-period db))]
+                          from))
+                      tc/to-date)
+        date-to (service/find-max-person-paid-period-date db person-id)]
+    (timbre/debug "finding-person-substs from" date-from "to" date-to)
+    {:substable-dps (->> (service/find-person-daily-plans db person-id date-from date-to)
+                         (filter #(and (:daily-plan/att-cancelled? %)
+                                       (not (:daily-plan/substituted-by %))
+                                       (not (:daily-plan/subst-req-on %)))))
+     :dp-gap-days (->> (service/find-daily-plans db (service/find-max-lunch-order-date db) date-to)
+                       (group-by :daily-plan/date)
+                       (reduce (fn [out [date plans]]
+                                 (if (some #(and (= person-id (get-in % [:daily-plan/person :db/id]))
+                                                 (not (:daily-plan/subst-req-on %)))
+                                           plans)
+                                   out
+                                   (assoc out date plans)))
+                               (sorted-map)))}))

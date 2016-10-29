@@ -188,7 +188,7 @@
 
 (declare merge-person-bill-facts find-by-type)
 
-(defn max-lunch-order-date [db]
+(defn find-max-lunch-order-date [db]
   (d/q '[:find (max ?date) .
          :where [_ :lunch-order/date ?date]]
        db))
@@ -205,7 +205,7 @@
                            (not [?e :daily-plan/lunch-ord])
                            [?e :daily-plan/date ?date]
                            [(> ?date ?min-date)]]
-                         db ent-id (max-lunch-order-date db))
+                         db ent-id (find-max-lunch-order-date db))
         person (d/pull db '[*] (get-in bill [:person-bill/person :db/id]))]
     (timbre/info "retracting bill" bill "with" (count daily-plans) "plans of person" person)
 
@@ -224,8 +224,8 @@
   (timbre/debug ent)
   "Returns the number of retracted datoms (attributes)."
   (->> (mapv (fn [[attr-key attr-val]]
-              [:db/retract (:db/id ent) attr-key attr-val])
-            (dissoc ent :db/id))
+               [:db/retract (:db/id ent) attr-key attr-val])
+             (dissoc ent :db/id))
        (transact conn user-id)
        :tx-data
        count
@@ -272,7 +272,7 @@
   ([db ent-type where-m]
    (find-by-type-default db ent-type where-m '[*]))
   ([db ent-type where-m pull-pattern]
-  (let [attr (get ent-type->attr ent-type ent-type)]
+   (let [attr (get ent-type->attr ent-type ent-type)]
      (find-where db (merge {attr nil} where-m) pull-pattern))))
 
 (defmulti find-by-type (fn [db ent-type where-m] ent-type))
@@ -398,7 +398,7 @@
                 {:tx-data []
                  :total 0}
                 plans-with-lunches)]
-   (update out :tx-data conj (new-lunch-order-ent date (:total out)))))
+    (update out :tx-data conj (new-lunch-order-ent date (:total out)))))
 
 (defn find-price-list [db]
   (first (find-where db {:price-list/days-1 nil})))
@@ -445,13 +445,6 @@
                   (assoc :daily-plan/child-att child-att)))))
           dates)))
 
-(defn- billing-period-start-end
-  "Returns local dates with end exclusive!!"
-  [{:keys [:billing-period/from-yyyymm :billing-period/to-yyyymm] :as period}]
-  [(t/local-date (quot from-yyyymm 100) (rem from-yyyymm 100) 1)
-   (t/plus (t/local-date (quot to-yyyymm 100) (rem to-yyyymm 100) 1)
-           (t/months 1))])
-
 (defn- period-dates [holiday?-fn from to]
   "Returns all local-dates except holidays from - to (exclusive)."
   (->> from
@@ -472,7 +465,7 @@
                                    (into {})))
         billing-period (find-by-id db period-id)
         published-status (d/entid db :person-bill.status/published)
-        dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))
+        dates (apply period-dates (make-holiday?-fn db) (cljc-util/period-start-end billing-period))
         out (->>
              (for [person (->> (find-where db {:person/active? true})
                                (remove cljc-util/zero-patterns?))
@@ -491,13 +484,13 @@
                                                       db (:db/id person))
                                                  0)
                          att-price (calculate-att-price price-list
-                                              (- (:billing-period/to-yyyymm billing-period)
-                                                 (:billing-period/from-yyyymm billing-period)
-                                                 -1)
-                                              (count (->> person :person/att-pattern pattern-map vals (filter (partial = 1))))
-                                              (->> daily-plans
-                                                   (filter #(-> % :daily-plan/child-att (= 2)))
-                                                   count))
+                                                        (- (:billing-period/to-yyyymm billing-period)
+                                                           (:billing-period/from-yyyymm billing-period)
+                                                           -1)
+                                                        (count (->> person :person/att-pattern pattern-map vals (filter (partial = 1))))
+                                                        (->> daily-plans
+                                                             (filter #(-> % :daily-plan/child-att (= 2)))
+                                                             count))
                          lunch-price (:price-list/lunch price-list)
                          old-bill (get @person-id->bill (:db/id person))]]
                (do
@@ -550,39 +543,39 @@
                [?e :person-bill/period ?period-id]
                [?e :person-bill/status :person-bill.status/published]]
              db bill-id)
-        order-date (tc/to-local-date (max-lunch-order-date db))
-        dates (->> (apply period-dates (make-holiday?-fn db) (billing-period-start-end (find-by-id db period-id)))
+        order-date (tc/to-local-date (find-max-lunch-order-date db))
+        dates (->> (apply period-dates (make-holiday?-fn db) (cljc-util/period-start-end (find-by-id db period-id)))
                    (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
         tx-result (->> (generate-daily-plans person dates)
-         (map #(-> % (assoc :db/id (d/tempid :db.part/user)
-                            :daily-plan/bill bill-id)))
-         (into [[:db/add bill-id :person-bill/status :person-bill.status/paid]
-                [:db.fn/cas (:db/id person) :person/lunch-fund
-                 (:person/lunch-fund person) (+ (or (:person/lunch-fund person) 0)
-                                                (- total att-price))]])
+                       (map #(-> % (assoc :db/id (d/tempid :db.part/user)
+                                          :daily-plan/bill bill-id)))
+                       (into [[:db/add bill-id :person-bill/status :person-bill.status/paid]
+                              [:db.fn/cas (:db/id person) :person/lunch-fund
+                               (:person/lunch-fund person) (+ (or (:person/lunch-fund person) 0)
+                                                              (- total att-price))]])
                        (transact conn user-id))]
     (find-by-type (:db-after tx-result) :person-bill {:db/id bill-id})))
 
 #_(defn all-period-bills-paid [conn user-id period-id]
-  (let [db (d/db conn)
-        billing-period (find-by-id db period-id)
-        dates (apply period-dates (make-holiday?-fn db) (billing-period-start-end billing-period))]
-    (->> (d/q '[:find [(pull ?e [:db/id :person-bill/total :person-bill/att-price
-                                 {:person-bill/person [:db/id :person/lunch-pattern :person/att-pattern :person/lunch-fund]}]) ...]
-                :in $ ?period-id ?paid?
-                :where
-                [?e :person-bill/period ?period-id]
-                [?e :person-bill/status :person-bill.status/published]]
-              db period-id false)
-         (mapcat (fn [{:keys [:db/id :person-bill/person :person-bill/total :person-bill/att-price]}]
-                   (->> (generate-daily-plans person dates)
-                        (map #(-> % (assoc :db/id (d/tempid :db.part/user)
-                                           :daily-plan/bill id)))
-                        (into [[:db/add id :person-bill/status :person-bill.status/paid]
-                               [:db.fn/cas (:db/id person) :person/lunch-fund
-                                (:person/lunch-fund person) (+ (:person/lunch-fund person)
-                                                               (- total att-price))]]))))
-         (transact-period-person-bills conn user-id period-id))))
+    (let [db (d/db conn)
+          billing-period (find-by-id db period-id)
+          dates (apply period-dates (make-holiday?-fn db) (cljc-util/period-start-end billing-period))]
+      (->> (d/q '[:find [(pull ?e [:db/id :person-bill/total :person-bill/att-price
+                                   {:person-bill/person [:db/id :person/lunch-pattern :person/att-pattern :person/lunch-fund]}]) ...]
+                  :in $ ?period-id ?paid?
+                  :where
+                  [?e :person-bill/period ?period-id]
+                  [?e :person-bill/status :person-bill.status/published]]
+                db period-id false)
+           (mapcat (fn [{:keys [:db/id :person-bill/person :person-bill/total :person-bill/att-price]}]
+                     (->> (generate-daily-plans person dates)
+                          (map #(-> % (assoc :db/id (d/tempid :db.part/user)
+                                             :daily-plan/bill id)))
+                          (into [[:db/add id :person-bill/status :person-bill.status/paid]
+                                 [:db.fn/cas (:db/id person) :person/lunch-fund
+                                  (:person/lunch-fund person) (+ (:person/lunch-fund person)
+                                                                 (- total att-price))]]))))
+           (transact-period-person-bills conn user-id period-id))))
 
 (defn find-person-bills [db user-id]
   (->> (d/q '[:find [(pull ?e [* {:person-bill/person [*] :person-bill/period [*]}]) ...]
@@ -645,3 +638,60 @@
           (map (fn [row]
                  (-> (d/pull db '[*] (-> row :t d/t->tx))
                      (assoc :datom-count (count (:data row))))))))))
+
+(defn- today-yyyymm []
+  (let [today (t/today)]
+    (+ (* (t/year today) 100)
+       (t/month today))))
+
+(defn find-previous-periods [db]
+  (->> (d/q '[:find [(pull ?e [*]) ...]
+              :in $ ?today
+              :where
+              [?e :billing-period/to-yyyymm ?to]
+              [(< ?to ?today)]]
+            db (today-yyyymm))
+       (sort-by :billing-period/to-yyyymm)))
+
+(defn find-current-period [db]
+  (d/q '[:find (pull ?e [*]) .
+         :in $ ?today
+         :where
+         [?e :billing-period/from-yyyymm ?from]
+         [(<= ?from ?today)]
+         [?e :billing-period/to-yyyymm ?to]
+         [(<= ?today ?to)]]
+       db (today-yyyymm)))
+
+(defn find-max-person-paid-period-date [db person-id]
+  (let [to-yyyymm (d/q '[:find (max ?yyyymm) .
+                         :in $ ?person
+                         :where
+                         [?e :person-bill/person ?person]
+                         [?e :person-bill/status :person-bill.status/paid]
+                         [?e :person-bill/period ?p]
+                         [?p :billing-period/to-yyyymm ?yyyymm]]
+                       db person-id)]
+    (-> (t/local-date (quot to-yyyymm 100) (rem to-yyyymm 100) 1)
+        (t/plus (t/months 1))
+        (t/minus (t/days 1))
+        tc/to-date)))
+
+(defn find-person-daily-plans [db person-id date-from date-to]
+   (d/q '[:find [(pull ?e [*]) ...]
+          :in $ ?person ?date-from ?date-to
+          :where
+          [?e :daily-plan/person ?person]
+          [?e :daily-plan/date ?date]
+          [(<= ?date-from ?date)]
+          [(<= ?date ?date-to)]]
+        db person-id date-from date-to))
+
+(defn find-daily-plans [db date-from date-to]
+  (d/q '[:find [(pull ?e [*]) ...]
+         :in $ ?date-from ?date-to
+         :where
+         [?e :daily-plan/date ?date]
+         [(<= ?date-from ?date)]
+         [(<= ?date ?date-to)]]
+       db date-from date-to))
