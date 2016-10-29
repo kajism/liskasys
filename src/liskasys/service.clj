@@ -308,6 +308,9 @@
   (->> (find-by-type-default db ent-type where-m '[* {:person-bill/status [:db/id :db/ident]}])
        (map (partial merge-person-bill-facts db))))
 
+(defmethod find-by-type :daily-plan [db ent-type where-m]
+  (find-by-type-default db ent-type where-m '[* {:daily-plan/_substituted-by [:db/id]}]))
+
 (defn find-by-id [db eid]
   (d/pull db '[*] eid))
 

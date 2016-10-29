@@ -89,13 +89,15 @@
                   [?e :daily-plan/person ?person]
                   [?e :daily-plan/date ?date]]
                 db child-id (set/union cancel-dates uncancel-dates #{}))
-           (mapcat (fn [{:keys [:db/id :daily-plan/date :daily-plan/lunch-req]}]
+           (mapcat (fn [{:keys [:db/id :daily-plan/date :daily-plan/lunch-req :daily-plan/substituted-by]}]
                      (if (contains? cancel-dates date)
                        (cond-> [[:db/add id :daily-plan/att-cancelled? true]]
                          (and (some? lunch-req) (pos? lunch-req) (can-cancel-lunch?-fn date))
                          (conj [:db/add id :daily-plan/lunch-cancelled? true]))
-                       [[:db/retract id :daily-plan/att-cancelled? true]
-                        [:db/retract id :daily-plan/lunch-cancelled? true]])))
+                       (cond-> [[:db/retract id :daily-plan/att-cancelled? true]
+                                [:db/retract id :daily-plan/lunch-cancelled? true]]
+                         substituted-by
+                         (conj [:db.fn/retractEntity (:db/id substituted-by)])))))
            (service/transact conn user-id)
            :tx-data
            count))))
@@ -168,12 +170,20 @@
 (defn request-substitution [conn user-id child-id req-date]
   (let [db (d/db conn)
         {:keys [substable-dps dp-gap-days can-subst?]} (find-person-substs db child-id)
-        db-id (d/tempid :db.part/user)]
+        db-id (d/tempid :db.part/user)
+        lunch-req? (some #(some-> % :daily-plan/lunch-req pos?) substable-dps) ;; if have lunch some day
+        substituted (or (->> substable-dps
+                             (filter #(= 1 (:daily-plan/child-att %)))
+                             first) ;;full-day attendance preference
+                        (->> substable-dps
+                             (filter #(= 2 (:daily-plan/child-att %)))
+                             first))]
     (when (and can-subst? (contains? dp-gap-days req-date))
-      (service/transact conn user-id [{:db/id db-id
-                                       :daily-plan/person child-id
-                                       :daily-plan/date req-date
-                                       :daily-plan/lunch-req 1 ;;TODO
-                                       :daily-plan/child-att 1 ;;TODO
-                                       :daily-plan/subst-req-on (Date.)}
-                                      [:db/add (-> substable-dps first :db/id) :daily-plan/substituted-by db-id]]))))
+      (service/transact conn user-id [(cond-> {:db/id db-id
+                                               :daily-plan/person child-id
+                                               :daily-plan/date req-date
+                                               :daily-plan/child-att (:daily-plan/child-att substituted)
+                                               :daily-plan/subst-req-on (Date.)}
+                                        lunch-req?
+                                        (assoc :daily-plan/lunch-req 1))
+                                      [:db/add (:db/id substituted) :daily-plan/substituted-by db-id]]))))

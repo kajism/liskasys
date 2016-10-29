@@ -77,12 +77,18 @@
                                   "-"))]
                  ["Obědy: Požadováno ks" #(or (:daily-plan/lunch-req %) 0)]
                  ["Odhlášen?" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]
-                 ["Objednáno ks" #(or (:daily-plan/lunch-ord %) 0)]]
+                 ["Objednáno ks" #(or (:daily-plan/lunch-ord %) 0)]
+                 {:header "Nahrada zapsána"
+                  :val-fn :daily-plan/subst-req-on
+                  :td-comp (fn [& {:keys [value]}]
+                             [:td (time/to-format value time/ddMMyyyyHHmmss)])}
+                 ["Nahrazováno" #(some-> % :daily-plan/substituted-by :db/id (@daily-plans) :daily-plan/date)]]
          :desc? true]]])))
 
 (defn page-daily-plan []
   (let [daily-plan (re-frame/subscribe [:entity-edit :daily-plan])
         persons (re-frame/subscribe [:entities :person])
+        daily-plans (re-frame/subscribe [:entities :daily-plan])
         user (re-frame/subscribe [:auth-user])]
     (fn []
       (let [item @daily-plan
@@ -90,6 +96,17 @@
         [re-com/v-box :gap "5px"
          :children
          [[:h3 "Denní plán osoby"]
+          (when (:daily-plan/subst-req-on item)
+            [re-com/h-box :gap "5px"
+             :children
+             [[re-com/label :label "Náhrada zapsána "]
+              [:label (time/to-format (:daily-plan/subst-req-on item) time/ddMMyyyyHHmmss)]
+              [re-com/label :label " za "]
+              (let [subst-id (-> item :daily-plan/_substituted-by first :db/id)]
+                [:label [:a {:href (str "#/daily-plan/" subst-id)}
+                         (some-> (get @daily-plans subst-id)
+                                 :daily-plan/date
+                                 (time/to-format time/ddMMyyyy))]])]])
           [re-com/label :label "Den"]
           [re-com/input-text
            :model (time/to-format (:daily-plan/date item) time/ddMMyyyy)
@@ -126,7 +143,15 @@
                 [re-com/checkbox
                  :label "docházka omluvena?"
                  :model (:daily-plan/att-cancelled? item)
-                 :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/att-cancelled? %])]]]]))
+                 :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/att-cancelled? %])]
+                (when (:daily-plan/substituted-by item)
+                  [re-com/label :label "Nahrazováno:"])
+                (when (:daily-plan/substituted-by item)
+                  (let [subst-id (get-in item [:daily-plan/substituted-by :db/id])]
+                    [:label [:a {:href (str "#/daily-plan/" subst-id)}
+                             (some-> (get @daily-plans subst-id)
+                                     :daily-plan/date
+                                     (time/to-format time/ddMMyyyy))]]))]]]))
           [re-com/label :label "Požadováno obědů"]
           [re-com/h-box :gap "15px" :align :center
            :children
@@ -142,7 +167,7 @@
           [re-com/label :label "Objednáno obědů"]
           [re-com/input-text
            :model (str (:daily-plan/lunch-ord item))
-           :on-change #() ;;#(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (cljc-util/parse-int %)])
+           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (cljc-util/parse-int %)])
            :disabled? (not (contains? (:-roles @user) "superadmin"))
            :width "100px"]
           [re-com/h-box :gap "5px" :align :center
