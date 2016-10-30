@@ -102,3 +102,8 @@
        tc/to-date-time
        (tf/unparse day-formatter)
        (str/lower-case)))
+
+(defn tomorrow []
+  (-> (t/today)
+      (t/plus (t/days 1))
+      tc/to-date))

@@ -132,7 +132,7 @@
                 [?e :daily-plan/date ?date]
                 [(<= ?from ?date)]
                 [(<= ?date ?to)]]
-              db person-id (service/tomorrow) to-date)
+              db person-id (time/tomorrow) to-date)
          (sort-by :daily-plan/date))))
 
 (defn find-person-substs [db person-id]

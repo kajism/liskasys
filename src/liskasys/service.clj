@@ -16,11 +16,6 @@
 (defn sort-by-locale [key-fn coll]
   (sort-by key-fn cs-collator coll))
 
-(defn tomorrow []
-  (-> (t/today)
-      (t/plus (t/days 1))
-      tc/to-date))
-
 (defn all-work-days-since [ld]
   (->> ld
        (iterate #(t/plus % (t/days 1)))
@@ -87,13 +82,14 @@
   (seq (filter #(*school-holiday? % ld) school-holidays)))
 
 (defn transact [conn user-id tx-data]
-  (let [tx-data (cond-> (vec tx-data)
-                  user-id
-                  (conj {:db/id (d/tempid :db.part/tx) :tx/person user-id}))
-        _ (timbre/info "Transacting" tx-data)
-        tx-result @(d/transact conn tx-data)]
-    (timbre/debug tx-result)
-    tx-result))
+  (when (seq tx-data)
+    (let [tx-data (cond-> (vec tx-data)
+                    user-id
+                    (conj {:db/id (d/tempid :db.part/tx) :tx/person user-id}))
+          _ (timbre/info "Transacting" tx-data)
+          tx-result @(d/transact conn tx-data)]
+      (timbre/debug tx-result)
+      tx-result)))
 
 (def tempid? map?)
 
@@ -321,6 +317,15 @@
        db
        date))
 
+(defn find-persons-with-role [db role]
+  (d/q '[:find [(pull ?e [*]) ...]
+         :in $ ?role
+         :where
+         [?e :person/roles ?roles]
+         [(clojure.string/index-of ?roles ?role)]]
+       db
+       role))
+
 (defn- new-lunch-order-ent [date total]
   (cond-> {:db/id (d/tempid :db.part/user)
            :lunch-order/date date}
@@ -331,20 +336,70 @@
   (->> (new-lunch-order-ent date nil)
        (transact-entity conn nil)))
 
+(defn process-substitutions [conn date]
+  (let [db (d/db conn)
+        daily-plans (find-where db {:daily-plan/date date}
+                                '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
+                                                         {:person/lunch-type [:lunch-type/label]
+                                                          :person/parent [:person/email]}]}])
+        [going not-going] (->> daily-plans
+                               (filter #(and (some-> % :daily-plan/child-att pos?)
+                                             (not (:daily-plan/att-cancelled? %))))
+                               (sort-by :daily-plan/subst-req-on)
+                               (partition-all cljc-util/max-children-per-day))
+        not-going-msg {:from "robot@obedy.listicka.org"
+                       :to (mapcat #(map :person/email (-> % :daily-plan/person :person/parent))
+                                   not-going)
+                       :subject "Lištička: Zítřejší náhrada bohužel není možná"
+                       :body [{:type "text/plain; charset=utf-8"
+                               :content "Zítřejší náhrada bohužel není možná z důvodu nedostatku volných míst."}]}
+        admin-subj (str "Denní souhrn na " (time/format-day-date date))
+        going->str-fn #(str (-> % :daily-plan/person cljc-util/person-fullname)
+                            (if (or (not (:daily-plan/lunch-req %)) (zero? (:daily-plan/lunch-req %)))
+                              " bez obědu"
+                              (when-let [type (some-> % :daily-plan/person :person/lunch-type :lunch-type/label)]
+                                (str " " type))))
+        admin-msg {:from "robot@obedy.listicka.org"
+                   :to (mapv :person/email (find-persons-with-role db "admin"))
+                   :subject admin-subj
+                   :body [{:type "text/plain; charset=utf-8"
+                           :content (str admin-subj "\n"
+                                         "Docházka -------------------------------------------------\n\n"
+                                         (->> going
+                                              (remove :daily-plan/subst-req-on)
+                                              (map going->str-fn)
+                                              (sort-by-locale identity)
+                                              (str/join "\n"))
+                                         "\n\nNáhradnící ------------------------------------------------\n"
+                                         (->> going
+                                              (filter :daily-plan/subst-req-on)
+                                              (map going->str-fn)
+                                              (sort-by-locale identity)
+                                              (str/join "\n"))
+                                         "\n\n===========================================================\n"
+                                         "\nOmluvenky -------------------------------------------------\n"
+                                         (->> daily-plans
+                                              (filter :daily-plan/att-cancelled?)
+                                              (map (comp cljc-util/person-fullname :daily-plan/person))
+                                              (sort-by-locale identity)
+                                              (str/join "\n"))
+                                         "\n\nNáhradníci, kteří se nevešli ------------------------------\n"
+                                         (->> not-going
+                                              (map (comp cljc-util/person-fullname :daily-plan/person))
+                                              (sort-by-locale identity)
+                                              (str/join "\n")))}]}]
+    (transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
+    (when (seq (:to not-going-msg))
+      (timbre/info "Sending to not going" not-going-msg)
+      (postal/send-message not-going-msg))
+    (timbre/info "Sending to admins" admin-msg)
+    (postal/send-message admin-msg)))
+
 (defn- get-lunch-type-map [db]
   (->> (find-where db {:lunch-type/label nil})
        (into [{:db/id nil :lunch-type/label "běžná"}])
        (map (juxt :db/id :lunch-type/label))
        (into {})))
-
-(defn find-persons-with-role [db role]
-  (d/q '[:find [(pull ?e [*]) ...]
-         :in $ ?role
-         :where
-         [?e :person/roles ?roles]
-         [(clojure.string/index-of ?roles ?role)]]
-       db
-       role))
 
 (defn- find-lunch-counts-by-diet-label [lunch-types plans-with-lunches]
   (->> plans-with-lunches
@@ -402,7 +457,7 @@
         total-by-type (apply + (map second lunch-counts))
         {:keys [tx-data total]} (lunch-order-tx-total date (:price-list/lunch (find-price-list db)) plans-with-lunches)]
     (if (not= total total-by-type)
-      (timbre/fatal "Invalid lunch totals: processed=" total "by-type=" total-by-type " . Operation skipped!")
+      (timbre/error "Invalid lunch totals: processed=" total "by-type=" total-by-type " . Operation skipped!")
       (do
         (transact conn nil tx-data)
         (send-lunch-order-email date
@@ -689,4 +744,3 @@
          [(<= ?date-from ?date)]
          [(<= ?date ?date-to)]]
        db date-from date-to))
-
