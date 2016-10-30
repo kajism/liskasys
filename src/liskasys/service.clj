@@ -406,12 +406,12 @@
     (transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
     (doseq [msg  not-going-subst-msgs]
       (timbre/info "Sending to not going" msg)
-      (postal/send-message msg))
+      (timbre/info (postal/send-message msg)))
     (doseq [msg  going-subst-msgs]
       (timbre/info "Sending to going" msg)
-      (postal/send-message msg))
+      (timbre/info (postal/send-message msg)))
     (timbre/info "Sending to admins" admin-msg)
-    (postal/send-message admin-msg)))
+    (timbre/info (postal/send-message admin-msg))))
 
 (defn- get-lunch-type-map [db]
   (->> (find-where db {:lunch-type/label nil})
