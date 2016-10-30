@@ -1,4 +1,4 @@
-(defproject liskasys "1.0.12"
+(defproject liskasys "1.0.13-SNAPSHOT"
   :description "Web information, attendance and lunch cancelation/ordering system for a forest kidergarten"
   :url "http://obedy.listicka.org"
   :min-lein-version "2.0.0"
