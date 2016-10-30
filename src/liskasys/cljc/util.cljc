@@ -117,3 +117,8 @@
       from-cents
       money->text))
 
+(defn child-att->str [child-att]
+  (case child-att
+    1 "celodenní"
+    2 "půldenní"
+    "-"))

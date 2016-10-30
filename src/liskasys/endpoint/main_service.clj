@@ -89,11 +89,13 @@
                   [?e :daily-plan/person ?person]
                   [?e :daily-plan/date ?date]]
                 db child-id (set/union cancel-dates uncancel-dates #{}))
-           (mapcat (fn [{:keys [:db/id :daily-plan/date :daily-plan/lunch-req :daily-plan/substituted-by]}]
+           (mapcat (fn [{:keys [:db/id :daily-plan/date :daily-plan/lunch-req :daily-plan/substituted-by :daily-plan/subst-req-on]}]
                      (if (contains? cancel-dates date)
                        (cond-> [[:db/add id :daily-plan/att-cancelled? true]]
                          (and (some? lunch-req) (pos? lunch-req) (can-cancel-lunch?-fn date))
-                         (conj [:db/add id :daily-plan/lunch-cancelled? true]))
+                         (conj [:db/add id :daily-plan/lunch-cancelled? true])
+                         subst-req-on
+                         (conj [:db.fn/retractEntity id]))
                        (cond-> [[:db/retract id :daily-plan/att-cancelled? true]
                                 [:db/retract id :daily-plan/lunch-cancelled? true]]
                          substituted-by
@@ -148,7 +150,12 @@
                                          (not (:daily-plan/substituted-by %))
                                          (not (:daily-plan/subst-req-on %))))
                            (sort-by :daily-plan/date))
-        all-plans (service/find-att-daily-plans db (service/find-max-lunch-order-date db) date-to)]
+        all-plans (service/find-att-daily-plans db
+                                                (-> (service/find-max-lunch-order-date db)
+                                                    tc/to-local-date
+                                                    (t/plus (t/days 1))
+                                                    tc/to-date)
+                                                date-to)]
     (timbre/debug "finding-person-substs from" date-from "to" date-to)
     {:substable-dps substable-dps
      :dp-gap-days (->> all-plans

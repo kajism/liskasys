@@ -70,7 +70,7 @@
                                  :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
                                  :label value]
                                 value)])}
-                 ["Docházka" #(case (:daily-plan/child-att %) 1 "celodenní" 2 "půldenní" "-")]
+                 ["Docházka" #(cljc-util/child-att->str (:daily-plan/child-att %))]
                  ["Omluvena?" (fn [row]
                                 (if (->> row :daily-plan/person :db/id (get @persons) :person/child?)
                                   (-> row  :daily-plan/att-cancelled? cljc-util/boolean->text)
