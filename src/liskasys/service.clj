@@ -1,26 +1,15 @@
 (ns liskasys.service
   (:require [clj-time.coerce :as tc]
             [clj-time.core :as t]
-            [clj-time.format :as tf]
             [clojure.set :as set]
             [clojure.string :as str]
-            [crypto.password.scrypt :as scrypt]
             [datomic.api :as d]
+            [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc-util]
             [postal.core :as postal]
-            [taoensso.timbre :as timbre]
-            [clojure.pprint :refer [pprint]])
+            [taoensso.timbre :as timbre])
   (:import java.text.Collator
            java.util.Locale))
-
-(def day-formatter (-> (tf/formatter "E d. MMMM yyyy")
-                       (tf/with-locale (Locale. "cs"))))
-
-(defn format-day-date [date]
-  (->> date
-       tc/to-date-time
-       (tf/unparse day-formatter)
-       (str/lower-case)))
 
 (def cs-collator (Collator/getInstance (Locale. "CS")))
 
@@ -364,7 +353,7 @@
        (sort-by-locale first)))
 
 (defn- send-lunch-order-email [date emails lunch-counts]
-  (let [subject (str "Objednávka obědů pro Lištičku na " (format-day-date date))
+  (let [subject (str "Objednávka obědů pro Lištičku na " (time/format-day-date date))
         msg {:from "daniela.chaloupkova@post.cz"
              :to emails
              :subject subject

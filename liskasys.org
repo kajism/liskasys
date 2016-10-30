@@ -29,10 +29,17 @@ CLOSED: [2016-10-18 Tue 16:47]
 ** DONE refresh persons & plans after deleted bill
    CLOSED: [2016-10-28 Fri 20:08]
 ** TODO nahrady
-*** moznost nahrazovani z aktuaniho a 1 predchoziho obdobi
-*** poradnik nahradniku
-*** moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
-*** emaily, když zruší omluvenku => ruší se náhrada, pokud není jiné volné místo
+*** DONE moznost nahrazovani z aktuaniho a 1 predchoziho obdobi
+    CLOSED: [2016-10-29 Sat 16:18]
+*** DONE poradnik nahradniku
+    CLOSED: [2016-10-29 Sat 16:18]
+*** DONE moznost nahradit odhlasenou dochazku ve dnech, kdy neni plna kapacita
+    CLOSED: [2016-10-29 Sat 16:18]
+*** TODO emaily
+**** emaily tem, na ktere nezbylo misto + smazani v dp 
+**** potvrzovaci emaily tem, kteri se dostali
+**** email holkam, se seznamem deti, obedu, nahradniku
+** TODO denni prehledovy email Danka, Janka, Misa v 10 na dalsi den
 ** TODO neumoznit smazat platbu u skonceneho obdobi
 ** odchytávání DB constraint exceptions => rozumna hlaska uživateli
 ** tlacitko Seznam by melo zahodit/prenahrat entitu v pripade zmen/editace
@@ -44,7 +51,6 @@ CLOSED: [2016-10-18 Tue 16:47]
     CLOSED: [2016-10-19 Wed 17:11]
 *** prijmeni + jmeno na stranku lide
 *** vzdy proklik jmena prijmeni
-** TODO denni prehledovy email Danka, Janka, Misa v 10 na dalsi den
 ** TODO moznost dogenerovat denni plany i v prubehu obdobi
 ** TODO na Objednavkach obedu zobrazit seznam lidi, kterym se obed odecetl (i dodatecne tx)
 ** TODO zobrazit zrusene obedy rodicum

@@ -7,7 +7,6 @@
             [clj-time.periodic :as tp]
             [clojure.pprint :refer [pprint]]
             [liskasys.cljc.util :as cljc-util]
-            [liskasys.service :as service]
             [taoensso.timbre :as timbre])
   (:import java.text.Collator
            [java.util Date Locale]))
@@ -74,7 +73,7 @@
              [:input {:type "checkbox" :name "cancel-dates[]"
                       :value date-str
                       :checked (boolean att-cancelled?)}] " "
-             (service/format-day-date date)
+             (time/format-day-date date)
              " "
              (when lunch-cancelled?
                "(oběd odhlášen)")]]])]]]
@@ -123,8 +122,8 @@
                                     (filter #(= (:selected-id user-children-data) (get-in % [:daily-plan/person :db/id])))
                                     first)]]
             [:tr
-             [:td [:label (service/format-day-date date)]]
-             [:td (- 19 (count plans))]
+             [:td [:label (time/format-day-date date)]]
+             [:td (- cljc-util/max-children-per-day (count plans))]
              [:td (let [substs (->> plans
                                     (filter #(:daily-plan/subst-req-on %))
                                     (sort-by :daily-plan/subst-req-on))]

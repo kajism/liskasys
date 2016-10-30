@@ -6,6 +6,8 @@
                 [[cljs-time.core :as t]
                  [cljs.tools.reader.edn :as edn]])))
 
+(def max-children-per-day 19)
+
 (defn person-fullname [{:keys [:person/lastname :person/firstname]}]
   (str lastname " " firstname))
 

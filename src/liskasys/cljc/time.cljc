@@ -5,7 +5,8 @@
          [clj-time.core :as t]
          [clj-time.format :as tf]
          [clojure.edn :as edn]
-         [clojure.string :as str])]
+         [clojure.string :as str])
+        (:import java.util.Locale)]
        :cljs
        [(:require
          [cljs-time.coerce :as tc]
@@ -93,3 +94,11 @@
 
 (def week-days (array-map 1 "pondělí" 2 "úterý" 3 "středa" 4  "čtvrtek" 5 "pátek" 6 "sobota" 7 "neděle"))
 
+(def day-formatter (-> (tf/formatter "E d. MMMM yyyy")
+                       #?(:clj (tf/with-locale (Locale. "cs")))))
+
+(defn format-day-date [date]
+  (->> date
+       tc/to-date-time
+       (tf/unparse day-formatter)
+       (str/lower-case)))
