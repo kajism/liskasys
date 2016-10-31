@@ -28,6 +28,17 @@
    ((if (fn? val) update-in assoc-in) db [:page-states page-id key] val)))
 
 (re-frame/register-sub
+ :current-page
+ (fn [db _]
+   (ratom/reaction (:current-page @db))))
+
+(re-frame/register-handler
+ :set-current-page
+ common/debug-mw
+ (fn [db [_ current-page]]
+   (assoc db :current-page current-page)))
+
+(re-frame/register-sub
  :msg
  (fn [db [_ kw]]
    (ratom/reaction (get-in @db [:msg kw]))))

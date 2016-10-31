@@ -27,11 +27,6 @@
 (enable-console-print!)
 
 (re-frame/register-sub
- :current-page
- (fn [db _]
-   (ratom/reaction (:current-page @db))))
-
-(re-frame/register-sub
  :auth-user
  (fn [db [_]]
    (ratom/reaction (:auth-user @db))))
@@ -49,12 +44,6 @@
  common/debug-mw
  (fn [db [_ auth-user]]
    (assoc db :auth-user auth-user)))
-
-(re-frame/register-handler
- :set-current-page
- common/debug-mw
- (fn [db [_ current-page]]
-   (assoc db :current-page current-page)))
 
 (re-frame/register-handler
  :init-app
