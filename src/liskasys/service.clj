@@ -82,14 +82,15 @@
   (seq (filter #(*school-holiday? % ld) school-holidays)))
 
 (defn transact [conn user-id tx-data]
-  (when (seq tx-data)
+  (if (seq tx-data)
     (let [tx-data (cond-> (vec tx-data)
                     user-id
                     (conj {:db/id (d/tempid :db.part/tx) :tx/person user-id}))
           _ (timbre/info "Transacting" tx-data)
           tx-result @(d/transact conn tx-data)]
       (timbre/debug tx-result)
-      tx-result)))
+      tx-result)
+    {:db-after (d/db conn)}))
 
 (def tempid? map?)
 
@@ -131,9 +132,8 @@
         ent (cond-> ent
               (not id)
               (assoc :db/id (d/tempid :db.part/user)))
-        tx-result (when-let [tx-data (not-empty (entity->tx-data (d/db conn) ent))]
-                    (transact conn user-id tx-data))
-        db (or (:db-after tx-result) (d/db conn))]
+        tx-result (transact conn user-id (entity->tx-data (d/db conn) ent))
+        db (:db-after tx-result)]
     (d/pull db '[*] (or id (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id ent))))))
 
 (defmulti transact-entity (fn [conn user-id ent]
@@ -380,8 +380,8 @@
                    :to (mapv :person/email (find-persons-with-role db "admin"))
                    :subject admin-subj
                    :body [{:type "text/plain; charset=utf-8"
-                           :content (str admin-subj "\n"
-                                         "Docházka -------------------------------------------------\n\n"
+                           :content (str admin-subj "\n\n]"
+                                         "Docházka -------------------------------------------------\n"
                                          (->> going
                                               (remove :daily-plan/subst-req-on)
                                               (map going->str-fn)
@@ -392,26 +392,26 @@
                                                                       (map going->str-fn)
                                                                       (sort-by-locale identity)
                                                                       (str/join "\n")))]
-                                           (str "\n\nNáhradnící -----------------------------------------\n" x))
+                                           (str "\n\nNáhradnící ------------------------------------\n" x))
                                          (when-let [x (not-empty (->> daily-plans
                                                                       (remove att?-fn)
                                                                       (filter lunch?-fn)
                                                                       (map going->str-fn)
                                                                       (sort-by-locale identity)
                                                                       (str/join "\n")))]
-                                           (str "\n\nOstatní obědy---------------------------------------\n" x))
-                                         "\n\n===========================================================\n"
+                                           (str "\n\nOstatní obědy----------------------------------\n" x))
+                                         "\n\n======================================================\n"
                                          (when-let [x (not-empty (->> daily-plans
                                                                       (filter :daily-plan/att-cancelled?)
                                                                       (map (comp cljc-util/person-fullname :daily-plan/person))
                                                                       (sort-by-locale identity)
                                                                       (str/join "\n")))]
-                                           (str "\nOmluvenky --------------------------------------------\n" x))
+                                           (str "\nOmluvenky ---------------------------------------\n" x))
                                          (when-let [x (not-empty (->> not-going
                                                                       (map (comp cljc-util/person-fullname :daily-plan/person))
                                                                       (sort-by-locale identity)
                                                                       (str/join "\n")))]
-                                           (str "\n\nNáhradníci, kteří se nevešli -----------------------\n" x)))}]}]
+                                           (str "\n\nNáhradníci, kteří se nevešli ------------------\n" x)))}]}]
     (transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
     (doseq [msg  not-going-subst-msgs]
       (timbre/info "Sending to not going" msg)
