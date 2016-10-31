@@ -342,9 +342,12 @@
                                 '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
                                                          {:person/lunch-type [:lunch-type/label]
                                                           :person/parent [:person/email]}]}])
+        att?-fn #(and (some-> % :daily-plan/child-att pos?)
+                      (not (:daily-plan/att-cancelled? %)))
+        lunch?-fn #(and (some-> % :daily-plan/lunch-req pos?)
+                        (not (:daily-plan/lunch-cancelled? %)))
         [going not-going] (->> daily-plans
-                               (filter #(and (some-> % :daily-plan/child-att pos?)
-                                             (not (:daily-plan/att-cancelled? %))))
+                               (filter att?-fn)
                                (sort-by :daily-plan/subst-req-on)
                                (partition-all cljc-util/max-children-per-day))
         not-going-subst-msgs (map (fn [dp] {:from "robot@obedy.listicka.org"
@@ -364,13 +367,12 @@
                                                                    " má zítra ve školce nahradní "
                                                                    (cljc-util/child-att->str (:daily-plan/child-att dp))
                                                                    " docházku "
-                                                                   (if (and (some-> dp :daily-plan/lunch-req pos?)
-                                                                            (not (:daily-plan/lunch-cancelled? dp)))
+                                                                   (if (lunch?-fn dp)
                                                                      "včetně oběda."
                                                                      "bez oběda."))}]})))
         admin-subj (str "Denní souhrn na " (time/format-day-date date))
         going->str-fn #(str (-> % :daily-plan/person cljc-util/person-fullname)
-                            (if (or (not (:daily-plan/lunch-req %)) (zero? (:daily-plan/lunch-req %)))
+                            (if-not (lunch?-fn %)
                               ", bez oběda"
                               (when-let [type (some-> % :daily-plan/person :person/lunch-type :lunch-type/label)]
                                 (str ", strava " type))))
@@ -390,19 +392,26 @@
                                                                       (map going->str-fn)
                                                                       (sort-by-locale identity)
                                                                       (str/join "\n")))]
-                                           (str "\n\nNáhradnící ------------------------------------------------\n" x))
+                                           (str "\n\nNáhradnící -----------------------------------------\n" x))
+                                         (when-let [x (not-empty (->> daily-plans
+                                                                      (remove att?-fn)
+                                                                      (filter lunch?-fn)
+                                                                      (map going->str-fn)
+                                                                      (sort-by-locale identity)
+                                                                      (str/join "\n")))]
+                                           (str "\n\nOstatní obědy---------------------------------------\n" x))
                                          "\n\n===========================================================\n"
                                          (when-let [x (not-empty (->> daily-plans
                                                                       (filter :daily-plan/att-cancelled?)
                                                                       (map (comp cljc-util/person-fullname :daily-plan/person))
                                                                       (sort-by-locale identity)
                                                                       (str/join "\n")))]
-                                           (str "\nOmluvenky -------------------------------------------------\n" x))
+                                           (str "\nOmluvenky --------------------------------------------\n" x))
                                          (when-let [x (not-empty (->> not-going
                                                                       (map (comp cljc-util/person-fullname :daily-plan/person))
                                                                       (sort-by-locale identity)
                                                                       (str/join "\n")))]
-                                           (str "\n\nNáhradníci, kteří se nevešli ------------------------------\n" x)))}]}]
+                                           (str "\n\nNáhradníci, kteří se nevešli -----------------------\n" x)))}]}]
     (transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
     (doseq [msg  not-going-subst-msgs]
       (timbre/info "Sending to not going" msg)
