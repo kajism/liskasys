@@ -380,8 +380,8 @@
                    :to (mapv :person/email (find-persons-with-role db "admin"))
                    :subject admin-subj
                    :body [{:type "text/plain; charset=utf-8"
-                           :content (str admin-subj "\n\n]"
-                                         "Docházka -------------------------------------------------\n"
+                           :content (str admin-subj "\n\n"
+                                         "Docházka -----------------------------------------\n"
                                          (->> going
                                               (remove :daily-plan/subst-req-on)
                                               (map going->str-fn)
@@ -399,8 +399,8 @@
                                                                       (map going->str-fn)
                                                                       (sort-by-locale identity)
                                                                       (str/join "\n")))]
-                                           (str "\n\nOstatní obědy----------------------------------\n" x))
-                                         "\n\n======================================================\n"
+                                           (str "\n\nOstatní obědy ------------------------------------\n" x))
+                                         "\n\n===========================================\n"
                                          (when-let [x (not-empty (->> daily-plans
                                                                       (filter :daily-plan/att-cancelled?)
                                                                       (map (comp cljc-util/person-fullname :daily-plan/person))
@@ -412,15 +412,18 @@
                                                                       (sort-by-locale identity)
                                                                       (str/join "\n")))]
                                            (str "\n\nNáhradníci, kteří se nevešli ------------------\n" x)))}]}]
-    (transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
-    (doseq [msg  not-going-subst-msgs]
-      (timbre/info "Sending to not going" msg)
-      (timbre/info (postal/send-message msg)))
-    (doseq [msg  going-subst-msgs]
-      (timbre/info "Sending to going" msg)
-      (timbre/info (postal/send-message msg)))
-    (timbre/info "Sending to admins" admin-msg)
-    (timbre/info (postal/send-message admin-msg))))
+    (if-not (seq daily-plans)
+      (timbre/info "No daily plans for " date ". Sending skipped.")
+      (do
+        (transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
+        (doseq [msg  not-going-subst-msgs]
+          (timbre/info "Sending to not going" msg)
+          (timbre/info (postal/send-message msg)))
+        (doseq [msg  going-subst-msgs]
+          (timbre/info "Sending to going" msg)
+          (timbre/info (postal/send-message msg)))
+        (timbre/info "Sending to admins" admin-msg)
+        (timbre/info (postal/send-message admin-msg))))))
 
 (defn- get-lunch-type-map [db]
   (->> (find-where db {:lunch-type/label nil})

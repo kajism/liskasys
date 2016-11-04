@@ -178,13 +178,16 @@
   (let [db (d/db conn)
         {:keys [substable-dps dp-gap-days can-subst?]} (find-person-substs db child-id)
         db-id (d/tempid :db.part/user)
-        lunch-req? (some #(some-> % :daily-plan/lunch-req pos?) substable-dps) ;; if have lunch some day
         substituted (or (->> substable-dps
                              (filter #(= 1 (:daily-plan/child-att %)))
                              first) ;;full-day attendance preference
                         (->> substable-dps
                              (filter #(= 2 (:daily-plan/child-att %)))
-                             first))]
+                             first))
+        lunch-req? (some #(and (some-> % :daily-plan/lunch-req pos?)
+                               (= (:daily-plan/child-att %) (:daily-plan/child-att substituted)))
+                         substable-dps) ;; if have lunch some day with the same att type
+        ]
     (when (and can-subst? (contains? dp-gap-days req-date))
       (service/transact conn user-id [(cond-> {:db/id db-id
                                                :daily-plan/person child-id
