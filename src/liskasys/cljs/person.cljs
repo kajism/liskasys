@@ -203,7 +203,7 @@
              :children
              [[re-com/input-text
                :model (str (cljc-util/from-cents (:person/lunch-fund item)))
-               :on-change #() ;; #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-fund (cljc-util/to-cents %)])
+               :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-fund (cljc-util/to-cents %)])
                :validation-regex #"^\d{0,4}$"
                :disabled? (if (contains? (:-roles @user) "superadmin") false (:db/id item))]
               "Kč"]]
