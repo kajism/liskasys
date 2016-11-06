@@ -38,7 +38,7 @@
          (response/redirect "/jidelni-listek")
          (let [db (d/db conn)
                ucd (user-children-data db (:db/id user) (:child-id params))
-               child-daily-plans (main-service/find-next-weeks-person-daily-plans db (:selected-id ucd) 3)]
+               child-daily-plans (main-service/find-next-person-daily-plans db (:selected-id ucd))]
            (main-hiccup/liskasys-frame
             user
             (main-hiccup/cancellation-page ucd child-daily-plans)))))

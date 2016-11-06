@@ -372,6 +372,8 @@
                                                                      "bez oběda."))}]})))
         admin-subj (str "Denní souhrn na " (time/format-day-date date))
         going->str-fn #(str (-> % :daily-plan/person cljc-util/person-fullname)
+                            (when (= (:daily-plan/child-att %) 2)
+                              ", půldenní")
                             (if-not (lunch?-fn %)
                               ", bez oběda"
                               (when-let [type (some-> % :daily-plan/person :person/lunch-type :lunch-type/label)]

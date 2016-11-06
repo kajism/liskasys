@@ -123,19 +123,18 @@
        (sort-by (comp :db/id :person-bill/period))
        reverse))
 
-(defn find-next-weeks-person-daily-plans [db person-id weeks]
+#_(defn find-next-weeks-person-daily-plans [db person-id weeks]
   (let [to-date (-> (t/today)
                     (t/plus (t/weeks weeks))
                     tc/to-date)]
-    (->> (d/q '[:find [(pull ?e [*]) ...]
-                :in $ ?person ?from ?to
-                :where
-                [?e :daily-plan/person ?person]
-                [?e :daily-plan/date ?date]
-                [(<= ?from ?date)]
-                [(<= ?date ?to)]]
-              db person-id (time/tomorrow) to-date)
+    (->> (service/find-person-daily-plans db person-id (time/tomorrow) to-date)
          (sort-by :daily-plan/date))))
+
+(defn find-next-person-daily-plans [db person-id]
+  (->> (service/find-person-daily-plans db person-id
+                                        (time/tomorrow)
+                                        (service/find-max-person-paid-period-date db person-id))
+       (sort-by :daily-plan/date)))
 
 (defn find-person-substs [db person-id]
   (let [date-from (-> (if-let [prev-period (last (service/find-previous-periods db))]
