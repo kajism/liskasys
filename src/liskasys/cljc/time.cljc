@@ -49,9 +49,11 @@
 
 (defn from-format [s formatter]
   (when-not (str/blank? s)
-    (-> (tf/parse formatter s)
-        adjust-time
-        to-date)))
+    (cond-> (tf/parse formatter s)
+      (not (or (= formatter dMyyyy) (= formatter ddMMyyyy)))
+      adjust-time
+      true
+      to-date)))
 
 (defn from-dMyyyy [s]
   (when-not (str/blank? s)
@@ -77,8 +79,12 @@
               :else s)]
       (from-format s dMyyyy))))
 
-(defn time-plus-hours [date n]
-  (t/plus (from-date date) (t/hours n)))
+(defn time-plus [date period]
+  (when date
+    (-> date
+        (tc/from-date)
+        (t/plus period)
+        (tc/to-date))))
 
 (defn min->sec [min]
   (when min

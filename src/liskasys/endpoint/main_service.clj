@@ -132,7 +132,7 @@
 
 (defn find-next-person-daily-plans [db person-id]
   (->> (service/find-person-daily-plans db person-id
-                                        (time/tomorrow)
+                                        (time/time-plus (service/find-max-lunch-order-date db) (t/days 1))
                                         (service/find-max-person-paid-period-date db person-id))
        (sort-by :daily-plan/date)))
 
