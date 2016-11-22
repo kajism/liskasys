@@ -10,12 +10,12 @@
 
 (defn wrap-exceptions [handler api-pattern]
   (fn [request]
-    (if-not (re-find api-pattern (:uri request))
+    (try
       (handler request)
-      (try
-        (handler request)
-        (catch Exception e
-          (timbre/info e)
+      (catch Exception e
+        (timbre/error e)
+        (if-not (re-find api-pattern (:uri request))
+          (throw e)
           {:status 500
            :headers {"Content-Type" "text/plain;charset=utf-8"}
            :body (.getMessage e)})))))

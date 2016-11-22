@@ -26,7 +26,7 @@
   (or (:upload-dir env) "./uploads/"))
 
 (defn- user-children-data [db user-id selected-id]
-  (let [user-children (main-service/find-children-by-person-id db user-id)]
+  (let [user-children (main-service/find-active-children-by-person-id db user-id)]
     {:user-children user-children
      :selected-id (or (edn/read-string selected-id) (:db/id (first user-children)))}))
 

@@ -58,11 +58,12 @@
      :previous? (boolean (second last-two))
      :history history}))
 
-(defn find-children-by-person-id [db parent-id]
+(defn find-active-children-by-person-id [db parent-id]
   (->> (d/q '[:find [(pull ?e [*]) ...]
               :in $ ?parent
               :where
-              [?e :person/parent ?parent]]
+              [?e :person/parent ?parent]
+              [?e :person/active? true]]
             db parent-id)
        (service/sort-by-locale cljc-util/person-fullname)))
 
@@ -78,7 +79,7 @@
   (let [db (d/db conn)
         can-cancel-lunch?-fn (make-can-cancel-lunch?-fn db)]
     (if-not  (contains? (->> user-id
-                             (find-children-by-person-id db)
+                             (find-active-children-by-person-id db)
                              (map :db/id)
                              set)
                         child-id)
@@ -131,10 +132,11 @@
          (sort-by :daily-plan/date))))
 
 (defn find-next-person-daily-plans [db person-id]
-  (->> (service/find-person-daily-plans db person-id
-                                        (time/time-plus (service/find-max-lunch-order-date db) (t/days 1))
-                                        (service/find-max-person-paid-period-date db person-id))
-       (sort-by :daily-plan/date)))
+  (let [date-from (time/time-plus (service/find-max-lunch-order-date db) (t/days 1))
+        date-to (service/find-max-person-paid-period-date db person-id)]
+    (when date-to
+      (->> (service/find-person-daily-plans db person-id date-from date-to)
+           (sort-by :daily-plan/date)))))
 
 (defn find-person-substs [db person-id]
   (let [date-from (-> (if-let [prev-period (last (service/find-previous-periods db))]

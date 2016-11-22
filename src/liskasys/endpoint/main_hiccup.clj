@@ -97,25 +97,25 @@
             :role "form"}
      [:input {:type "hidden" :name "child-id" :value (:selected-id user-children-data)}]
      #_[:table.table.table-striped
-      [:thead
-       [:tr
-        [:th "Omluvených dnů"]
-        [:th "Nahrazených dnů"]]]
-      [:tbody
-       [:tr
-        [:td (count canc-plans)]
-        [:td (count subst-plans)]]]]
-     [:div.form-group
-      [:label {:for "from"} "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem (a oběd objednán) den předem po 10. hodině."]
-      [:table.table.table-striped
-       [:thead
-        [:tr
-         [:th "Datum"]
-         [:th "Počet volných míst"]
-         [:th "Náhradníci"]]]
-       [:tbody
-        (if-not (seq dp-gap-days)
-          [:h3 "Nebyl nalezen žádný den kdy nemáte řádnou docházku."]
+        [:thead
+         [:tr
+          [:th "Omluvených dnů"]
+          [:th "Nahrazených dnů"]]]
+        [:tbody
+         [:tr
+          [:td (count canc-plans)]
+          [:td (count subst-plans)]]]]
+     (if-not (seq dp-gap-days)
+       [:h3 "Nebyl nalezen žádný den, ve kterém nemáte řádnou docházku."]
+       [:div
+        [:label {:for "from"} "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem (a oběd objednán) den předem po 10. hodině."]
+        [:table.table.table-striped
+         [:thead
+          [:tr
+           [:th "Datum"]
+           [:th "Počet volných míst"]
+           [:th "Náhradníci"]]]
+         [:tbody
           (for [[date plans] dp-gap-days
                 :let [date-str (time/to-format date time/ddMMyyyy)
                       my-subst (->> plans
@@ -144,7 +144,7 @@
                       [:input.btn.btn-success.btn-xs
                        {:type "submit"
                         :name (str "subst-request[" date-str "]")
-                        :value "Mám zájem"}]))]]))]]]
+                        :value "Mám zájem"}]))]])]]])
      #_(anti-forgery/anti-forgery-field)]]])
 
 (defn lunch-menu [lunch-menu previous? history]
