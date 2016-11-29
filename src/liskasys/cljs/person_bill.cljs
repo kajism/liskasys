@@ -62,11 +62,12 @@
                     (when (= (:db/id row) (:selected-row-id @table-state))
                       [re-com/h-box :gap "5px" :justify :end
                        :children
-                       [#_[re-com/hyperlink-href
-                         :href (str "#/person-bill/" (get-in row [:person-bill/period :db/id]) "/" (:db/id row) "e")
-                         :label [re-com/md-icon-button
-                                 :md-icon-name "zmdi-edit"
-                                 :tooltip "Editovat"]]
+                       [(when (contains? (:-roles @user) "superadmin")
+                          [re-com/hyperlink-href
+                           :href (str "#/person-bill/" (get-in row [:person-bill/period :db/id]) "/" (:db/id row) "e")
+                           :label [re-com/md-icon-button
+                                   :md-icon-name "zmdi-edit"
+                                   :tooltip "Editovat"]])
                         [buttons/delete-button #(re-frame/dispatch [::delete-bill row])]]]))
                   :none]
                  {:header "Jméno"
@@ -93,9 +94,9 @@
                                   :on-click #(re-frame/dispatch [:liskasys.cljs.billing-period/send-cmd (get-in row [:person-bill/period :db/id]) "set-bill-as-paid" (:db/id row)])]])])}
                  ["Celkem Kč" (comp cljc-util/from-cents :person-bill/total)]
                  ["Cena za docházku" (comp cljc-util/from-cents :person-bill/att-price)]
-                 ["Cena za obědy" (fn [{:person-bill/keys [lunch-count] :keys [_lunch-price _total-lunch-price]}]
-                                    (str lunch-count " x " (cljc-util/cents->text _lunch-price) " = " (cljc-util/from-cents _total-lunch-price)))]
-                 ["Z předch. období" (comp cljc-util/from-cents :_from-previous)]
+                 ["Cena za obědy" (fn [{:person-bill/keys [lunch-count] :keys [-lunch-price -total-lunch-price]}]
+                                    (str lunch-count " x " (cljc-util/cents->text -lunch-price) " = " (cljc-util/from-cents -total-lunch-price)))]
+                 ["Z předch. období" (comp cljc-util/from-cents :-from-previous)]
                  ["Rozvrh docházky" #(-> % :person-bill/person :person/att-pattern cljc-util/att-pattern->text)]
                  ["Rozvrh obědů" #(-> % :person-bill/person :person/lunch-pattern cljc-util/lunch-pattern->text)]]]]])))
 
@@ -109,8 +110,7 @@
       (let [item (get @person-bills @item-id)]
         [re-com/v-box :gap "5px"
          :children
-         [[:pre (pr-str item)]
-          [:h3 "Rozpis platby"]
+         [[:h3 "Rozpis platby"]
           [re-com/label :label "Období"]
           [:b (cljc-util/period->text @billing-period)]
           [re-com/label :label "Jméno"]
@@ -119,11 +119,31 @@
           [:b (-> item :person-bill/person :person/var-symbol)]
           [re-com/label :label "Stav"]
           [:b (row->status item)]
-          #_[re-com/h-box :align :center :gap "5px"
+          [re-com/label :label "Celkem Kč"]
+          [re-com/h-box :gap "5px"
            :children
-           [[re-com/button :label "Vrátit stav na ..." :class "btn-danger" :on-click #(re-frame/dispatch [::re-generate-bill-and-plans (:db/id item)])]
-            "nebo"
-            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/billing-period/" @billing-period-id)]]]
+           [[re-com/input-text
+             :model (str (cljc-util/from-cents (:person-bill/total item)))
+             :on-change #(re-frame/dispatch [:entity-change :person-bill (:db/id item) :person-bill/total (cljc-util/to-cents %)])
+             :validation-regex #"^\d{0,4}$"]
+            "Kč"]]
+          [re-com/label :label "Cena za docházku"]
+          [re-com/h-box :gap "5px"
+           :children
+           [[re-com/input-text
+             :model (str (cljc-util/from-cents (:person-bill/att-price item)))
+             :on-change #(re-frame/dispatch [:entity-change :person-bill (:db/id item) :person-bill/att-price (cljc-util/to-cents %)])
+             :validation-regex #"^\d{0,4}$"]
+            "Kč"]]
+          [re-com/label :label "Počet obědů"]
+          [re-com/input-text
+           :model (str (:person-bill/lunch-count item))
+           :on-change #(re-frame/dispatch [:entity-change :person-bill (:db/id item) :person-bill/lunch-count (cljc-util/parse-int %)])
+           :validation-regex #"^[0-9]{0,2}$"
+           :width "100px"]
+          [re-com/h-box :align :center :gap "5px"
+           :children
+           [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person-bill])]]]
           (when (:db/id item))]]))))
 
 (secretary/defroute #"/person-bill/(\d+)/(\d*)(e?)" [period-id bill-id edit?]

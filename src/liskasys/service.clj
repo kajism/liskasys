@@ -199,7 +199,7 @@
                 [:db.fn/retractEntity dp-id]))
          (into [[:db.fn/retractEntity ent-id]
                 [:db.fn/cas (:db/id person) :person/lunch-fund (:person/lunch-fund person)
-                 (- (:person/lunch-fund person) (:_total-lunch-price bill))]])
+                 (- (:person/lunch-fund person) (:-total-lunch-price bill))]])
          (transact conn user-id)
          :tx-data
          count
@@ -285,9 +285,9 @@
         total-lunch-price (* lunch-price lunch-count)]
     (-> person-bill
         (update :person-bill/person merge patterns)
-        (merge {:_lunch-price lunch-price
-                :_total-lunch-price total-lunch-price
-                :_from-previous (- total (+ att-price total-lunch-price))}))))
+        (merge {:-lunch-price lunch-price
+                :-total-lunch-price total-lunch-price
+                :-from-previous (- total (+ att-price total-lunch-price))}))))
 
 (defmethod find-by-type :person-bill [db ent-type where-m]
   (->> (find-by-type-default db ent-type where-m '[* {:person-bill/status [:db/id :db/ident]}])
