@@ -5,6 +5,7 @@
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as str]
+            [compojure.coercions :refer [as-int]]
             [compojure.core :refer :all]
             [datomic.api :as d]
             [environ.core :refer [env]]
@@ -13,9 +14,12 @@
             [liskasys.endpoint.main-hiccup :as main-hiccup]
             [liskasys.endpoint.main-service :as main-service]
             [liskasys.hiccup :as hiccup]
+            [liskasys.qr-code :as qr-code]
             [liskasys.service :as service]
             [ring.util.response :as response]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [liskasys.cljc.util :as cljc-util])
+  (:import java.io.ByteArrayInputStream))
 
 (defn- make-date-sets [str-date-seq]
   (some->> str-date-seq
@@ -87,6 +91,23 @@
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/person-bills person-bills))))
+
+     (GET "/qr-code" [id :<< as-int]
+          (let [db (d/db conn)
+                person-bill (first (service/find-by-type db :person-bill {:db/id id}))
+                person (service/find-by-id db (get-in person-bill [:person-bill/person :db/id]))
+                period (service/find-by-id db (get-in person-bill [:person-bill/period :db/id]))
+                price-list (service/find-price-list db)
+                qr-code-file (qr-code/save-qr-code (:price-list/bank-account price-list)
+                                                   (/ (:person-bill/total person-bill) 100)
+                                                   (str (-> person-bill :person-bill/person :person/var-symbol))
+                                                   (str (cljc-util/person-fullname person) " "
+                                                        (cljc-util/period->text period)))
+                qr-code-bytes (main-service/file-to-byte-array qr-code-file)]
+            (.delete qr-code-file)
+            (-> (response/response (ByteArrayInputStream. qr-code-bytes))
+                (response/content-type "image/png")
+                (response/header "Content-Length" (count qr-code-bytes)))) )
 
      (GET "/jidelni-listek" [history]
        (let [history (or (edn/read-string history) 0)

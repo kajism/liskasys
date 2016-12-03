@@ -9,7 +9,8 @@
             [liskasys.cljc.util :as cljc-util]
             [liskasys.service :as service]
             [taoensso.timbre :as timbre])
-  (:import java.util.Date))
+  (:import java.io.FileInputStream
+           java.util.Date))
 
 (defn check-person-password [{:keys [:db/id :person/passwd :person/_parent]} pwd]
   (if passwd
@@ -198,3 +199,10 @@
                                         lunch-req?
                                         (assoc :daily-plan/lunch-req 1))
                                       [:db/add (:db/id substituted) :daily-plan/substituted-by db-id]]))))
+
+(defn file-to-byte-array [f]
+  (let [ary (byte-array (.length f))
+        is (FileInputStream. f)]
+    (.read is ary)
+    (.close is)
+    ary))

@@ -191,14 +191,18 @@
       [:th "Rozvrh docházky"]
       [:th "Rozvrh obědů"]]]
     [:tbody
-     (for [{:person-bill/keys [period person total att-price lunch-count] :keys [-lunch-price -total-lunch-price -from-previous]} person-bills]
-       [:tr
-        [:td (cljc-util/period->text period)]
-        [:td (cljc-util/person-fullname person)]
-        [:td.right (:person/var-symbol person)]
-        [:td.right [:b (cljc-util/cents->text total)]]
-        [:td.right (cljc-util/cents->text att-price)]
-        [:td.right (str lunch-count " x " (cljc-util/from-cents -lunch-price) " = " (cljc-util/from-cents -total-lunch-price))]
-        [:td.right (cljc-util/cents->text -from-previous)]
-        [:td (cljc-util/att-pattern->text (:person/att-pattern person))]
-        [:td (cljc-util/lunch-pattern->text (:person/lunch-pattern person))]])]]])
+     (for [{:person-bill/keys [period person total att-price lunch-count] :keys [:db/id -lunch-price -total-lunch-price -from-previous -paid?]} person-bills]
+       (list
+        [:tr
+         [:td (cljc-util/period->text period)]
+         [:td (cljc-util/person-fullname person)]
+         [:td.right (:person/var-symbol person)]
+         [:td.right [:b (cljc-util/cents->text total)]]
+         [:td.right (cljc-util/cents->text att-price)]
+         [:td.right (str lunch-count " x " (cljc-util/from-cents -lunch-price) " = " (cljc-util/from-cents -total-lunch-price))]
+         [:td.right (cljc-util/cents->text -from-previous)]
+         [:td (cljc-util/att-pattern->text (:person/att-pattern person))]
+         [:td (cljc-util/lunch-pattern->text (:person/lunch-pattern person))]]
+        (when-not -paid?
+          [:tr
+           [:td {:col-span 9} [:img {:src (str "/qr-code?id=" id)}]]])))]]])

@@ -39,13 +39,14 @@
                                :tooltip "Editovat"]]
                       #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])]]])
                   :none]
+                 ["Číslo účtu" :price-list/bank-account]
                  ["5 dní" (comp cljc-util/from-cents :price-list/days-5)]
                  ["4 dny" (comp cljc-util/from-cents :price-list/days-4)]
                  ["3 dny" (comp cljc-util/from-cents :price-list/days-3)]
                  ["2 dny" (comp cljc-util/from-cents :price-list/days-2)]
                  ["1 den" (comp cljc-util/from-cents :price-list/days-1)]
-                 ["půlden" (comp cljc-util/from-cents :price-list/half-day)]
-                 ["oběd" (comp cljc-util/from-cents :price-list/lunch)]]]]])))
+                 ["Půlden" (comp cljc-util/from-cents :price-list/half-day)]
+                 ["Oběd" (comp cljc-util/from-cents :price-list/lunch)]]]]])))
 
 (defn- from-cents [cents]
   (str (cljc-util/from-cents cents)))
@@ -57,6 +58,11 @@
         [re-com/v-box :gap "5px"
          :children
          [[:h3 "Ceník"]
+          [re-com/label :label "Číslo účtu"]
+          [re-com/input-text
+           :model (str (:price-list/bank-account item))
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/bank-account %])
+           :width "200px"]
           [re-com/label :label "5 dní"]
           [re-com/input-text
            :model (from-cents (:price-list/days-5 item))

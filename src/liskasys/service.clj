@@ -269,7 +269,7 @@
   (->> (find-by-type-default db ent-type where-m)
        (map #(dissoc % :person/passwd))))
 
-(defn merge-person-bill-facts [db {:person-bill/keys [lunch-count total att-price] :as person-bill}]
+(defn merge-person-bill-facts [db {:person-bill/keys [lunch-count total att-price status] :as person-bill}]
   (let [tx (apply max (d/q '[:find [?tx ...]
                              :in $ ?e
                              :where
@@ -282,12 +282,14 @@
         lunch-price (d/q '[:find ?l .
                            :where [_ :price-list/lunch ?l]]
                          as-of-db)
-        total-lunch-price (* lunch-price lunch-count)]
+        total-lunch-price (* lunch-price lunch-count)
+        paid-status (d/entid db :person-bill.status/paid)]
     (-> person-bill
         (update :person-bill/person merge patterns)
         (merge {:-lunch-price lunch-price
                 :-total-lunch-price total-lunch-price
-                :-from-previous (- total (+ att-price total-lunch-price))}))))
+                :-from-previous (- total (+ att-price total-lunch-price))
+                :-paid? (= (:db/id status) paid-status)}))))
 
 (defmethod find-by-type :person-bill [db ent-type where-m]
   (->> (find-by-type-default db ent-type where-m '[* {:person-bill/status [:db/id :db/ident]}])

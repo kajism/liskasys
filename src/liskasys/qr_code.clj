@@ -11,4 +11,4 @@
         tmp-file (File/createTempFile "qrcode" ".png")]
     (doto (SpaydQRFactory.)
       (.saveQRCode payment "png" tmp-file))
-    (.getAbsolutePath tmp-file)))
+    tmp-file))
