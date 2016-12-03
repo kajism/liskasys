@@ -174,9 +174,10 @@
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :daily-plan])]
             "nebo"
-            [re-com/hyperlink-href
-             :href (str "#/daily-plan/e")
-             :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan {:daily-plan/person (:daily-plan/person item)}])]]
+            (when (:db/id item)
+              [re-com/hyperlink-href
+               :href (str "#/daily-plan/e")
+               :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan {:daily-plan/person (:daily-plan/person item)}])]])
             [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/daily-plans")]]]
           [history/view (:db/id item)]]]))))
 

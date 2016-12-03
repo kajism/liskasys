@@ -9,7 +9,8 @@
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
-            [secretary.core :as secretary]))
+            [secretary.core :as secretary]
+            [liskasys.cljs.comp.history :as history]))
 
 (re-frame/register-handler
  ::delete-bill
@@ -144,7 +145,7 @@
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person-bill])]]]
-          (when (:db/id item))]]))))
+          [history/view (:db/id item)]]]))))
 
 (secretary/defroute #"/person-bill/(\d+)/(\d*)(e?)" [period-id bill-id edit?]
   (re-frame/dispatch [:entity-set-edit :billing-period (cljc-util/parse-int period-id) (not-empty edit?)])

@@ -4,6 +4,7 @@
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.comp.history :as history]
             [liskasys.cljs.comp.input-text :refer [input-text]]
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
@@ -68,8 +69,10 @@
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :lunch-type validation-fn])]
             "nebo"
-            [re-com/hyperlink-href :label [re-com/button :label "Nová"] :href (str "#/lunch-type/e")]
-            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-types")]]]]]))))
+            (when (:db/id item)
+              [re-com/hyperlink-href :label [re-com/button :label "Nová"] :href (str "#/lunch-type/e")])
+            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-types")]]]
+          [history/view (:db/id item)]]]))))
 
 (secretary/defroute "/lunch-types" []
   (re-frame/dispatch [:set-current-page :lunch-types]))

@@ -281,9 +281,10 @@
              :children
              [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person])]
               "nebo"
-              [re-com/hyperlink-href :href (str "#/person/e")
-               :label [re-com/button :label "Nový"
-                       :on-click #(re-frame/dispatch [:entity-new :person empty-person])]]
+              (when (:db/id item)
+                [re-com/hyperlink-href :href (str "#/person/e")
+                 :label [re-com/button :label "Nový"
+                         :on-click #(re-frame/dispatch [:entity-new :person empty-person])]])
               [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/persons")]]]
             [history/view (:db/id item)]]])))))
 

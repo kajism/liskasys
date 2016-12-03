@@ -3,6 +3,7 @@
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.comp.history :as history]
             [liskasys.cljs.pages :as pages]
             [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
@@ -80,8 +81,10 @@
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :bank-holiday])]
             "nebo"
-            [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/bank-holiday/e")]
-            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/bank-holidays")]]]]]))))
+            (when (:db/id item)
+              [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/bank-holiday/e")])
+            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/bank-holidays")]]]
+          [history/view (:db/id item)]]]))))
 
 (secretary/defroute "/bank-holidays" []
   (re-frame/dispatch [:set-current-page :bank-holidays]))

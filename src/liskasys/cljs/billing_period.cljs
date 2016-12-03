@@ -98,7 +98,8 @@
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :billing-period])]
             "nebo"
-            [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/billing-period/e")]
+            (when (:db/id item)
+              [re-com/hyperlink-href :label [re-com/button :label "Nové"] :href (str "#/billing-period/e")])
             [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/billing-periods")]]]
           (when (:db/id item)
             [:div

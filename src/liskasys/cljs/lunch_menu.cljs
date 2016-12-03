@@ -9,7 +9,8 @@
             [liskasys.cljs.pages :as pages]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [secretary.core :as secretary]))
+            [secretary.core :as secretary]
+            [liskasys.cljs.comp.history :as history]))
 
 (defn page-lunch-menus []
   (let [lunch-menus (re-frame/subscribe [:entities :lunch-menu])
@@ -70,8 +71,10 @@
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :lunch-menu])]
             "nebo"
-            [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/lunch-menu/e")]
-            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-menus")]]]]]))))
+            (when (:db/id item)
+              [re-com/hyperlink-href :label [re-com/button :label "Nový"] :href (str "#/lunch-menu/e")])
+            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/lunch-menus")]]]
+          [history/view (:db/id item)]]]))))
 
 (secretary/defroute "/lunch-menus" []
   (re-frame/dispatch [:set-current-page :lunch-menus]))

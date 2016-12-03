@@ -5,6 +5,7 @@
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
+            [liskasys.cljs.comp.history :as history]
             [liskasys.cljs.pages :as pages]
             [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
@@ -102,7 +103,8 @@
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :price-list])]
             "nebo"
-            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/price-lists")]]]]]))))
+            [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/price-lists")]]]
+          [history/view (:db/id item)]]]))))
 
 (secretary/defroute "/price-lists" []
   (re-frame/dispatch [:set-current-page :price-lists]))
