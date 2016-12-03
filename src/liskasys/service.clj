@@ -383,37 +383,32 @@
                    :subject admin-subj
                    :body [{:type "text/plain; charset=utf-8"
                            :content (str admin-subj "\n\n"
-                                         "Docházka -----------------------------------------\n"
-                                         (->> going
-                                              (remove :daily-plan/subst-req-on)
-                                              (map going->str-fn)
-                                              (sort-by-locale identity)
-                                              (str/join "\n"))
-                                         (when-let [x (not-empty (->> going
+                                         (when-let [xs (not-empty (->> going
+                                                                       (remove :daily-plan/subst-req-on)
+                                                                       (map going->str-fn)
+                                                                       (sort-by-locale identity)))]
+                                           (str "Docházka (" (count xs) ") ------------------------------\n" (str/join "\n" xs)))
+                                         (when-let [xs (not-empty (->> going
                                                                       (filter :daily-plan/subst-req-on)
                                                                       (map going->str-fn)
-                                                                      (sort-by-locale identity)
-                                                                      (str/join "\n")))]
-                                           (str "\n\nNáhradnící ------------------------------------\n" x))
-                                         (when-let [x (not-empty (->> daily-plans
+                                                                      (sort-by-locale identity)))]
+                                           (str "\n\nNáhradnící (" (count xs) ") ------------------------\n" (str/join "\n" xs)))
+                                         (when-let [xs (not-empty (->> daily-plans
                                                                       (remove att?-fn)
                                                                       (filter lunch?-fn)
                                                                       (map going->str-fn)
-                                                                      (sort-by-locale identity)
-                                                                      (str/join "\n")))]
-                                           (str "\n\nOstatní obědy ------------------------------------\n" x))
+                                                                      (sort-by-locale identity)))]
+                                           (str "\n\nOstatní obědy (" (count xs) ") ---------------------\n" (str/join "\n" xs)))
                                          "\n\n===========================================\n"
-                                         (when-let [x (not-empty (->> daily-plans
+                                         (when-let [xs (not-empty (->> daily-plans
                                                                       (filter :daily-plan/att-cancelled?)
                                                                       (map (comp cljc-util/person-fullname :daily-plan/person))
-                                                                      (sort-by-locale identity)
-                                                                      (str/join "\n")))]
-                                           (str "\nOmluvenky ---------------------------------------\n" x))
-                                         (when-let [x (not-empty (->> not-going
+                                                                      (sort-by-locale identity)))]
+                                           (str "\nOmluvenky (" (count xs) ") ---------------------------\n" (str/join "\n" xs)))
+                                         (when-let [xs (not-empty (->> not-going
                                                                       (map (comp cljc-util/person-fullname :daily-plan/person))
-                                                                      (sort-by-locale identity)
-                                                                      (str/join "\n")))]
-                                           (str "\n\nNáhradníci, kteří se nevešli ------------------\n" x)))}]}]
+                                                                      (sort-by-locale identity)))]
+                                           (str "\n\nNáhradníci, kteří se nevešli (" (count xs) ") ------\n" (str/join "\n" xs))))}]}]
     (if-not (seq daily-plans)
       (timbre/info "No daily plans for " date ". Sending skipped.")
       (do
