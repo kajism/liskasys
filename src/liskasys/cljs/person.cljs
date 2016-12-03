@@ -74,8 +74,8 @@
                 :none]
                ["Příjmení" :person/lastname]
                ["Jméno" :person/firstname]
-               ["Rozvrh docházky" (comp cljc-util/att-pattern->text :person/att-pattern)]
-               ["Rozvrh obědů" (comp cljc-util/lunch-pattern->text :person/lunch-pattern)]
+               ["Šablona docházky" (comp cljc-util/att-pattern->text :person/att-pattern)]
+               ["Šablona obědů" (comp cljc-util/lunch-pattern->text :person/lunch-pattern)]
                ["Variabilní symbol" #(str (:person/var-symbol %))]
                ["Email" :person/email]
                ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
@@ -190,7 +190,7 @@
              :label-fn :lunch-type/label
              :placeholder "běžná"
              :width "250px"]
-            [re-com/label :label "Rozvrh obědů"]
+            [re-com/label :label "Šablona obědů pro generování plateb a denních plánů na další období"]
             [re-com/h-box :gap "5px"
              :children
              [[re-com/input-text
@@ -214,7 +214,7 @@
             (if (:person/child? item)
               [re-com/v-box
                :children
-               [[re-com/label :label "Rozvrh docházky"]
+               [[re-com/label :label "Šablona docházky pro generování plateb a denních plánů na další období"]
                 [re-com/h-box :gap "5px"
                  :children
                  [[re-com/input-text
