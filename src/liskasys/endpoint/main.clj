@@ -95,14 +95,12 @@
      (GET "/qr-code" [id :<< as-int]
           (let [db (d/db conn)
                 person-bill (first (service/find-by-type db :person-bill {:db/id id}))
-                person (service/find-by-id db (get-in person-bill [:person-bill/person :db/id]))
-                period (service/find-by-id db (get-in person-bill [:person-bill/period :db/id]))
                 price-list (service/find-price-list db)
                 qr-code-file (qr-code/save-qr-code (:price-list/bank-account price-list)
                                                    (/ (:person-bill/total person-bill) 100)
                                                    (str (-> person-bill :person-bill/person :person/var-symbol))
-                                                   (str (cljc-util/person-fullname person) " "
-                                                        (cljc-util/period->text period)))
+                                                   (str (-> person-bill :person-bill/person cljc-util/person-fullname) " "
+                                                        (-> person-bill :person-bill/period cljc-util/period->text)))
                 qr-code-bytes (main-service/file-to-byte-array qr-code-file)]
             (.delete qr-code-file)
             (-> (response/response (ByteArrayInputStream. qr-code-bytes))

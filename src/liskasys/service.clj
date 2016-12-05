@@ -191,15 +191,17 @@
                            [?e :daily-plan/date ?date]
                            [(> ?date ?min-date)]]
                          db ent-id (find-max-lunch-order-date db))
-        person (d/pull db '[*] (get-in bill [:person-bill/person :db/id]))]
+        person (d/pull db '[*] (get-in bill [:person-bill/person :db/id]))
+        tx-data (cond-> [[:db.fn/retractEntity ent-id]]
+                  (= (-> bill :person-bill/status :db/ident) :person-bill.status/paid)
+                  (conj [:db.fn/cas (:db/id person) :person/lunch-fund (:person/lunch-fund person)
+                         (- (:person/lunch-fund person) (- (:person-bill/total bill) (:person-bill/att-price bill)))]))]
     (timbre/info "retracting bill" bill "with" (count daily-plans) "plans of person" person)
 
     (->> daily-plans
          (map (fn [dp-id]
                 [:db.fn/retractEntity dp-id]))
-         (into [[:db.fn/retractEntity ent-id]
-                [:db.fn/cas (:db/id person) :person/lunch-fund (:person/lunch-fund person)
-                 (- (:person/lunch-fund person) (:-total-lunch-price bill))]])
+         (into tx-data)
          (transact conn user-id)
          :tx-data
          count
@@ -277,7 +279,8 @@
                            db (:db/id person-bill)))
         as-of-db (d/as-of db tx)
         patterns (d/pull as-of-db
-                         [:person/var-symbol :person/att-pattern :person/lunch-pattern]
+                         [:person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email
+                          {:person/parent [:person/email]}]
                          (get-in person-bill [:person-bill/person :db/id]))
         lunch-price (d/q '[:find ?l .
                            :where [_ :price-list/lunch ?l]]
@@ -292,7 +295,8 @@
                 :-paid? (= (:db/id status) paid-status)}))))
 
 (defmethod find-by-type :person-bill [db ent-type where-m]
-  (->> (find-by-type-default db ent-type where-m '[* {:person-bill/status [:db/id :db/ident]}])
+  (->> (find-by-type-default db ent-type where-m '[* {:person-bill/period [*]
+                                                      :person-bill/status [:db/id :db/ident]}])
        (map (partial merge-person-bill-facts db))))
 
 (defmethod find-by-type :daily-plan [db ent-type where-m]
@@ -598,16 +602,38 @@
 
 (defn publish-all-bills [conn user-id period-id]
   (let [db (d/db conn)
-        billing-period (find-by-id db period-id)]
-    (->> (d/q '[:find [?e ...]
-                :in $ ?period-id
-                :where
-                [?e :person-bill/period ?period-id]
-                [?e :person-bill/status :person-bill.status/new]]
-              db period-id)
-         (mapv (fn [id]
-                 [:db/add id :person-bill/status :person-bill.status/published]))
-         (transact-period-person-bills conn user-id period-id))))
+        billing-period (find-by-id db period-id)
+        new-bill-ids (d/q '[:find [?e ...]
+                            :in $ ?period-id
+                            :where
+                            [?e :person-bill/period ?period-id]
+                            [?e :person-bill/status :person-bill.status/new]]
+                          db period-id)
+        out (->> new-bill-ids
+                 (mapv (fn [id]
+                         [:db/add id :person-bill/status :person-bill.status/published]))
+                 (transact-period-person-bills conn user-id period-id))]
+    (doseq [id new-bill-ids]
+      (let [bill (first (find-by-type db :person-bill {:db/id id}))
+            price-list (find-price-list db)
+            subject (str "Lištička: Platba školkovného a obědů na období " (-> bill :person-bill/period cljc-util/period->text))
+            msg {:from "nemcova.mysi@gmail.com"
+                 :to (or (-> bill :person-bill/person :person/email)
+                         (mapv :person/email (-> bill :person-bill/person :person/parent)))
+                 :subject subject
+                 :body [{:type "text/plain; charset=utf-8"
+                         :content (str subject "\n"
+                                       "---------------------------------------------------------------------------------\n\n"
+                                       "Číslo účtu: " (:price-list/bank-account price-list) "\n"
+                                       "Částka: " (/ (:person-bill/total bill) 100) " Kč\n"
+                                       "Variabilní symbol: " (-> bill :person-bill/person :person/var-symbol) "\n"
+                                       "Poznámka: " (-> bill :person-bill/person cljc-util/person-fullname) " "
+                                       (-> bill :person-bill/period cljc-util/period->text) "\n\n"
+                                       "Pro QR platbu přejděte na https://obedy.listicka.org/ menu Platby\n\n"
+                                       "Toto je automaticky generovaný email ze systému https://obedy.listicka.org/")}]}]
+        (timbre/info "Sending info about published payment" msg)
+        (timbre/info (postal/send-message msg))))
+    out))
 
 (defn set-bill-as-paid [conn user-id bill-id]
   (let [db (d/db conn)
@@ -773,3 +799,4 @@
          [(<= ?date-from ?date)]
          [(<= ?date ?date-to)]]
        db date-from date-to))
+

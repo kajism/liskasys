@@ -111,7 +111,7 @@
                 :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "generate"])]
                (when (some #(= (get-in % [:person-bill/status :db/ident]) :person-bill.status/new) (vals @person-bills))
                  [re-com/button
-                  :label "Zveřejnit rozpisy"
+                  :label "Zveřejnit nové a poslat emaily"
                   :class "btn-danger"
                   :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "publish-all-bills"])])]]
              [person-bill/person-bills person-bills]])]]))))
