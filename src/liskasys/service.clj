@@ -627,8 +627,9 @@
                                        "Číslo účtu: " (:price-list/bank-account price-list) "\n"
                                        "Částka: " (/ (:person-bill/total bill) 100) " Kč\n"
                                        "Variabilní symbol: " (-> bill :person-bill/person :person/var-symbol) "\n"
-                                       "Poznámka: " (-> bill :person-bill/person cljc-util/person-fullname) " "
-                                       (-> bill :person-bill/period cljc-util/period->text) "\n\n"
+                                       "Do poznámky: " (-> bill :person-bill/person cljc-util/person-fullname) " "
+                                       (-> bill :person-bill/period cljc-util/period->text) "\n"
+                                       "Splatnost do: 15. dne tohoto měsíce\n\n"
                                        "Pro QR platbu přejděte na https://obedy.listicka.org/ menu Platby\n\n"
                                        "Toto je automaticky generovaný email ze systému https://obedy.listicka.org/")}]}]
         (timbre/info "Sending info about published payment" msg)

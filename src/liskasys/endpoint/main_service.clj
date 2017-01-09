@@ -47,17 +47,26 @@
                                            :person/passwd (scrypt/encrypt new-pwd)})))
 
 (defn find-last-lunch-menu [db history]
-  (let [eids (d/q '[:find [?e ...] :where [?e :lunch-menu/text]] db)
-        history (min (dec (count eids)) history)
-        last-two (->> eids
-                      sort
-                      reverse
-                      (drop history)
+  (let [id-dates (->> (d/q '[:find ?e ?date :where [?e :lunch-menu/from ?date]] db)
+                      (sort-by second)
+                      (reverse))
+        last-date (second (first id-dates))
+        new-history (min (dec (count id-dates))
+                         (or history
+                             (if (and last-date
+                                      (t/before? (t/now)
+                                                 (t/minus (tc/from-date last-date)
+                                                          (t/days 2)))) ;;don't show new before Saturday
+                               1
+                               0)))
+        last-two (->> id-dates
+                      (drop new-history)
                       (take 2)
+                      (map first)
                       (d/pull-many db '[*]))]
     {:lunch-menu (first last-two)
      :previous? (boolean (second last-two))
-     :history history}))
+     :history new-history}))
 
 (defn find-active-children-by-person-id [db parent-id]
   (->> (d/q '[:find [(pull ?e [*]) ...]

@@ -108,11 +108,10 @@
                 (response/header "Content-Length" (count qr-code-bytes)))) )
 
      (GET "/jidelni-listek" [history]
-       (let [history (or (edn/read-string history) 0)
-             {:keys [lunch-menu previous? history]} (main-service/find-last-lunch-menu (d/db conn) history)]
-         (main-hiccup/liskasys-frame
-          user
-          (main-hiccup/lunch-menu lunch-menu previous? history))))
+          (let [{:keys [lunch-menu previous? history]} (main-service/find-last-lunch-menu (d/db conn) (edn/read-string history))]
+            (main-hiccup/liskasys-frame
+             user
+             (main-hiccup/lunch-menu lunch-menu previous? history))))
 
      #_(GET "/jidelni-listek/:id" [id :<< as-int]
          (let [lunch-menu (first (jdbc-common/select db-spec :lunch-menu {:id id}))]
