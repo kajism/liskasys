@@ -78,11 +78,11 @@
                ["Šablona obědů" (comp cljc-util/lunch-pattern->text :person/lunch-pattern)]
                ["Variabilní symbol" #(str (:person/var-symbol %))]
                ["Email" :person/email]
+               ["Telefon" :person/phone]
                ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
                ["Fond obědů" #(some-> % :person/lunch-fund cljc-util/from-cents)]
                #_["Aktivní?" :person/active?]
-               #_["Dítě?" :person/child?]
-               #_["Mobilní telefon" :person/phone]]])))
+               #_["Dítě?" :person/child?]]])))
 
 (defn daily-summary [kids]
   (let [kids-by-day (reduce (fn [out day-idx]
