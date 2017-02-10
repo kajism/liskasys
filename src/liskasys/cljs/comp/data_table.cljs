@@ -205,14 +205,14 @@
         on-change-search-colls (fn []
                                  (change-state-fn :search-colls #(merge % @search-colls))
                                  (change-state-fn :page-no 0))]
+    (if @state
+      (reset! search-colls (:search-colls @state))
+      (re-frame/dispatch [:table-state-set table-id init-state]))
     (add-watch search-colls :search-colls
                (fn [_ _ _ new-state]
                  (js/setTimeout #(when (= new-state @search-colls)
                                    (on-change-search-colls))
                                 250)))
-    (if @state
-      (reset! search-colls (:search-colls @state))
-      (re-frame/dispatch [:table-state-set table-id init-state]))
     (fn data-table-render []
       (if-not @state
         [re-com/throbber]
