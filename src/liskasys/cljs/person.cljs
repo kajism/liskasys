@@ -45,7 +45,15 @@
 
 (defn table [rows]
   (let [lunch-types (re-frame/subscribe [:entities :lunch-type])
-        table-state (re-frame/subscribe [:table-state :persons])]
+        table-state (re-frame/subscribe [:table-state :persons])
+        persons (re-frame/subscribe [:entities :person])
+        parent-attrs (fn [row kw]
+                       [:div
+                        (doall
+                         (for [p (-> row :person/parent)
+                               :let [parent (-> p :db/id (@persons))]]
+                           ^{:key (:db/id parent)}
+                           [:div.nowrap (kw parent)]))])]
     (fn [rows]
       [data-table
        :table-id :persons
@@ -77,8 +85,10 @@
                ["Šablona docházky" (comp cljc-util/att-pattern->text :person/att-pattern)]
                ["Šablona obědů" (comp cljc-util/lunch-pattern->text :person/lunch-pattern)]
                ["Variabilní symbol" #(str (:person/var-symbol %))]
-               ["Email" :person/email]
-               ["Telefon" :person/phone]
+               ["Email rodičů" #(or (:person/email %)
+                                    (parent-attrs % :person/email))]
+               ["Telefon rodičů" #(or (:person/phone %)
+                                      (parent-attrs % :person/phone))]
                ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
                ["Fond obědů" #(some-> % :person/lunch-fund cljc-util/from-cents)]
                #_["Aktivní?" :person/active?]
