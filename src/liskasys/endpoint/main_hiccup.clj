@@ -80,7 +80,7 @@
      #_(anti-forgery/anti-forgery-field)
      [:button.btn.btn-danger {:type "submit"} "Uložit"]]]])
 
-(defn substitutions [user-children-data {:keys [dp-gap-days  can-subst?]}]
+(defn substitutions [user-children-data {:keys [dp-gap-days  can-subst? substable-dps]}]
   [:div.container
    [:h3 "Náhrady"]
    [:div
@@ -108,7 +108,7 @@
      (if-not (seq dp-gap-days)
        [:h3 "Nebyla nalezena žádná možnost náhrady (nebo den, kdy není řádná docházka)."]
        [:div
-        [:label {:for "from"} "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem (a oběd objednán) den předem po 10. hodině."]
+        [:label "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem (a oběd objednán) den předem po 10. hodině."]
         [:table.table.table-striped
          [:thead
           [:tr
@@ -144,7 +144,8 @@
                       [:input.btn.btn-success.btn-xs
                        {:type "submit"
                         :name (str "subst-request[" date-str "]")
-                        :value "Mám zájem"}]))]])]]])
+                        :value "Mám zájem"}]))]])]]
+        [:label "Zbývající počet náhrad: " (count substable-dps)]])
      #_(anti-forgery/anti-forgery-field)]]])
 
 (defn lunch-menu [lunch-menu previous? history]
