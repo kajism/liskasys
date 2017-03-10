@@ -9,6 +9,7 @@
             [postal.core :as postal]
             [taoensso.timbre :as timbre])
   (:import java.text.Collator
+           java.util.concurrent.ExecutionException
            java.util.Locale))
 
 (def cs-collator (Collator/getInstance (Locale. "CS")))
@@ -137,23 +138,34 @@
     (d/pull db '[*] (or id (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id ent))))))
 
 (defmulti transact-entity (fn [conn user-id ent]
-                            (first (keys (select-keys ent [:daily-plan/date])))))
+                            (first (keys (select-keys ent [:daily-plan/date :person/lastname])))))
 
 (defmethod transact-entity :default [conn user-id ent]
   (transact-entity* conn user-id ent))
 
 (defmethod transact-entity :daily-plan/date [conn user-id ent]
-  (when-let [old-id (d/q '[:find ?e .
-                           :in $ ?date ?pid
-                           :where
-                           [?e :daily-plan/date ?date]
-                           [?e :daily-plan/person ?pid]]
-                         (d/db conn)
-                         (:daily-plan/date ent)
-                         (:db/id (:daily-plan/person ent)))]
-    (when (not= old-id (:db/id ent))
-      (throw (Exception. "Pro tuto osobu a den již v denním plánu existuje záznam."))))
-  (transact-entity* conn user-id ent))
+  (let [old-id (d/q '[:find ?e .
+                      :in $ ?date ?pid
+                      :where
+                      [?e :daily-plan/date ?date]
+                      [?e :daily-plan/person ?pid]]
+                    (d/db conn)
+                    (:daily-plan/date ent)
+                    (:db/id (:daily-plan/person ent)))]
+    (if (not= old-id (:db/id ent))
+      {:error/msg "Pro tuto osobu a den již v denním plánu existuje záznam."}
+      (transact-entity* conn user-id ent))))
+
+(defmethod transact-entity :person/lastname [conn user-id ent]
+  (try
+    (transact-entity* conn user-id ent)
+    (catch ExecutionException e
+      (let [cause (.getCause e)]
+        (if (instance? IllegalStateException cause)
+          (do
+            (timbre/info "Tx failed" (.getMessage cause))
+            {:error/msg "Osoba se zadaným variabilním symbolem nebo emailem již v databázi existuje."})
+          (throw cause))))))
 
 (defn retract-entity*
   "Returns the number of retracted datoms (attributes)."

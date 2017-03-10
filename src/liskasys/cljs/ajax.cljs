@@ -5,18 +5,22 @@
             [taoensso.timbre :as timbre]))
 
 (defn server-call
-  ([request-msg response-msg]
-   (server-call request-msg nil response-msg))
-  ([request-msg file response-msg]
-   (server-call request-msg file response-msg nil))
-  ([request-msg file response-msg rollback-db]
+  ([request-msg response-evt]
+   (server-call request-msg nil response-evt))
+  ([request-msg file response-evt]
+   (server-call request-msg file response-evt nil))
+  ([request-msg file response-evt rollback-db]
    (ajax/POST "/admin.app/api"
        (merge
         {:headers {;;"Accept" "application/transit+json"
                    "x-csrf-token" (some->
                                    (.getElementById js/document "__anti-forgery-token")
                                    .-value)}
-         :handler #(when response-msg (re-frame/dispatch (conj response-msg %)))
+         :handler #(cond
+                     (:error/msg %)
+                     (re-frame/dispatch [:set-msg :error (:error/msg %) rollback-db])
+                     response-evt
+                     (re-frame/dispatch (conj response-evt %)))
          :error-handler #(re-frame/dispatch [:set-msg :error
                                              (or (get-in (timbre/spy %) [:parse-error :original-text])
                                                  "Server je nedostupný")

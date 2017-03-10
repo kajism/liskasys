@@ -75,7 +75,7 @@
           :body @info-msg
           :style {:position "absolute"}])
        (when-not (str/blank? @error-msg)
-         [error-msg-popup "Systémová chyba" @error-msg #(re-frame/dispatch [:set-msg :error nil])])
+         [error-msg-popup "Chyba" @error-msg #(re-frame/dispatch [:set-msg :error nil])])
        (if-not (and @current-page @user)
          [re-com/throbber]
          [(get @pages @current-page)])])))
