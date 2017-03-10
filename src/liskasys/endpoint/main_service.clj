@@ -207,7 +207,7 @@
                                                :daily-plan/subst-req-on (Date.)}
                                         lunch-req?
                                         (assoc :daily-plan/lunch-req 1))
-                                      [:db/add (:db/id substituted) :daily-plan/substituted-by db-id]]))))
+                                      [:db.fn/cas (:db/id substituted) :daily-plan/substituted-by nil db-id]]))))
 
 (defn file-to-byte-array [f]
   (let [ary (byte-array (.length f))

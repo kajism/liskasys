@@ -76,7 +76,6 @@
                                       :subst-remove
                                       ffirst
                                       edn/read-string)]
-             (timbre/debug params subst-req-date subst-remove-id)
              (cond
                subst-remove-id
                (service/retract-entity conn (:db/id user) subst-remove-id)
