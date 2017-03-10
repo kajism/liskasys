@@ -106,7 +106,7 @@
           [:td (count canc-plans)]
           [:td (count subst-plans)]]]]
      (if-not (seq dp-gap-days)
-       [:h3 "Nebyl nalezen žádný den, ve kterém nemáte řádnou docházku."]
+       [:h3 "Nebyla nalezena žádná možnost náhrady (nebo den, kdy není řádná docházka)."]
        [:div
         [:label {:for "from"} "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem (a oběd objednán) den předem po 10. hodině."]
         [:table.table.table-striped

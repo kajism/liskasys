@@ -5,6 +5,7 @@
             [clojure.string :as str]
             [crypto.password.scrypt :as scrypt]
             [datomic.api :as d]
+            [environ.core :refer [env]]
             [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc-util]
             [liskasys.service :as service]
@@ -13,11 +14,12 @@
            java.util.Date))
 
 (defn check-person-password [{:keys [:db/id :person/passwd :person/_parent]} pwd]
-  (if passwd
-    (scrypt/check pwd passwd)
-    (->> _parent
-         (filter #(= pwd (str (:person/var-symbol %))))
-         not-empty)))
+  (or (and (:dev env) (str/blank? pwd))
+      (if passwd
+        (scrypt/check pwd passwd)
+        (->> _parent
+             (filter #(= pwd (str (:person/var-symbol %))))
+             not-empty))))
 
 (defn login [db username pwd]
   (let [person (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol]}]) .
@@ -144,9 +146,8 @@
 (defn find-next-person-daily-plans [db person-id]
   (let [date-from (time/time-plus (service/find-max-lunch-order-date db) (t/days 1))
         date-to (service/find-max-person-paid-period-date db person-id)]
-    (when date-to
-      (->> (service/find-person-daily-plans db person-id date-from date-to)
-           (sort-by :daily-plan/date)))))
+    (->> (service/find-person-daily-plans db person-id date-from date-to)
+         (sort-by :daily-plan/date))))
 
 (defn find-person-substs [db person-id]
   (let [date-from (-> (if-let [prev-period (last (service/find-previous-periods db))]
