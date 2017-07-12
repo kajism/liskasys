@@ -50,20 +50,20 @@
 
 (def easter-monday-for-year-memo (memoize easter-monday-for-year))
 
-(defn- *bank-holiday? [{:keys [:bank-holiday/day :bank-holiday/month :bank-holiday/easter-delta]} ld]
-  (or (and (= (t/day ld) day)
-           (= (t/month ld) month))
+(defn- *bank-holiday? [{:keys [:bank-holiday/day :bank-holiday/month :bank-holiday/easter-delta]} local-date]
+  (or (and (= (t/day local-date) day)
+           (= (t/month local-date) month))
       (and (some? easter-delta)
-           (t/equal? ld
-                     (t/plus (easter-monday-for-year-memo (t/year ld))
+           (t/equal? local-date
+                     (t/plus (easter-monday-for-year-memo (t/year local-date))
                              (t/days easter-delta))))))
 
-(defn- bank-holiday? [bank-holidays ld]
-  (seq (filter #(*bank-holiday? % ld) bank-holidays)))
+(defn- bank-holiday? [bank-holidays local-date]
+  (seq (filter #(*bank-holiday? % local-date) bank-holidays)))
 
-(defn- *school-holiday? [{:keys [:school-holiday/from :school-holiday/to :school-holiday/every-year?]} ld]
+(defn- *school-holiday? [{:keys [:school-holiday/from :school-holiday/to :school-holiday/every-year?]} local-date]
   (let [from (tc/from-date from)
-        dt (tc/to-date-time ld)
+        dt (tc/to-date-time local-date)
         from (if-not every-year?
                from
                (let [from (t/date-time (t/year dt) (t/month from) (t/day from))]
@@ -79,8 +79,8 @@
                  (t/plus to (t/years 1)))))]
     (t/within? from to dt)))
 
-(defn- school-holiday? [school-holidays ld]
-  (seq (filter #(*school-holiday? % ld) school-holidays)))
+(defn- school-holiday? [school-holidays local-date]
+  (seq (filter #(*school-holiday? % local-date) school-holidays)))
 
 (defn transact [conn user-id tx-data]
   (if (seq tx-data)
@@ -641,7 +641,7 @@
                                        "Variabilní symbol: " (-> bill :person-bill/person :person/var-symbol) "\n"
                                        "Do poznámky: " (-> bill :person-bill/person cljc-util/person-fullname) " "
                                        (-> bill :person-bill/period cljc-util/period->text) "\n"
-                                       "Splatnost do: 15. dne tohoto měsíce\n\n"
+                                       "Splatnost do: 20. dne tohoto měsíce\n\n"
                                        "Pro QR platbu přejděte na https://obedy.listicka.org/ menu Platby\n\n"
                                        "Toto je automaticky generovaný email ze systému https://obedy.listicka.org/")}]}]
         (timbre/info "Sending info about published payment" msg)
