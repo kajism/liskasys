@@ -4,18 +4,19 @@
             [goog.history.EventType :as EventType]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
+            [liskasys.cljs.group :as group]
             [liskasys.cljs.pages :as pages]
-            liskasys.cljs.bank-holiday
-            liskasys.cljs.billing-period
-            liskasys.cljs.daily-plan
-            liskasys.cljs.lunch-menu
-            liskasys.cljs.lunch-order
-            liskasys.cljs.lunch-type
-            liskasys.cljs.person
-            liskasys.cljs.person-bill
-            liskasys.cljs.price-list
-            liskasys.cljs.school-holiday
-            liskasys.cljs.transaction
+            [liskasys.cljs.bank-holiday]
+            [liskasys.cljs.billing-period]
+            [liskasys.cljs.daily-plan]
+            [liskasys.cljs.lunch-menu]
+            [liskasys.cljs.lunch-order]
+            [liskasys.cljs.lunch-type]
+            [liskasys.cljs.person]
+            [liskasys.cljs.person-bill]
+            [liskasys.cljs.price-list]
+            [liskasys.cljs.school-holiday]
+            [liskasys.cljs.transaction]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
@@ -96,6 +97,7 @@
         [:li [:a {:href "#/lunch-types"} "Diety"]]
         [:li [:a {:href "#/school-holidays"} "Prázdniny"]]
         [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
+        [:li [:a {:href "#/groups"} "Třídy"]]
         [:li [:a {:href "#/transactions"} "Transakce"]]]]
       [:li
        [:a

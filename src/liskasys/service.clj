@@ -265,7 +265,8 @@
    :person :person/firstname
    :price-list :price-list/days-1
    :person-bill :person-bill/total
-   :school-holiday :school-holiday/label})
+   :school-holiday :school-holiday/label
+   :group :group/label})
 
 (defn find-by-type-default
   ([db ent-type where-m]

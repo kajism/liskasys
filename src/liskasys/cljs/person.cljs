@@ -45,6 +45,7 @@
 
 (defn table [rows]
   (let [lunch-types (re-frame/subscribe [:entities :lunch-type])
+        groups (re-frame/subscribe [:entities :group])
         table-state (re-frame/subscribe [:table-state :persons])
         persons (re-frame/subscribe [:entities :person])
         parent-attrs (fn [row kw]
@@ -89,6 +90,7 @@
                                     (parent-attrs % :person/email))]
                ["Telefon rodičů" #(or (:person/phone %)
                                       (parent-attrs % :person/phone))]
+               ["Třída" #(:group/label (get @groups (some-> % :person/group :db/id)))]
                ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
                ["Fond obědů" #(some-> % :person/lunch-fund cljc-util/from-cents)]
                #_["Aktivní?" :person/active?]
@@ -170,11 +172,12 @@
 (defn page-person []
   (let [person (re-frame/subscribe [:entity-edit :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])
+        groups (re-frame/subscribe [:entities :group])
         persons (re-frame/subscribe [:entities :person])
         kids (re-frame/subscribe [::kids])
         user (re-frame/subscribe [:auth-user])]
     (fn []
-      (if-not (and @persons @lunch-types)
+      (if-not (and @persons @lunch-types @groups)
         [re-com/throbber]
         (let [item @person
               errors (:-errors item)]
@@ -191,11 +194,20 @@
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/active? %])]
             [re-com/label :label "Variabilní symbol"]
             [input-text item :person :person/var-symbol cljc-util/parse-int]
+            [re-com/label :label "Třída"]
+            [re-com/single-dropdown
+             :model (some-> item :person/group :db/id)
+             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/group {:db/id %}])
+             :choices (conj (util/sort-by-locale :group/label (vals @groups)) {:db/id nil :group/label "nezařazeno"})
+             :id-fn :db/id
+             :label-fn :group/label
+             :placeholder "nezařazeno"
+             :width "250px"]
             [re-com/label :label "Dieta"]
             [re-com/single-dropdown
              :model (some-> item :person/lunch-type :db/id)
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-type {:db/id %}])
-             :choices (conj (util/sort-by-locale :label (vals @lunch-types)) {:db/id nil :lunch-type/label "běžná"})
+             :choices (conj (util/sort-by-locale :lunch-type/label (vals @lunch-types)) {:db/id nil :lunch-type/label "běžná"})
              :id-fn :db/id
              :label-fn :lunch-type/label
              :placeholder "běžná"

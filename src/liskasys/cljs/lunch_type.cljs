@@ -44,17 +44,16 @@
                         [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-type (:db/id row)])]]]))
                   :none]
                  ["Název" :lunch-type/label]
-                 ["Barva" :lunch-type/color]]]]])))
+                 #_["Barva" :lunch-type/color]]]]])))
 
 (defn page-lunch-type []
   (let [lunch-type (re-frame/subscribe [:entity-edit :lunch-type])
         validation-fn #(cond-> {}
                          (str/blank? (:lunch-type/label %))
                          (assoc :lunch-type/label "Vyplňte název")
-                         (str/blank? (:lunch-type/color %))
-                         (assoc :lunch-type/color "Vyplňte barvu")
-                         true
-                         timbre/spy)]
+                         ;;(str/blank? (:lunch-type/color %))
+                         ;;(assoc :lunch-type/color "Vyplňte barvu")
+                         )]
     (fn []
       (let [item @lunch-type
             errors (:-errors item)]
@@ -63,8 +62,8 @@
          [[:h3 "Dieta"]
           [re-com/label :label "Název"]
           [input-text item :lunch-type :lunch-type/label]
-          [re-com/label :label "Barva"]
-          [input-text item :lunch-type :lunch-type/color]
+          #_[re-com/label :label "Barva"]
+          #_[input-text item :lunch-type :lunch-type/color]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :lunch-type validation-fn])]
