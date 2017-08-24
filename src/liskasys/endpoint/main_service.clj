@@ -163,9 +163,9 @@
                            (sort-by :daily-plan/date))
         all-plans (service/find-att-daily-plans db
                                                 (-> (service/find-max-lunch-order-date db)
-                                                    tc/to-local-date
+                                                    (tc/to-local-date)
                                                     (t/plus (t/days 1))
-                                                    tc/to-date)
+                                                    (tc/to-date))
                                                 date-to)]
     (timbre/debug "finding-person-substs from" date-from "to" date-to)
     {:substable-dps substable-dps
@@ -182,7 +182,7 @@
                       (->> all-plans
                            (filter #(and (= person-id (get-in % [:daily-plan/person :db/id]))
                                          (:daily-plan/subst-req-on %)))
-                           count
+                           (count)
                            (> 2)))}))
 
 (defn request-substitution [conn user-id child-id req-date]
@@ -191,10 +191,10 @@
         db-id (d/tempid :db.part/user)
         substituted (or (->> substable-dps
                              (filter #(= 1 (:daily-plan/child-att %)))
-                             first) ;;full-day attendance preference
+                             (first)) ;;full-day attendance preference
                         (->> substable-dps
                              (filter #(= 2 (:daily-plan/child-att %)))
-                             first))
+                             (first)))
         lunch-req? (some #(and (some-> % :daily-plan/lunch-req pos?)
                                (= (:daily-plan/child-att %) (:daily-plan/child-att substituted)))
                          substable-dps) ;; if have lunch some day with the same att type
