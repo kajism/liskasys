@@ -150,12 +150,11 @@
          (sort-by :daily-plan/date))))
 
 (defn find-person-substs [db person-id]
-  (let [date-from (-> (if-let [prev-period (last (service/find-previous-periods db))]
-                        (let [[from _] (cljc-util/period-start-end prev-period)]
-                          from)
-                        (let [[from _] (cljc-util/period-start-end (service/find-current-period db))]
-                          from))
-                      tc/to-date)
+  (let [date-from (some-> (or (last (service/find-previous-periods db))
+                              (service/find-current-period db))
+                          (cljc-util/period-start-end)
+                          (first)
+                          (tc/to-date))
         date-to (service/find-max-person-paid-period-date db person-id)
         substable-dps (->> (service/find-person-daily-plans db person-id date-from date-to)
                            (filter #(and (:daily-plan/att-cancelled? %)
