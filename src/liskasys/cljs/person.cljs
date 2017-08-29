@@ -96,9 +96,9 @@
                #_["Aktivní?" :person/active?]
                #_["Dítě?" :person/child?]]])))
 
-(defn daily-summary [kids]
+(defn daily-summary [rows]
   (let [kids-by-day (reduce (fn [out day-idx]
-                              (assoc out day-idx (->> @kids
+                              (assoc out day-idx (->> rows
                                                       (remove (fn [{att-pattern :person/att-pattern}]
                                                                 (or (not att-pattern)
                                                                     (= "0" (nth att-pattern day-idx)))))
@@ -131,6 +131,17 @@
                [re-com/hyperlink-href
                 :href (str "#/person/" (:db/id kid) "e")
                 :label (cljc-util/person-fullname kid)]]))]))]]]))
+
+(defn daily-summary-per-group [rows]
+  (let [groups (re-frame/subscribe [:entities :group])]
+    (fn [rows]
+      [re-com/v-box :gap "5px" :children
+       (->> rows
+            (group-by (comp :db/id :person/group))
+            (mapcat  (fn [[group-id kids]]
+                       [[:h3 (->> group-id (get @groups) :group/label)]
+                        [daily-summary kids]]))
+            (vec))])))
 
 (defn page-persons []
   (let [page-state (re-frame/subscribe [:page-state :persons])
@@ -166,7 +177,8 @@
                :model (:daily-summary? @page-state)
                :on-change #(re-frame/dispatch [:page-state-change :persons :daily-summary? %])])]]
           (if (and (:child? @page-state) (:active? @page-state) (:daily-summary? @page-state))
-            [daily-summary rows]
+
+            [daily-summary-per-group @rows]
             [table rows])]]))))
 
 (defn page-person []
