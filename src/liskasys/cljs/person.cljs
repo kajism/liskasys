@@ -194,15 +194,6 @@
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/active? %])]
             [re-com/label :label "Variabilní symbol"]
             [input-text item :person :person/var-symbol cljc-util/parse-int]
-            [re-com/label :label "Třída"]
-            [re-com/single-dropdown
-             :model (some-> item :person/group :db/id)
-             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/group {:db/id %}])
-             :choices (conj (util/sort-by-locale :group/label (vals @groups)) {:db/id nil :group/label "nezařazeno"})
-             :id-fn :db/id
-             :label-fn :group/label
-             :placeholder "nezařazeno"
-             :width "250px"]
             [re-com/label :label "Dieta"]
             [re-com/single-dropdown
              :model (some-> item :person/lunch-type :db/id)
@@ -236,7 +227,16 @@
             (if (:person/child? item)
               [re-com/v-box
                :children
-               [[re-com/label :label "Šablona docházky pro generování plateb a denních plánů na další období"]
+               [[re-com/label :label "Třída"]
+                [re-com/single-dropdown
+                 :model (some-> item :person/group :db/id)
+                 :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/group {:db/id %}])
+                 :choices (conj (util/sort-by-locale :group/label (vals @groups)) {:db/id nil :group/label "nezařazeno"})
+                 :id-fn :db/id
+                 :label-fn :group/label
+                 :placeholder "nezařazeno"
+                 :width "250px"]
+                [re-com/label :label "Šablona docházky pro generování plateb a denních plánů na další období"]
                 [re-com/h-box :gap "5px"
                  :children
                  [[re-com/input-text
