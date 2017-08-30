@@ -83,6 +83,9 @@
 (defn substitutions [user-children-data {:keys [dp-gap-days  can-subst? substable-dps]}]
   [:div.container
    [:h3 "Náhrady"]
+   [:label "Omluvenky z předchozího školního roku nelze nahrazovat v novém. Náhrady pro nový školni rok budou zprovozněny zhruba do poloviny září, po úpravách systému zohledňujících zařazení dětí do tříd."]]
+  #_[:div.container
+   [:h3 "Náhrady"]
    [:div
     [:div.form-group
      [:label {:for "child"} "Dítě"]

@@ -66,7 +66,7 @@
           user
           (main-hiccup/substitutions ucd substs))))
 
-     (POST "/nahrady" {:keys [params]}
+     #_(POST "/nahrady" {:keys [params]}
            (let [child-id (edn/read-string (:child-id params))
                  subst-req-date (-> params
                                     :subst-request
