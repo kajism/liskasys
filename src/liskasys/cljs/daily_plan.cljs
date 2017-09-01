@@ -24,10 +24,9 @@
 (defn page-daily-plans []
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
         persons (re-frame/subscribe [:entities :person])
+        lunch-types (re-frame/subscribe [:entities :lunch-type])
         table-state (re-frame/subscribe [:table-state :daily-plans])
-        user (re-frame/subscribe [:auth-user])
-        row->person-fullname (fn [row persons]
-                               (->> row :daily-plan/person :db/id (get persons) cljc-util/person-fullname))]
+        user (re-frame/subscribe [:auth-user])]
     (fn []
       [re-com/v-box
        :children
@@ -62,7 +61,7 @@
                   :none]
                  ["Datum" :daily-plan/date]
                  {:header "Jméno"
-                  :val-fn #(row->person-fullname % @persons)
+                  :val-fn #(some->> % :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)
                   :td-comp (fn [& {:keys [value row row-state]}]
                              [:td
                               (if (:selected? row-state)
@@ -76,6 +75,7 @@
                                   (-> row  :daily-plan/att-cancelled? cljc-util/boolean->text)
                                   "-"))]
                  ["Obědy: Požadováno ks" #(or (:daily-plan/lunch-req %) 0)]
+                 ["Dieta" #(some->> % :daily-plan/person :db/id (get @persons) :person/lunch-type :db/id (get @lunch-types) :lunch-type/label)]
                  ["Odhlášen?" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]
                  ["Objednáno ks" #(or (:daily-plan/lunch-ord %) 0)]
                  {:header "Nahrada zapsána"
