@@ -832,7 +832,9 @@
          next-school-day-date (find-next-school-day-date db from-date)]
      (when (or (not last-order-date)
                (not next-school-day-date)
-               (> (.getTime next-school-day-date) (.getTime last-order-date)))
+               (and (> (.getTime next-school-day-date) (.getTime last-order-date))
+                    (< (- (.getTime next-school-day-date) (.getTime last-order-date)) (* 14 24 60 60 1000)) ;; max 14 days ahead
+                    ))
        next-school-day-date))))
 
 (defn process-lunch-order-and-substitutions [conn]
