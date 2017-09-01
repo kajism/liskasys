@@ -351,11 +351,11 @@
     total
     (assoc :lunch-order/total total)))
 
-(defn close-lunch-order [conn date]
+(defn- close-lunch-order [conn date]
   (->> (new-lunch-order-ent date nil)
        (transact-entity conn nil)))
 
-(defn process-substitutions [conn date]
+#_(defn- process-substitutions [conn date]
   (let [db (d/db conn)
         daily-plans (find-where db {:daily-plan/date date}
                                 '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
@@ -477,7 +477,7 @@
             (timbre/info "Lunch order has been sent" result)
             (timbre/error "Failed to send email" result)))))))
 
-(defn lunch-order-tx-total [date lunch-price plans-with-lunches]
+(defn- lunch-order-tx-total [date lunch-price plans-with-lunches]
   (let [out
         (reduce (fn [out {:keys [:db/id :daily-plan/person :daily-plan/lunch-req]}]
                   (-> out
@@ -496,7 +496,7 @@
 (defn find-price-list [db]
   (first (find-where db {:price-list/days-1 nil})))
 
-(defn process-lunch-order [conn date]
+(defn- process-lunch-order [conn date]
   (let [db (d/db conn)
         plans-with-lunches (find-person-daily-plans-with-lunches db date)
         lunch-counts (find-lunch-counts-by-diet-label (get-lunch-type-map db) plans-with-lunches)
@@ -816,3 +816,29 @@
            [(<= ?date ?date-to)]]
          db date-from date-to)))
 
+(defn- find-next-school-day-date [db from-date]
+  (d/q '[:find (min ?date) .
+         :in $ ?from-date
+         :where
+         [_ :daily-plan/date ?date]
+         [(< ?from-date ?date)]]
+       db from-date))
+
+(defn- next-lunch-order-date
+  ([db]
+   (next-lunch-order-date db (time/today)))
+  ([db from-date]
+   (let [last-order-date (find-max-lunch-order-date db)
+         next-school-day-date (find-next-school-day-date db from-date)]
+     (when (or (not last-order-date)
+               (not next-school-day-date)
+               (> (.getTime next-school-day-date) (.getTime last-order-date)))
+       next-school-day-date))))
+
+(defn process-lunch-order-and-substitutions [conn]
+  (when-let [date (next-lunch-order-date (d/db conn))]
+    (timbre/info "Processing lunch order for" date)
+    (close-lunch-order conn date)
+    (Thread/sleep 5000)
+    #_(process-substitutions conn date)
+    (process-lunch-order conn date)))

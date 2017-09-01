@@ -109,7 +109,11 @@
        (tf/unparse day-formatter)
        (str/lower-case)))
 
+(defn today []
+  (-> (t/today)
+      (tc/to-date)))
+
 (defn tomorrow []
   (-> (t/today)
       (t/plus (t/days 1))
-      tc/to-date))
+      (tc/to-date)))
