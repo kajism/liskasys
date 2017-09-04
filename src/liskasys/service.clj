@@ -325,8 +325,8 @@
       (or (bank-holiday? bank-holidays ld)
           (school-holiday? school-holidays ld)))))
 
-(defn find-person-daily-plans-with-lunches [db date]
-  (d/q '[:find [(pull ?e [:db/id :daily-plan/lunch-req {:daily-plan/person [:db/id :person/lunch-type :person/lunch-fund]}]) ...]
+(defn- find-person-daily-plans-with-lunches [db date]
+  (d/q '[:find [(pull ?e [:db/id :daily-plan/lunch-req {:daily-plan/person [:db/id :person/lunch-type :person/lunch-fund :person/child?]}]) ...]
          :in $ ?date
          :where
          [?e :daily-plan/date ?date]
@@ -441,7 +441,7 @@
         (timbre/info "Sending to admins" admin-msg)
         (timbre/info (postal/send-message admin-msg))))))
 
-(defn- get-lunch-type-map [db]
+(defn- find-lunch-types-by-id [db]
   (->> (find-where db {:lunch-type/label nil})
        (into [{:db/id nil :lunch-type/label "běžná"}])
        (map (juxt :db/id :lunch-type/label))
@@ -450,10 +450,11 @@
 (defn- find-lunch-counts-by-diet-label [lunch-types plans-with-lunches]
   (->> plans-with-lunches
        (group-by (comp :db/id :person/lunch-type :daily-plan/person))
-       (map (fn [[k v]] [(get lunch-types k) (reduce + 0 (keep :daily-plan/lunch-req v))]))
+       (map (fn [[k v]]
+              [(get lunch-types k) (reduce + 0 (keep :daily-plan/lunch-req v))]))
        (sort-by-locale first)))
 
-(defn- send-lunch-order-email [date emails lunch-counts]
+(defn- send-lunch-order-email [date emails plans-with-lunches lunch-types-by-id]
   (let [subject (str "Objednávka obědů pro Lištičku na " (time/format-day-date date))
         msg {:from "daniela.chaloupkova@post.cz"
              :to emails
@@ -461,13 +462,23 @@
              :body [{:type "text/plain; charset=utf-8"
                      :content (str subject "\n"
                                    "-------------------------------------------------\n\n"
+                                   "DĚTI --------------------------------------------\n\n"
                                    "Dle diety:\n"
                                    (apply str
-                                          (for [[t c] lunch-counts]
+                                          (for [[t c] (->> plans-with-lunches
+                                                           (filter (comp :person/child? :daily-plan/person))
+                                                           (find-lunch-counts-by-diet-label lunch-types-by-id))]
+                                            (str t ": " c "\n")))
+                                   "DOSPĚLÍ -----------------------------------------\n\n"
+                                   "Dle diety:\n"
+                                   (apply str
+                                          (for [[t c] (->> plans-with-lunches
+                                                           (filter (complement (comp :person/child? :daily-plan/person)))
+                                                           (find-lunch-counts-by-diet-label lunch-types-by-id))]
                                             (str t ": " c "\n")))
                                    "-------------------------------------------------\n"
-                                   "CELKEM: " (apply + (map second lunch-counts)))}]}]
-    (if-not (seq lunch-counts)
+                                   "CELKEM: " (count plans-with-lunches))}]}]
+    (if-not (seq plans-with-lunches)
       (timbre/info "No lunches for " date ". Sending skipped.")
       (do
         (timbre/info "Sending " (:subject msg) "to" (:to msg))
@@ -499,16 +510,13 @@
 (defn- process-lunch-order [conn date]
   (let [db (d/db conn)
         plans-with-lunches (find-person-daily-plans-with-lunches db date)
-        lunch-counts (find-lunch-counts-by-diet-label (get-lunch-type-map db) plans-with-lunches)
-        total-by-type (apply + (map second lunch-counts))
         {:keys [tx-data total]} (lunch-order-tx-total date (:price-list/lunch (find-price-list db)) plans-with-lunches)]
-    (if (not= total total-by-type)
-      (timbre/error "Invalid lunch totals: processed=" total "by-type=" total-by-type " . Operation skipped!")
-      (do
-        (transact conn nil tx-data)
-        (send-lunch-order-email date
-                                (mapv :person/email (find-persons-with-role db "obedy"))
-                                lunch-counts)))))
+    (do
+      (transact conn nil tx-data)
+      (send-lunch-order-email date
+                              (mapv :person/email (find-persons-with-role db "obedy"))
+                              plans-with-lunches
+                              (find-lunch-types-by-id db)))))
 
 (defn- calculate-att-price [price-list months-count days-per-week half-days-count]
   (+ (* months-count (get price-list (keyword "price-list" (str "days-" days-per-week)) 0))
