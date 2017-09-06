@@ -462,15 +462,15 @@
              :body [{:type "text/plain; charset=utf-8"
                      :content (str subject "\n"
                                    "-------------------------------------------------\n\n"
-                                   "DĚTI --------------------------------------------\n\n"
-                                   "Dle diety:\n"
+                                   "DĚTI --------------------------------------------\n"
+                                   #_"Dle diety:\n"
                                    (apply str
                                           (for [[t c] (->> plans-with-lunches
                                                            (filter (comp :person/child? :daily-plan/person))
                                                            (find-lunch-counts-by-diet-label lunch-types-by-id))]
                                             (str t ": " c "\n")))
-                                   "DOSPĚLÍ -----------------------------------------\n\n"
-                                   "Dle diety:\n"
+                                   "\nDOSPĚLÍ -----------------------------------------\n"
+                                   #_"Dle diety:\n"
                                    (apply str
                                           (for [[t c] (->> plans-with-lunches
                                                            (filter (complement (comp :person/child? :daily-plan/person)))
@@ -490,15 +490,19 @@
 
 (defn- lunch-order-tx-total [date lunch-price plans-with-lunches]
   (let [out
-        (reduce (fn [out {:keys [:db/id :daily-plan/person :daily-plan/lunch-req]}]
-                  (-> out
-                      (update :tx-data conj
-                              [:db.fn/cas (:db/id person) :person/lunch-fund
-                               (:person/lunch-fund person) (- (or (:person/lunch-fund person) 0)
-                                                              (* lunch-req lunch-price))])
-                      (update :tx-data conj
-                              [:db/add id :daily-plan/lunch-ord lunch-req])
-                      (update :total + lunch-req)))
+        (reduce (fn [out {:keys [:db/id :daily-plan/person :daily-plan/lunch-req] :as plan-with-lunch}]
+                  (if-not person
+                    (do
+                      (timbre/error "missing person of plan-with-lunch" plan-with-lunch)
+                      out)
+                    (-> out
+                        (update :tx-data conj
+                                [:db.fn/cas (:db/id person) :person/lunch-fund
+                                 (:person/lunch-fund person) (- (or (:person/lunch-fund person) 0)
+                                                                (* lunch-req lunch-price))])
+                        (update :tx-data conj
+                                [:db/add id :daily-plan/lunch-ord lunch-req])
+                        (update :total + lunch-req))))
                 {:tx-data []
                  :total 0}
                 plans-with-lunches)]

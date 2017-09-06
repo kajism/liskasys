@@ -6,7 +6,10 @@
   (:import java.util.TimeZone))
 
 (twarc/defjob process-lunch-order-and-substitutions-job [scheduler conn]
-  (service/process-lunch-order-and-substitutions conn))
+  (try
+    (service/process-lunch-order-and-substitutions conn)
+    (catch Exception e
+      (timbre/error "process-lunch-order-and-substitutions-job error" e))))
 
 (defrecord Scheduler [datomic twarc-scheduler quartz-props]
   component/Lifecycle

@@ -2,6 +2,10 @@ LISKASYST
 
 podpurny informacni system pro lesni materskou skolu Listicka
 
+
+(require '[datomic.api :as d])
+(def conn (d/connect "datomic:free://localhost:4334/liskasys"))
+
 * TODOs
 ** DONE preserve person-bill state after re-generation
 CLOSED: [2016-10-18 Tue 15:37]
