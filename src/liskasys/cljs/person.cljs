@@ -48,6 +48,7 @@
         groups (re-frame/subscribe [:entities :group])
         table-state (re-frame/subscribe [:table-state :persons])
         persons (re-frame/subscribe [:entities :person])
+        user (re-frame/subscribe [:auth-user])
         parent-attrs (fn [row kw]
                        [:div
                         (doall
@@ -79,7 +80,8 @@
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])]]]))
+                      (when (contains? (:-roles @user) "superadmin")
+                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])])]]))
                 :none]
                ["Příjmení" :person/lastname]
                ["Jméno" :person/firstname]
