@@ -58,27 +58,40 @@
                    :selected (= (:selected-id user-children-data) (:db/id person))} (cljc-util/person-fullname person)])]]]
     [:form {:method "post"
             :role "form"}
-     [:input {:type "hidden" :name "child-id" :value (:selected-id user-children-data)}]
      [:div.form-group
-      [:label {:for "from"} "Docházka bude (nebo již je) omluvena v označených dnech"]
+      [:input.form-control {:type "hidden" :name "child-id" :value (:selected-id user-children-data)}]
+      #_[:label {:for "from"} "Docházka bude (nebo již je) omluvena v označených dnech"]
       [:table.table.table-striped
+       [:thead
+        [:tr
+         [:th "Datum"]
+         [:th "Omluvit?"]
+         [:th "Důvod nepřítomnosti"]]]
        [:tbody
-        (for [{:keys [:daily-plan/date :daily-plan/att-cancelled? :daily-plan/lunch-cancelled?]} child-daily-plans
+        (for [{:keys [:daily-plan/date :daily-plan/att-cancelled? :daily-plan/lunch-cancelled? :daily-plan/excuse]} child-daily-plans
               :let [date-str (time/to-format date time/ddMMyyyy)]]
           [:tr
            [:td
-            [:label
-             (when att-cancelled?
-               [:input {:type "hidden" :name "already-cancelled-dates[]" :value date-str}])
-             [:input {:type "checkbox" :name "cancel-dates[]"
-                      :value date-str
-                      :checked (boolean att-cancelled?)}] " "
-             (time/format-day-date date)
+            [:label.nowrap (time/format-day-date date)]]
+           [:td
+            (when att-cancelled?
+              [:input {:type "hidden" :name "already-cancelled-dates[]" :value date-str}])
+            [:input.form-control.input-sm {:type "checkbox" :name "cancel-dates[]"
+                                           :value date-str
+                                           :checked (boolean att-cancelled?)}]
+            #_[:label.nowrap
              " "
              (when lunch-cancelled?
-               "(oběd odhlášen)")]]])]]]
+               "(oběd odhlášen)")]]
+           [:td
+            [:input.form-control {:type "text"
+                                  :name (str "excuse[" date-str  "]")
+                                  :size "30"
+                                  :value excuse}]]])]]]
      #_(anti-forgery/anti-forgery-field)
-     [:button.btn.btn-danger {:type "submit"} "Uložit"]]]])
+     [:button.btn.btn-danger {:type "submit"} "Uložit"]
+     [:br]
+     [:br]]]])
 
 (defn substitutions [user-children-data {:keys [dp-gap-days  can-subst? substable-dps]}]
   [:div.container

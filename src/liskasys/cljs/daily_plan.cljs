@@ -64,7 +64,7 @@
                   :val-fn #(some->> % :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)
                   :td-comp (fn [& {:keys [value row row-state]}]
                              [:td
-                              (if (:selected? row-state)
+                              (if (and (:selected? row-state) value)
                                 [re-com/hyperlink-href
                                  :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
                                  :label value]
@@ -74,10 +74,11 @@
                                 (if (->> row :daily-plan/person :db/id (get @persons) :person/child?)
                                   (-> row  :daily-plan/att-cancelled? cljc-util/boolean->text)
                                   "-"))]
-                 ["Obědy: Požadováno ks" #(or (:daily-plan/lunch-req %) 0)]
-                 ["Dieta" #(some->> % :daily-plan/person :db/id (get @persons) :person/lunch-type :db/id (get @lunch-types) :lunch-type/label)]
+                 ["Důvod oml." :daily-plan/excuse]
+                 ["Obědy: Dieta" #(some->> % :daily-plan/person :db/id (get @persons) :person/lunch-type :db/id (get @lunch-types) :lunch-type/label)]
+                 ["Pož.ks" #(or (:daily-plan/lunch-req %) 0)]
                  ["Odhlášen?" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]
-                 ["Objednáno ks" #(or (:daily-plan/lunch-ord %) 0)]
+                 ["Obj.ks" #(or (:daily-plan/lunch-ord %) 0)]
                  {:header "Nahrada zapsána"
                   :val-fn :daily-plan/subst-req-on
                   :td-comp (fn [& {:keys [value]}]

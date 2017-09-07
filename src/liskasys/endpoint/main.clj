@@ -22,9 +22,9 @@
   (:import java.io.ByteArrayInputStream))
 
 (defn- make-date-sets [str-date-seq]
-  (some->> str-date-seq
-           (map #(time/from-format % time/ddMMyyyy))
-           set))
+  (->> str-date-seq
+       (map #(time/from-format % time/ddMMyyyy))
+       (set)))
 
 (defn- upload-dir []
   (or (:upload-dir env) "./uploads/"))
@@ -48,14 +48,20 @@
             (main-hiccup/cancellation-page ucd child-daily-plans)))))
 
      (POST "/" {:keys [params]}
-       (let [cancel-dates (make-date-sets (:cancel-dates params))
+       (let [excuses (->> (:excuse params)
+                          (keep (fn [[k v]]
+                                  (when-not (str/blank? v)
+                                    [(time/from-format k time/ddMMyyyy) v])))
+                          (into {}))
+             cancel-dates (make-date-sets (:cancel-dates params))
              already-cancelled-dates (make-date-sets (:already-cancelled-dates params))
              child-id (edn/read-string (:child-id params))]
          (main-service/transact-cancellations conn
                                               (:db/id user)
                                               child-id
                                               (set/difference cancel-dates already-cancelled-dates)
-                                              (set/difference already-cancelled-dates cancel-dates))
+                                              (set/difference already-cancelled-dates cancel-dates)
+                                              excuses)
          (response/redirect (str "/" (when child-id (str "?child-id=" child-id))))))
 
      (GET "/nahrady" {:keys [params]}
@@ -67,23 +73,23 @@
           (main-hiccup/substitutions ucd substs))))
 
      #_(POST "/nahrady" {:keys [params]}
-           (let [child-id (edn/read-string (:child-id params))
-                 subst-req-date (-> params
-                                    :subst-request
+         (let [child-id (edn/read-string (:child-id params))
+               subst-req-date (-> params
+                                  :subst-request
+                                  ffirst
+                                  (time/from-format time/ddMMyyyy))
+               subst-remove-id  (-> params
+                                    :subst-remove
                                     ffirst
-                                    (time/from-format time/ddMMyyyy))
-                 subst-remove-id  (-> params
-                                      :subst-remove
-                                      ffirst
-                                      edn/read-string)]
-             (cond
-               subst-remove-id
-               (service/retract-entity conn (:db/id user) subst-remove-id)
-               subst-req-date
-               (main-service/request-substitution conn (:db/id user) child-id subst-req-date)
-               :else
-               (timbre/error "Invalid post to /nahrady without req-date or remove-id"))
-             (response/redirect (str "/nahrady" (when child-id (str "?child-id=" child-id))))))
+                                    edn/read-string)]
+           (cond
+             subst-remove-id
+             (service/retract-entity conn (:db/id user) subst-remove-id)
+             subst-req-date
+             (main-service/request-substitution conn (:db/id user) child-id subst-req-date)
+             :else
+             (timbre/error "Invalid post to /nahrady without req-date or remove-id"))
+           (response/redirect (str "/nahrady" (when child-id (str "?child-id=" child-id))))))
 
      (GET "/platby" {:keys [params]}
        (let [person-bills (main-service/find-person-bills (d/db conn) (:db/id user))]
@@ -92,25 +98,25 @@
           (main-hiccup/person-bills person-bills))))
 
      (GET "/qr-code" [id :<< as-int]
-          (let [db (d/db conn)
-                person-bill (first (service/find-by-type db :person-bill {:db/id id}))
-                price-list (service/find-price-list db)
-                qr-code-file (qr-code/save-qr-code (:price-list/bank-account price-list)
-                                                   (/ (:person-bill/total person-bill) 100)
-                                                   (str (-> person-bill :person-bill/person :person/var-symbol))
-                                                   (str (-> person-bill :person-bill/person cljc-util/person-fullname) " "
-                                                        (-> person-bill :person-bill/period cljc-util/period->text)))
-                qr-code-bytes (main-service/file-to-byte-array qr-code-file)]
-            (.delete qr-code-file)
-            (-> (response/response (ByteArrayInputStream. qr-code-bytes))
-                (response/content-type "image/png")
-                (response/header "Content-Length" (count qr-code-bytes)))) )
+       (let [db (d/db conn)
+             person-bill (first (service/find-by-type db :person-bill {:db/id id}))
+             price-list (service/find-price-list db)
+             qr-code-file (qr-code/save-qr-code (:price-list/bank-account price-list)
+                                                (/ (:person-bill/total person-bill) 100)
+                                                (str (-> person-bill :person-bill/person :person/var-symbol))
+                                                (str (-> person-bill :person-bill/person cljc-util/person-fullname) " "
+                                                     (-> person-bill :person-bill/period cljc-util/period->text)))
+             qr-code-bytes (main-service/file-to-byte-array qr-code-file)]
+         (.delete qr-code-file)
+         (-> (response/response (ByteArrayInputStream. qr-code-bytes))
+             (response/content-type "image/png")
+             (response/header "Content-Length" (count qr-code-bytes)))))
 
      (GET "/jidelni-listek" [history]
-          (let [{:keys [lunch-menu previous? history]} (main-service/find-last-lunch-menu (d/db conn) (edn/read-string history))]
-            (main-hiccup/liskasys-frame
-             user
-             (main-hiccup/lunch-menu lunch-menu previous? history))))
+       (let [{:keys [lunch-menu previous? history]} (main-service/find-last-lunch-menu (d/db conn) (edn/read-string history))]
+         (main-hiccup/liskasys-frame
+          user
+          (main-hiccup/lunch-menu lunch-menu previous? history))))
 
      #_(GET "/jidelni-listek/:id" [id :<< as-int]
          (let [lunch-menu (first (jdbc-common/select db-spec :lunch-menu {:id id}))]
