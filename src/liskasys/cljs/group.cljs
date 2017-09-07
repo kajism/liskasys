@@ -44,15 +44,15 @@
                         [buttons/delete-button #(re-frame/dispatch [:entity-delete :group (:db/id row)])]]]))
                   :none]
                  ["Název" :group/label]
-                 #_["Barva" :group/color]]]]])))
+                 ["Kapacita" :group/max-capacity]]]]])))
 
 (defn page-group []
   (let [group (re-frame/subscribe [:entity-edit :group])
         validation-fn #(cond-> {}
                          (str/blank? (:group/label %))
                          (assoc :group/label "Vyplňte název")
-                         ;;(str/blank? (:group/color %))
-                         ;;(assoc :group/color "Vyplňte barvu")
+                         (str/blank? (:group/max-capacity %))
+                         (assoc :group/max-capacity "Vyplňte maximální počet dětí ve třídě")
                          )]
     (fn []
       (let [item @group
@@ -62,8 +62,16 @@
          [[:h3 "Třídy"]
           [re-com/label :label "Název"]
           [input-text item :group :group/label]
-          #_[re-com/label :label "Barva"]
-          #_[input-text item :group :group/color]
+          [re-com/label :label "Kapacita"]
+          (let [error-msg (some-> item :-errors :group/max-capacity)]
+            [re-com/input-text
+             :model (str (:group/max-capacity item))
+             :on-change #(re-frame/dispatch [:entity-change :group (:db/id item) :group/max-capacity (cljc-util/parse-int %)])
+             :validation-regex #"^\d{0,2}$"
+             :width "70px"
+             :status (when error-msg :warning)
+             :status-icon? true
+             :status-tooltip error-msg])
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :group validation-fn])]
