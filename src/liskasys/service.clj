@@ -178,7 +178,7 @@
 
 (defmulti retract-entity (fn [conn user-id ent-id]
                            (first (keys (select-keys (d/pull (d/db conn) '[*] ent-id)
-                                                     [:person-bill/person])))))
+                                                     [:person-bill/total])))))
 
 (defmethod retract-entity :default [conn user-id ent-id]
   (retract-entity* conn user-id ent-id))
@@ -190,7 +190,7 @@
          :where [_ :lunch-order/date ?date]]
        db))
 
-(defmethod retract-entity :person-bill/person [conn user-id ent-id]
+(defmethod retract-entity :person-bill/total [conn user-id ent-id]
   (let [db (d/db conn)
         bill (merge-person-bill-facts
               db
@@ -205,7 +205,8 @@
                          db ent-id (find-max-lunch-order-date db))
         person (d/pull db '[*] (get-in bill [:person-bill/person :db/id]))
         tx-data (cond-> [[:db.fn/retractEntity ent-id]]
-                  (= (-> bill :person-bill/status :db/ident) :person-bill.status/paid)
+                  (and (= (-> bill :person-bill/status :db/ident) :person-bill.status/paid)
+                       (:person/lunch-fund person))
                   (conj [:db.fn/cas (:db/id person) :person/lunch-fund (:person/lunch-fund person)
                          (- (:person/lunch-fund person) (- (:person-bill/total bill) (:person-bill/att-price bill)))]))]
     (timbre/info "retracting bill" bill "with" (count daily-plans) "plans of person" person)
