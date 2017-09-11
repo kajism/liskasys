@@ -25,6 +25,7 @@
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
         persons (re-frame/subscribe [:entities :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])
+        groups (re-frame/subscribe [:entities :group])
         table-state (re-frame/subscribe [:table-state :daily-plans])
         user (re-frame/subscribe [:auth-user])]
     (fn []
@@ -69,7 +70,8 @@
                                  :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
                                  :label value]
                                 value)])}
-                 ["Docházka" #(cljc-util/child-att->str (:daily-plan/child-att %))]
+                 ["Třída" #(some->> % :daily-plan/person :db/id (get @persons):person/group :db/id (get @groups) :group/label)]
+                 #_["Docházka" #(cljc-util/child-att->str (:daily-plan/child-att %))]
                  ["Omluvena?" (fn [row]
                                 (if (->> row :daily-plan/person :db/id (get @persons) :person/child?)
                                   (-> row  :daily-plan/att-cancelled? cljc-util/boolean->text)

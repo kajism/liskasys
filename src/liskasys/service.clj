@@ -356,20 +356,16 @@
   (->> (new-lunch-order-ent date nil)
        (transact-entity conn nil)))
 
-#_(defn- process-substitutions [conn date]
-  (let [db (d/db conn)
-        daily-plans (find-where db {:daily-plan/date date}
-                                '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
-                                                         {:person/lunch-type [:lunch-type/label]
-                                                          :person/parent [:person/email]}]}])
-        att?-fn #(and (some-> % :daily-plan/child-att pos?)
+(defn- process-group-substitutions [conn date group daily-plans]
+  (let [att?-fn #(and (some-> % :daily-plan/child-att pos?)
                       (not (:daily-plan/att-cancelled? %)))
         lunch?-fn #(and (some-> % :daily-plan/lunch-req pos?)
                         (not (:daily-plan/lunch-cancelled? %)))
         [going not-going] (->> daily-plans
                                (filter att?-fn)
                                (sort-by :daily-plan/subst-req-on)
-                               (partition-all cljc-util/max-children-per-day))
+                               (partition-all (or (:group/max-capacity group)
+                                                  (count daily-plans))))
         not-going-subst-msgs (map (fn [dp] {:from "robot@obedy.listicka.org"
                                       :to (map :person/email (-> dp :daily-plan/person :person/parent))
                                       :subject "Lištička: Zítřejší náhrada bohužel není možná"
@@ -390,7 +386,7 @@
                                                                    (if (lunch?-fn dp)
                                                                      "včetně oběda."
                                                                      "bez oběda."))}]})))
-        admin-subj (str "Denní souhrn na " (time/format-day-date date))
+        admin-subj (str "Denní souhrn na " (time/format-day-date date) " pro skupinu " (:group/label group))
         going->str-fn #(str (-> % :daily-plan/person cljc-util/person-fullname)
                             (when (= (:daily-plan/child-att %) 2)
                               ", půldenní")
@@ -399,7 +395,7 @@
                               (when-let [type (some-> % :daily-plan/person :person/lunch-type :lunch-type/label)]
                                 (str ", strava " type))))
         admin-msg {:from "robot@obedy.listicka.org"
-                   :to (mapv :person/email (find-persons-with-role db "admin"))
+                   :to (mapv :person/email (find-persons-with-role (d/db conn) "admin"))
                    :subject admin-subj
                    :body [{:type "text/plain; charset=utf-8"
                            :content (str admin-subj "\n\n"
@@ -441,6 +437,19 @@
           (timbre/info (postal/send-message msg)))
         (timbre/info "Sending to admins" admin-msg)
         (timbre/info (postal/send-message admin-msg))))))
+
+
+(defn- process-substitutions [conn date]
+  (let [db (d/db conn)
+        groups (find-where db {:group/label nil})
+        daily-plans (find-where db {:daily-plan/date date}
+                                '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
+                                                         {:person/lunch-type [:lunch-type/label]
+                                                          :person/parent [:person/email]
+                                                          :person/group [:db/id]}]}])
+        dps-by-group (group-by (comp :db/id :person/group :daily-plan/person) daily-plans)]
+    (doseq [group groups]
+      (process-group-substitutions conn date group (get dps-by-group (:db/id group))))))
 
 (defn- find-lunch-types-by-id [db]
   (->> (find-where db {:lunch-type/label nil})
@@ -819,7 +828,7 @@
 
 (defn find-att-daily-plans [db date-from date-to]
   (when (and date-from date-to)
-    (d/q '[:find [(pull ?e [*]) ...]
+    (d/q '[:find [(pull ?e [* {:daily-plan/person [:db/id {:person/group [:db/id]}]}]) ...]
            :in $ ?date-from ?date-to
            :where
            (or [?e :daily-plan/child-att 1]
@@ -855,5 +864,5 @@
     (timbre/info "Processing lunch order for" date)
     (close-lunch-order conn date)
     (Thread/sleep 5000)
-    #_(process-substitutions conn date)
+    (process-substitutions conn date)
     (process-lunch-order conn date)))

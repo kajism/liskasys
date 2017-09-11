@@ -154,7 +154,9 @@
          (sort-by :daily-plan/date))))
 
 (defn find-person-substs [db person-id]
-  (let [date-from (some-> (or (last (service/find-previous-periods db))
+  (let [person (service/find-by-id db person-id)
+        group (service/find-by-id db (get-in person [:person/group :db/id]))
+        date-from (some-> (or (last (service/find-previous-periods db))
                               (service/find-current-period db))
                           (cljc-util/period-start-end)
                           (first)
@@ -172,7 +174,8 @@
                                                     (tc/to-date))
                                                 date-to)]
     (timbre/debug "finding-person-substs from" date-from "to" date-to)
-    {:substable-dps substable-dps
+    {:group group
+     :substable-dps substable-dps
      :dp-gap-days (->> all-plans
                        (group-by :daily-plan/date)
                        (reduce (fn [out [date plans]]

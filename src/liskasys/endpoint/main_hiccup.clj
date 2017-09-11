@@ -93,11 +93,11 @@
      [:br]
      [:br]]]])
 
-(defn substitutions [user-children-data {:keys [dp-gap-days  can-subst? substable-dps]}]
+(defn substitutions [user-children-data {:keys [dp-gap-days can-subst? substable-dps group]}]
   [:div.container
    [:h3 "Náhrady"]
-   [:label "Omluvenky z předchozího školního roku nelze nahrazovat v novém. Náhrady pro nový školni rok budou zprovozněny zhruba do poloviny září, po úpravách systému zohledňujících zařazení dětí do tříd."]]
-  #_[:div.container
+   #_[:label "Omluvenky z předchozího školního roku nelze nahrazovat v novém. Náhrady pro nový školni rok budou zprovozněny zhruba do poloviny září, po úpravách systému zohledňujících zařazení dětí do tříd."]]
+  [:div.container
    [:h3 "Náhrady"]
    [:div
     [:div.form-group
@@ -112,19 +112,10 @@
     [:form {:method "post"
             :role "form"}
      [:input {:type "hidden" :name "child-id" :value (:selected-id user-children-data)}]
-     #_[:table.table.table-striped
-        [:thead
-         [:tr
-          [:th "Omluvených dnů"]
-          [:th "Nahrazených dnů"]]]
-        [:tbody
-         [:tr
-          [:td (count canc-plans)]
-          [:td (count subst-plans)]]]]
      (if-not (seq dp-gap-days)
        [:h3 "Nebyla nalezena žádná možnost náhrady (nebo den, kdy není řádná docházka)."]
        [:div
-        [:label "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem (a oběd objednán) den předem po 10. hodině."]
+        [:label "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem (a oběd objednán) den předem dopoledne."]
         [:table.table.table-striped
          [:thead
           [:tr
@@ -136,11 +127,13 @@
                 :let [date-str (time/to-format date time/ddMMyyyy)
                       my-subst (->> plans
                                     (filter #(= (:selected-id user-children-data) (get-in % [:daily-plan/person :db/id])))
-                                    first)]]
+                                    (first))
+                      group-plans (->> plans
+                                       (filter #(= (:db/id group) (get-in % [:daily-plan/person :person/group :db/id]))))]]
             [:tr
              [:td [:label (time/format-day-date date)]]
-             [:td (- cljc-util/max-children-per-day (count plans))]
-             [:td (let [substs (->> plans
+             [:td (- (or (:group/max-capacity group) 0) (count group-plans))]
+             [:td (let [substs (->> group-plans
                                     (filter #(:daily-plan/subst-req-on %))
                                     (sort-by :daily-plan/subst-req-on))]
                     (str (when my-subst
