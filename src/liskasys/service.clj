@@ -327,7 +327,9 @@
           (school-holiday? school-holidays ld)))))
 
 (defn- find-person-daily-plans-with-lunches [db date]
-  (d/q '[:find [(pull ?e [:db/id :daily-plan/lunch-req {:daily-plan/person [:db/id :person/lunch-type :person/lunch-fund :person/child?]}]) ...]
+  (d/q '[:find [(pull ?e [:db/id :daily-plan/lunch-req
+                          {:daily-plan/person [:db/id :person/lunch-type :person/lunch-fund :person/child?
+                                               {:person/group [*]}]}]) ...]
          :in $ ?date
          :where
          [?e :daily-plan/date ?date]
@@ -472,22 +474,27 @@
              :body [{:type "text/plain; charset=utf-8"
                      :content (str subject "\n"
                                    "-------------------------------------------------\n\n"
-                                   "DĚTI --------------------------------------------\n"
-                                   #_"Dle diety:\n"
+                                   "* DĚTI"
                                    (apply str
-                                          (for [[t c] (->> plans-with-lunches
-                                                           (filter (comp :person/child? :daily-plan/person))
-                                                           (find-lunch-counts-by-diet-label lunch-types-by-id))]
-                                            (str t ": " c "\n")))
-                                   "\nDOSPĚLÍ -----------------------------------------\n"
+                                    (for [[group group-plans] (->> plans-with-lunches
+                                                                   (filter (comp :person/child? :daily-plan/person))
+                                                                   (group-by (comp :person/group :daily-plan/person)))]
+                                      (str "\n** Třída: " (:group/label group) "\n"
+                                           (apply str
+                                                  (for [[t c] (->> group-plans
+                                                                   (find-lunch-counts-by-diet-label lunch-types-by-id))]
+                                                    (str "   " t ": " c "\n"))))))
+
+                                   "\n* DOSPĚLÍ\n"
                                    #_"Dle diety:\n"
                                    (apply str
                                           (for [[t c] (->> plans-with-lunches
                                                            (filter (complement (comp :person/child? :daily-plan/person)))
                                                            (find-lunch-counts-by-diet-label lunch-types-by-id))]
-                                            (str t ": " c "\n")))
+                                            (str "  " t ": " c "\n")))
                                    "-------------------------------------------------\n"
-                                   "CELKEM: " (count plans-with-lunches))}]}]
+                                   "CELKEM: " (count plans-with-lunches) "\n\n")}]}]
+    #_(print (get-in msg [:body 0 :content]))
     (if-not (seq plans-with-lunches)
       (timbre/info "No lunches for " date ". Sending skipped.")
       (do
@@ -828,7 +835,7 @@
 
 (defn find-att-daily-plans [db date-from date-to]
   (when (and date-from date-to)
-    (d/q '[:find [(pull ?e [* {:daily-plan/person [:db/id {:person/group [:db/id]}]}]) ...]
+    (d/q '[:find [(pull ?e [* {:daily-plan/person [:db/id :person/group]}]) ...]
            :in $ ?date-from ?date-to
            :where
            (or [?e :daily-plan/child-att 1]
