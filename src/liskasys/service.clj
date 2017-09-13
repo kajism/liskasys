@@ -476,16 +476,21 @@
                                    "-------------------------------------------------\n\n"
                                    "* DĚTI"
                                    (apply str
+                                          (for [[t c] (->> plans-with-lunches
+                                                           (filter (comp :person/child? :daily-plan/person))
+                                                           (find-lunch-counts-by-diet-label lunch-types-by-id))]
+                                            (str "\n  " t ": " c)))
+                                   #_(apply str
                                     (for [[group group-plans] (->> plans-with-lunches
                                                                    (filter (comp :person/child? :daily-plan/person))
                                                                    (group-by (comp :person/group :daily-plan/person)))]
-                                      (str "\n** Třída: " (:group/label group) "\n"
+                                      (str "\n\n** Třída: " (:group/label group)
                                            (apply str
                                                   (for [[t c] (->> group-plans
                                                                    (find-lunch-counts-by-diet-label lunch-types-by-id))]
-                                                    (str "   " t ": " c "\n"))))))
+                                                    (str "\n   " t ": " c))))))
 
-                                   "\n* DOSPĚLÍ\n"
+                                   "\n\n* DOSPĚLÍ\n"
                                    #_"Dle diety:\n"
                                    (apply str
                                           (for [[t c] (->> plans-with-lunches
