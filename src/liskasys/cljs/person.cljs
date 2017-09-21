@@ -11,7 +11,8 @@
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
             [reagent.ratom :as ratom]
-            [secretary.core :as secretary]))
+            [secretary.core :as secretary]
+            [clojure.string :as str]))
 
 (re-frame/register-sub
  ::kids
@@ -145,13 +146,24 @@
                         [daily-summary kids]]))
             (vec))])))
 
+(defn emails-to-copy [rows]
+  [re-com/input-textarea
+   :model  (->> rows
+                (keep :person/email)
+                (sort)
+                (str/join ", "))
+   :on-change #()
+   :width "500px"
+   :height "500px"])
+
 (defn page-persons []
   (let [page-state (re-frame/subscribe [:page-state :persons])
         rows (re-frame/subscribe [::rows])]
     (when-not @page-state
       (re-frame/dispatch [:page-state-set :persons {:active? true
                                                     :child? true
-                                                    :daily-summary? false}]))
+                                                    :daily-summary? false
+                                                    :emails? false}]))
     (fn []
       (if-not @page-state
         [re-com/throbber]
@@ -172,15 +184,24 @@
                     {:id nil :label "Všichni"}]
              :model (:active? @page-state)
              :on-change #(re-frame/dispatch [:page-state-change :persons :active? %])]
-            (when (and (:child? @page-state) (:active? @page-state))
-              [re-com/horizontal-bar-tabs
-               :tabs [{:id false :label "Seznam"}
-                      {:id true :label "Denní souhrn"}]
-               :model (:daily-summary? @page-state)
-               :on-change #(re-frame/dispatch [:page-state-change :persons :daily-summary? %])])]]
-          (if (and (:child? @page-state) (:active? @page-state) (:daily-summary? @page-state))
-
+            (when (:active? @page-state)
+              (if (:child? @page-state)
+                  [re-com/horizontal-bar-tabs
+                   :tabs [{:id false :label "Seznam"}
+                          {:id true :label "Denní souhrn"}]
+                   :model (:daily-summary? @page-state)
+                   :on-change #(re-frame/dispatch [:page-state-change :persons :daily-summary? %])]
+                  [re-com/horizontal-bar-tabs
+                   :tabs [{:id false :label "Seznam"}
+                          {:id true :label "Emaily"}]
+                   :model (:emails? @page-state)
+                   :on-change #(re-frame/dispatch [:page-state-change :persons :emails? %])]))]]
+          (cond
+            (and (:child? @page-state) (:active? @page-state) (:daily-summary? @page-state))
             [daily-summary-per-group @rows]
+            (and (not (:child? @page-state)) (:active? @page-state) (:emails? @page-state))
+            [emails-to-copy @rows]
+            :else
             [table rows])]]))))
 
 (defn page-person []
