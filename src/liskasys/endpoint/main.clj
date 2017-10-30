@@ -36,7 +36,7 @@
 
 (defn main-endpoint [{{conn :conn} :datomic}]
   (routes
-   (context "" {{{roles :-roles :as user} :user} :session}
+   (context "" {{{roles :-roles :as user} :user} :session flash-msg :flash}
      (GET "/" {:keys [params]}
        (if-not (roles "parent")
          (response/redirect "/jidelni-listek")
@@ -45,7 +45,8 @@
                child-daily-plans (main-service/find-next-person-daily-plans db (:selected-id ucd))]
            (main-hiccup/liskasys-frame
             user
-            (main-hiccup/cancellation-page ucd child-daily-plans)))))
+            (main-hiccup/cancellation-page ucd child-daily-plans)
+            flash-msg))))
 
      (POST "/" {:keys [params]}
        (let [excuses (->> (:excuse params)
@@ -55,14 +56,16 @@
                           (into {}))
              cancel-dates (make-date-sets (:cancel-dates params))
              already-cancelled-dates (make-date-sets (:already-cancelled-dates params))
-             child-id (edn/read-string (:child-id params))]
-         (main-service/transact-cancellations conn
-                                              (:db/id user)
-                                              child-id
-                                              (set/difference cancel-dates already-cancelled-dates)
-                                              (set/difference already-cancelled-dates cancel-dates)
-                                              excuses)
-         (response/redirect (str "/" (when child-id (str "?child-id=" child-id))))))
+             child-id (edn/read-string (:child-id params))
+             out (main-service/transact-cancellations conn
+                                                      (:db/id user)
+                                                      child-id
+                                                      (set/difference cancel-dates already-cancelled-dates)
+                                                      (set/difference already-cancelled-dates cancel-dates)
+                                                      excuses)]
+         (cond-> (response/redirect (str "/" (when child-id (str "?child-id=" child-id))))
+           (> out 0)
+           (assoc :flash (str "Změny byly uloženy.")))))
 
      (GET "/nahrady" {:keys [params]}
        (let [db (d/db conn)

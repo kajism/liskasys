@@ -13,35 +13,41 @@
 
 (def system-title "LiškaSys")
 
-(defn liskasys-frame [{roles :-roles :as user} body-hiccup]
-  (hiccup/hiccup-response
-   (hiccup/hiccup-frame
-    system-title
-    [:div
-     [:nav.navbar.navbar-default
-      [:div.container-fluid
-       [:div.navbar-header
-        [:button.navbar-toggle {:type "button" :data-toggle "collapse" :data-target "#liskasys-navbar"}
-         [:span.icon-bar]
-         [:span.icon-bar]
-         [:span.icon-bar]]
-        [:a {:href "#"}
-         [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
-       [:div#liskasys-navbar.collapse.navbar-collapse
-        [:ul.nav.navbar-nav
-         (when (roles "parent")
-           [:li [:a {:href "/"} "Omluvenky"]])
-         [:li [:a {:href "/jidelni-listek"} "Jídelníček"]]
-         [:li [:a {:href "/platby"} "Platby"]]
-         [:li [:a {:href "/nahrady"} "Náhrady"]]]
-        [:ul.nav.navbar-nav.navbar-right
-         [:li
-          [:a {:href "/profile"} (cljc-util/person-fullname user)]]
-         (when (roles "admin")
-           [:li [:a {:target "admin" :href "/admin.app"} "Admin"]])
-         [:li [:a {:href "/passwd"} "Změna hesla"]]
-         [:li [:a {:href "/logout"} "Odhlásit se"]]]]]]
-     body-hiccup])))
+(defn liskasys-frame
+  ([user body-hiccup]
+   (liskasys-frame user body-hiccup nil))
+  ([{roles :-roles :as user} body-hiccup flash-msg]
+   (hiccup/hiccup-response
+    (hiccup/hiccup-frame
+     system-title
+     [:div
+      [:nav.navbar.navbar-default
+       [:div.container-fluid
+        [:div.navbar-header
+         [:button.navbar-toggle {:type "button" :data-toggle "collapse" :data-target "#liskasys-navbar"}
+          [:span.icon-bar]
+          [:span.icon-bar]
+          [:span.icon-bar]]
+         [:a {:href "#"}
+          [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
+        [:div#liskasys-navbar.collapse.navbar-collapse
+         [:ul.nav.navbar-nav
+          (when (roles "parent")
+            [:li [:a {:href "/"} "Omluvenky"]])
+          [:li [:a {:href "/jidelni-listek"} "Jídelníček"]]
+          [:li [:a {:href "/platby"} "Platby"]]
+          [:li [:a {:href "/nahrady"} "Náhrady"]]]
+         [:ul.nav.navbar-nav.navbar-right
+          [:li
+           [:a {:href "/profile"} (cljc-util/person-fullname user)]]
+          (when (roles "admin")
+            [:li [:a {:target "admin" :href "/admin.app"} "Admin"]])
+          [:li [:a {:href "/passwd"} "Změna hesla"]]
+          [:li [:a {:href "/logout"} "Odhlásit se"]]]]]]
+      (when flash-msg
+        [:div.container
+         [:div.alert.alert-success flash-msg]])
+      body-hiccup]))))
 
 (defn cancellation-page [user-children-data child-daily-plans]
   [:div.container

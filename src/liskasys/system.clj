@@ -36,7 +36,8 @@
                                                         :security {:anti-forgery false}
                                                         :proxy true}
                                                  (:dev env)
-                                                 (assoc :session {:store (cookie/cookie-store {:key "StursovaListicka"})})))
+                                                 (assoc :session {:store (cookie/cookie-store {:key "StursovaListicka"})
+                                                                  :flash true})))
          :aliases    {}}
    :ragtime {:resource-path "liskasys/migrations"}})
 
