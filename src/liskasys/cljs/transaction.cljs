@@ -47,7 +47,7 @@
  common/debug-mw
  (fn [db [_]]
    (server-call [:tx/range {:from-idx 0
-                            :n 500}]
+                            :n 4000}]
                 [::set-txes])
    (assoc db :tx nil)))
 
