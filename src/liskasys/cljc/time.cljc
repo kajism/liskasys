@@ -27,13 +27,15 @@
   (when date
     (tc/from-date date)))
 
+#?(:clj (def clj-tz (t/time-zone-for-id "Europe/Prague")))
+
 (def dMyyyy (tf/formatter "d.M.yyyy"))
 (def ddMMyyyy (tf/formatter "dd.MM.yyyy"))
-(def dMyyyyHmmss (tf/formatter "d.M.yyyy H:mm:ss" #?(:clj (t/default-time-zone))))
-(def ddMMyyyyHHmmss (tf/formatter "dd.MM.yyyy HH:mm:ss" #?(:clj (t/default-time-zone))))
-(def ddMMyyyyHHmm (tf/formatter "dd.MM.yyyy HH:mm" #?(:clj (t/default-time-zone))))
-(def yyyyMMdd-HHmm (tf/formatter "yyyyMMdd-HHmm" #?(:clj (t/default-time-zone))))
-(def HHmm (tf/formatter "HH:mm" #?(:clj (t/default-time-zone))))
+(def dMyyyyHmmss (tf/formatter "d.M.yyyy H:mm:ss" #?(:clj clj-tz)))
+(def ddMMyyyyHHmmss (tf/formatter "dd.MM.yyyy HH:mm:ss" #?(:clj clj-tz)))
+(def ddMMyyyyHHmm (tf/formatter "dd.MM.yyyy HH:mm" #?(:clj clj-tz)))
+(def yyyyMMdd-HHmm (tf/formatter "yyyyMMdd-HHmm" #?(:clj clj-tz)))
+(def HHmm (tf/formatter "HH:mm" #?(:clj clj-tz)))
 
 (defn to-format [date formatter]
   (if (nil? date)
