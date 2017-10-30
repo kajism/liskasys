@@ -1,5 +1,6 @@
 (ns liskasys.cljs.person
-  (:require [liskasys.cljc.util :as cljc-util]
+  (:require [liskasys.cljc.time :as time]
+            [liskasys.cljc.util :as cljc-util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -279,6 +280,12 @@
                    :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/att-pattern %])
                    :validation-regex #"^[0-2]{0,5}$"]
                   "poútstčtpá: 0 = bez docházky, 1 = celodenní, 2 = půldenní"]]
+                [re-com/label :label "Datum začátku docházky"]
+                [re-com/input-text
+                 :model (time/to-format (:person/start-date item) time/ddMMyyyy)
+                 :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/start-date (time/from-dMyyyy %)])
+                 :validation-regex #"^\d{0,2}$|^\d{0,2}\.\d{0,2}$|^\d{0,2}\.\d{0,2}\.\d{0,4}$"
+                 :width "100px"]
                 (when (:db/id item)
                   [re-com/v-box
                    :children

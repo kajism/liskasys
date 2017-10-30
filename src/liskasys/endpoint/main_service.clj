@@ -165,7 +165,8 @@
         substable-dps (->> (service/find-person-daily-plans db person-id date-from date-to)
                            (filter #(and (:daily-plan/att-cancelled? %)
                                          (not (:daily-plan/substituted-by %))
-                                         (not (:daily-plan/subst-req-on %))))
+                                         (not (:daily-plan/subst-req-on %))
+                                         (not (:daily-plan/refund? %))))
                            (sort-by :daily-plan/date))
         all-plans (service/find-att-daily-plans db
                                                 (-> (service/find-max-lunch-order-date db)

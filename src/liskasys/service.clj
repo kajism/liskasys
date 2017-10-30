@@ -93,6 +93,22 @@
       tx-result)
     {:db-after (d/db conn)}))
 
+(defn retract-entity*
+  "Returns the number of retracted datoms (attributes)."
+  [conn user-id ent-id]
+  (->> [[:db.fn/retractEntity ent-id]]
+       (transact conn user-id)
+       :tx-data
+       count
+       (+ -2)))
+
+(defmulti retract-entity (fn [conn user-id ent-id]
+                           (first (keys (select-keys (d/pull (d/db conn) '[*] ent-id)
+                                                     [:person-bill/total])))))
+
+(defmethod retract-entity :default [conn user-id ent-id]
+  (retract-entity* conn user-id ent-id))
+
 (def tempid? map?)
 
 (defn- coll->tx-data [eid k v old]
@@ -151,10 +167,17 @@
                       [?e :daily-plan/person ?pid]]
                     (d/db conn)
                     (:daily-plan/date ent)
-                    (:db/id (:daily-plan/person ent)))]
+                    (:db/id (:daily-plan/person ent)))
+        remove-substitution? (and (:daily-plan/refund? ent)
+                                  (:daily-plan/substituted-by ent))]
     (if (not= old-id (:db/id ent))
       {:error/msg "Pro tuto osobu a den již v denním plánu existuje záznam."}
-      (transact-entity* conn user-id ent))))
+      (do
+        (when remove-substitution?
+          (retract-entity conn user-id (get-in ent [:daily-plan/substituted-by :db/id])))
+        (transact-entity* conn user-id (cond-> ent
+                                         remove-substitution?
+                                         (dissoc :daily-plan/substituted-by)))))))
 
 (defmethod transact-entity :person/lastname [conn user-id ent]
   (try
@@ -166,22 +189,6 @@
             (timbre/info "Tx failed" (.getMessage cause))
             {:error/msg "Osoba se zadaným variabilním symbolem nebo emailem již v databázi existuje."})
           (throw cause))))))
-
-(defn retract-entity*
-  "Returns the number of retracted datoms (attributes)."
-  [conn user-id ent-id]
-  (->> [[:db.fn/retractEntity ent-id]]
-       (transact conn user-id)
-       :tx-data
-       count
-       (+ -2)))
-
-(defmulti retract-entity (fn [conn user-id ent-id]
-                           (first (keys (select-keys (d/pull (d/db conn) '[*] ent-id)
-                                                     [:person-bill/total])))))
-
-(defmethod retract-entity :default [conn user-id ent-id]
-  (retract-entity* conn user-id ent-id))
 
 (declare merge-person-bill-facts find-by-type)
 

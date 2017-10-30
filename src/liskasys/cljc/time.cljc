@@ -41,7 +41,7 @@
   (if (nil? date)
     ""
     (->> date
-         from-date
+         (from-date)
          #?(:cljs t/to-default-time-zone)
          (tf/unparse formatter))))
 
@@ -53,16 +53,16 @@
   (when-not (str/blank? s)
     (cond-> (tf/parse formatter s)
       (not (or (= formatter dMyyyy) (= formatter ddMMyyyy)))
-      adjust-time
+      (adjust-time)
       true
-      to-date)))
+      (to-date))))
 
 (defn from-dMyyyy [s]
   (when-not (str/blank? s)
     (let [today (t/today)
           s (str/replace s #"\s" "")
           end-year  (->> (re-find #"\d{1,2}\.\d{1,2}\.(\d{1,4})$" s)
-                         second
+                         (second)
                          (drop-while #(= % \0))
                          (apply str))
           s (str s (when (and (<= (count (re-seq #"\." s)) 1)
@@ -107,7 +107,7 @@
 
 (defn format-day-date [date]
   (->> date
-       tc/to-date-time
+       (tc/to-date-time)
        (tf/unparse day-formatter)
        (str/lower-case)))
 

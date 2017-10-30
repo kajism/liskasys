@@ -147,6 +147,10 @@
                  :label "docházka omluvena?"
                  :model (:daily-plan/att-cancelled? item)
                  :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/att-cancelled? %])]
+                [re-com/checkbox
+                 :label "vratka?"
+                 :model (:daily-plan/refund? item)
+                 :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/refund? %])]
                 (when (:daily-plan/substituted-by item)
                   [re-com/label :label "Nahrazováno:"])
                 (when (:daily-plan/substituted-by item)
