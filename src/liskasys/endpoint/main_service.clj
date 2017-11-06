@@ -156,7 +156,7 @@
 (defn find-person-substs [db person-id]
   (let [person (service/find-by-id db person-id)
         group (service/find-by-id db (get-in person [:person/group :db/id]))
-        date-from (some-> (or (last (service/find-previous-periods db))
+        date-from (some-> (or (first (service/find-previous-periods db (Date.)))
                               (service/find-current-period db))
                           (cljc-util/period-start-end)
                           (first)
