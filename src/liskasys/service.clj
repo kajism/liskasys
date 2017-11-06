@@ -696,7 +696,7 @@
                                                     (or (:person/lunch-fund person) 0)))}))))
              (filterv some?))]
         (->> (vals @person-id--bill)
-             (map #(vector :db.fn/retractEntity %))
+             (map #(vector :db.fn/retractEntity (:db/id %)))
              (into out))))
 
 (defn- transact-period-person-bills [conn user-id period-id tx-data]
