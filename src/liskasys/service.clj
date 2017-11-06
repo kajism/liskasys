@@ -663,11 +663,11 @@
                                                  (:billing-period/from-yyyymm billing-period)
                                                  -1)
                                         (some-> (:person/start-date person) (tc/to-local-date) (t/before? second-month-start) (not))
-                                        (- 1)
+                                        (dec)
                                         (some :daily-plan/refund? previous-dps)
-                                        (- 1)
+                                        (dec)
                                         (and (seq previous-dps) (every? :daily-plan/refund? previous-dps))
-                                        (- 1))
+                                        (dec))
                          att-price (calculate-att-price price-list
                                                         months-count
                                                         (count (->> person :person/att-pattern pattern-map vals (filter (partial = 1))))
