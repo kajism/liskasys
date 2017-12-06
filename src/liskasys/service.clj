@@ -198,9 +198,8 @@
          :where [_ :lunch-order/date ?date]]
        db))
 
-(defmethod retract-entity :person-bill/total [conn user-id ent-id]
-  (let [db (d/db conn)
-        bill (merge-person-bill-facts
+(defn- retract-person-bill-tx [db ent-id]
+  (let [bill (merge-person-bill-facts
               db
               (d/pull db '[* {:person-bill/status [:db/ident]}] ent-id))
         daily-plans (d/q '[:find [?e ...]
@@ -217,16 +216,18 @@
                        (:person/lunch-fund person))
                   (conj [:db.fn/cas (:db/id person) :person/lunch-fund (:person/lunch-fund person)
                          (- (:person/lunch-fund person) (- (:person-bill/total bill) (:person-bill/att-price bill)))]))]
-    (timbre/info "retracting bill" bill "with" (count daily-plans) "plans of person" person)
-
+    (timbre/info "preparing retract of bill" bill "with" (count daily-plans) "plans of person" person)
     (->> daily-plans
          (map (fn [dp-id]
                 [:db.fn/retractEntity dp-id]))
-         (into tx-data)
-         (transact conn user-id)
-         :tx-data
-         count
-         (+ -2))))
+         (into tx-data))))
+
+(defmethod retract-entity :person-bill/total [conn user-id ent-id]
+  (->> (retract-person-bill-tx (d/db conn) ent-id)
+       (transact conn user-id)
+       :tx-data
+       count
+       (+ -2)))
 
 (defn retract-attr [conn user-id ent]
   (timbre/debug ent)
@@ -696,7 +697,7 @@
                                                     (or (:person/lunch-fund person) 0)))}))))
              (filterv some?))]
         (->> (vals @person-id--bill)
-             (map #(vector :db.fn/retractEntity (:db/id %)))
+             (mapcat #(retract-person-bill-tx db (:db/id %)))
              (into out))))
 
 (defn- transact-period-person-bills [conn user-id period-id tx-data]
