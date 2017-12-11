@@ -171,8 +171,9 @@
                     (:db/id (:daily-plan/person ent)))
         remove-substitution? (and (:daily-plan/refund? ent)
                                   (:daily-plan/substituted-by ent))]
-    (if (not= old-id (:db/id ent))
-      {:error/msg "Pro tuto osobu a den již v denním plánu existuje záznam."}
+    (if (and old-id
+             (not= old-id (:db/id ent)))
+      {:error/msg "Pro tuto osobu a den již v denním plánu existuje jiný záznam."}
       (do
         (when remove-substitution?
           (retract-entity conn user-id (get-in ent [:daily-plan/substituted-by :db/id])))
