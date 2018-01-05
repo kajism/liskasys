@@ -20,7 +20,7 @@
       ;; cron expression: sec min hour day-of-mon mon day-of-week ?year
       (process-lunch-order-and-substitutions-job sched
                                                  [(:conn datomic)]
-                                                 :trigger {:cron {:expression "0 1 9 * * ?" ;; at 9:01:00 AM
+                                                 :trigger {:cron {:expression "0 0 8 * * ?" ;; at 8:00:00 AM
                                                                   :misfire-handling :fire-and-process
                                                                   :time-zone (TimeZone/getTimeZone "Europe/Prague")}})
       (assoc component :twarc-scheduler sched)))
