@@ -578,7 +578,7 @@
     (do
       (transact conn nil tx-data)
       (send-lunch-order-email date
-                              (mapv :person/email (find-persons-with-role db "obedy"))
+                              (mapv :person/email (find-persons-with-role db "obědy"))
                               plans-with-lunches
                               (find-lunch-types-by-id db)))))
 

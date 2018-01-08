@@ -327,7 +327,7 @@
                 [re-com/h-box :align :center :gap "5px"
                  :children
                  [[input-text item :person :person/roles]
-                  "admin, obedy"]]
+                  "možné role oddělené čárkou: admin, obědy, průvodce (obědy = email s objednávkou, průvodce = email Denní přehled)"]]
                 (when (seq (get @kids (:db/id item)))
                   [re-com/v-box
                    :children
