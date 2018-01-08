@@ -36,7 +36,8 @@
             [:li [:a {:href "/"} "Omluvenky"]])
           [:li [:a {:href "/jidelni-listek"} "Jídelníček"]]
           [:li [:a {:href "/platby"} "Platby"]]
-          [:li [:a {:href "/nahrady"} "Náhrady"]]]
+          (when (roles "parent")
+            [:li [:a {:href "/nahrady"} "Náhrady"]])]
          [:ul.nav.navbar-nav.navbar-right
           [:li
            [:a {:href "/profile"} (cljc-util/person-fullname user)]]
