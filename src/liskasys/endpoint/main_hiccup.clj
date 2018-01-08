@@ -96,7 +96,8 @@
                                   :size "30"
                                   :value excuse}]]])]]]
      #_(anti-forgery/anti-forgery-field)
-     [:button.btn.btn-danger {:type "submit"} "Uložit"]
+     (when (seq child-daily-plans)
+       [:button.btn.btn-danger {:type "submit"} "Uložit"])
      [:br]
      [:br]]]])
 
