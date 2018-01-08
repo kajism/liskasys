@@ -169,10 +169,10 @@
                                          (not (:daily-plan/refund? %))))
                            (sort-by :daily-plan/date))
         all-plans (service/find-att-daily-plans db
-                                                (-> (service/find-max-lunch-order-date db)
-                                                    (tc/to-local-date)
-                                                    (t/plus (t/days 1))
-                                                    (tc/to-date))
+                                                (some-> (service/find-max-lunch-order-date db)
+                                                        (tc/to-local-date)
+                                                        (t/plus (t/days 1))
+                                                        (tc/to-date))
                                                 date-to)]
     (timbre/debug "finding-person-substs from" date-from "to" date-to)
     {:group group
