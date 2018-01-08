@@ -408,7 +408,7 @@
                                 (str ", strava " type))))
         summary-msg {:from "robot@obedy.listicka.org"
                      :to (-> #{}
-                             (into (map :person/email (find-persons-with-role (d/db conn) "admin")))
+                             #_(into (map :person/email (find-persons-with-role (d/db conn) "admin")))
                              (into (map :person/email (find-persons-with-role (d/db conn) "průvodce")))
                              (vec))
                      :subject admin-subj
