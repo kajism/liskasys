@@ -80,12 +80,9 @@
        (service/sort-by-locale cljc-util/person-fullname)))
 
 (defn- make-can-cancel-lunch?-fn [db]
-  (let [max-lunch-order-date (-> (d/q '[:find (max ?date) .
-                                        :where [_ :lunch-order/date ?date]]
-                                      db)
-                                 tc/to-local-date)]
+  (let [max-lunch-order-date (tc/to-local-date (service/find-max-lunch-order-date db))]
     (fn [date]
-      (t/after? (-> date tc/to-local-date) max-lunch-order-date))))
+      (t/after? (tc/to-local-date date) max-lunch-order-date))))
 
 (defn transact-cancellations [conn user-id child-id cancel-dates uncancel-dates excuses-by-date]
   (let [db (d/db conn)
@@ -157,7 +154,9 @@
   (let [person (service/find-by-id db person-id)
         group (service/find-by-id db (get-in person [:person/group :db/id]))
         date-from (some-> (or (first (service/find-previous-periods db (Date.)))
-                              (service/find-current-period db))
+                              (service/find-current-period db)
+                              {:billing-period/from-yyyymm 200001
+                               :billing-period/to-yyyymm 200001})
                           (cljc-util/period-start-end)
                           (first)
                           (tc/to-date))
@@ -174,7 +173,7 @@
                                                         (t/plus (t/days 1))
                                                         (tc/to-date))
                                                 date-to)]
-    (timbre/debug "finding-person-substs from" date-from "to" date-to)
+    (timbre/debug "finding-person-substs from" date-from "to" date-to "all plans count" (count all-plans))
     {:group group
      :substable-dps substable-dps
      :dp-gap-days (->> all-plans

@@ -195,9 +195,10 @@
 (declare merge-person-bill-facts find-by-type)
 
 (defn find-max-lunch-order-date [db]
-  (d/q '[:find (max ?date) .
-         :where [_ :lunch-order/date ?date]]
-       db))
+  (or (d/q '[:find (max ?date) .
+             :where [_ :lunch-order/date ?date]]
+           db)
+      #inst "2000"))
 
 (defn- retract-person-bill-tx [db ent-id]
   (let [bill (merge-person-bill-facts
@@ -759,8 +760,9 @@
                [?e :person-bill/status :person-bill.status/published]]
              db bill-id)
         order-date (tc/to-local-date (find-max-lunch-order-date db))
-        dates (->> (apply period-dates (make-holiday?-fn db) (cljc-util/period-start-end (find-by-id db period-id)))
-                   (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
+        dates (cond->> (apply period-dates (make-holiday?-fn db) (cljc-util/period-start-end (find-by-id db period-id)))
+                order-date
+                (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
         tx-result (->> (generate-daily-plans person dates)
                        (map #(-> % (assoc :db/id (d/tempid :db.part/user)
                                           :daily-plan/bill bill-id)))
