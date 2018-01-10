@@ -296,6 +296,15 @@
   (->> (find-by-type-default db ent-type where-m)
        (map #(dissoc % :person/passwd))))
 
+(defn find-price-list [db]
+  (first (find-where db {:price-list/days-1 nil})))
+
+(defn- person-lunch-price [{child? :person/child?} {lunch-child :price-list/lunch lunch-adult :price-list/lunch-adult}]
+  (println child? lunch-adult lunch-child)
+  (if child?
+    lunch-child
+    lunch-adult))
+
 (defn merge-person-bill-facts [db {:person-bill/keys [lunch-count total att-price status] :as person-bill}]
   (let [tx (apply max (d/q '[:find [?tx ...]
                              :in $ ?e
@@ -303,17 +312,15 @@
                              [?e :person-bill/total _ ?tx]]
                            db (:db/id person-bill)))
         as-of-db (d/as-of db tx)
-        patterns (d/pull as-of-db
-                         [:person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email
+        person (d/pull as-of-db
+                         [:person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email :person/child?
                           {:person/parent [:person/email]}]
                          (get-in person-bill [:person-bill/person :db/id]))
-        lunch-price (d/q '[:find ?l .
-                           :where [_ :price-list/lunch ?l]]
-                         as-of-db)
+        lunch-price (person-lunch-price person (find-price-list db))
         total-lunch-price (* lunch-price lunch-count)
         paid-status (d/entid db :person-bill.status/paid)]
     (-> person-bill
-        (update :person-bill/person merge patterns)
+        (update :person-bill/person merge person)
         (merge {:-lunch-price lunch-price
                 :-total-lunch-price total-lunch-price
                 :-from-previous (- total (+ att-price total-lunch-price))
@@ -524,7 +531,7 @@
             (timbre/info "Lunch order has been sent" result)
             (timbre/error "Failed to send email" result)))))))
 
-(defn- lunch-order-tx-total [date lunch-price plans-with-lunches]
+(defn- lunch-order-tx-total [date price-list plans-with-lunches]
   (let [out
         (reduce (fn [out {:keys [:db/id :daily-plan/person :daily-plan/lunch-req] :as plan-with-lunch}]
                   (if-not person
@@ -535,7 +542,7 @@
                         (update :tx-data conj
                                 [:db.fn/cas (:db/id person) :person/lunch-fund
                                  (:person/lunch-fund person) (- (or (:person/lunch-fund person) 0)
-                                                                (* lunch-req lunch-price))])
+                                                                (* lunch-req (person-lunch-price person price-list)))])
                         (update :tx-data conj
                                 [:db/add id :daily-plan/lunch-ord lunch-req])
                         (update :total + lunch-req))))
@@ -543,9 +550,6 @@
                  :total 0}
                 plans-with-lunches)]
     (update out :tx-data conj (new-lunch-order-ent date (:total out)))))
-
-(defn find-price-list [db]
-  (first (find-where db {:price-list/days-1 nil})))
 
 (defn- date-yyyymm [date]
   (let [ld (tc/to-local-date date)]
@@ -575,7 +579,7 @@
 (defn- process-lunch-order [conn date]
   (let [db (d/db conn)
         plans-with-lunches (find-person-daily-plans-with-lunches db date)
-        {:keys [tx-data total]} (lunch-order-tx-total date (:price-list/lunch (find-price-list db)) plans-with-lunches)]
+        {:keys [tx-data total]} (lunch-order-tx-total date (find-price-list db) plans-with-lunches)]
     (do
       (transact conn nil tx-data)
       (send-lunch-order-email date
@@ -680,7 +684,6 @@
                                                         (->> daily-plans
                                                              (filter #(-> % :daily-plan/child-att (= 2)))
                                                              count))
-                         lunch-price (:price-list/lunch price-list)
                          lunch-count-next (->> daily-plans
                                                (keep :daily-plan/lunch-req)
                                                (reduce + 0))
@@ -697,7 +700,7 @@
                           {:person-bill/lunch-count lunch-count-next
                            :person-bill/att-price att-price
                            :person-bill/total (+ att-price
-                                                 (- (* lunch-price
+                                                 (- (* (person-lunch-price person price-list)
                                                        (+ lunch-count-next (find-lunch-count-planned db (:db/id person))))
                                                     (or (:person/lunch-fund person) 0)))}))))
              (filterv some?))]
@@ -910,7 +913,7 @@
      (when (or (not last-order-date)
                (not next-school-day-date)
                (and (> (.getTime next-school-day-date) (.getTime last-order-date))
-                    (< (- (.getTime next-school-day-date) (.getTime last-order-date)) (* 14 24 60 60 1000)) ;; max 14 days ahead
+                    (< (- (.getTime next-school-day-date) (.getTime from-date)) (* 14 24 60 60 1000)) ;; max 14 days ahead
                     ))
        next-school-day-date))))
 

@@ -46,7 +46,8 @@
                  ["2 dny" (comp cljc-util/from-cents :price-list/days-2)]
                  ["1 den" (comp cljc-util/from-cents :price-list/days-1)]
                  ["Půlden" (comp cljc-util/from-cents :price-list/half-day)]
-                 ["Oběd" (comp cljc-util/from-cents :price-list/lunch)]]]]])))
+                 ["Oběd dětský" (comp cljc-util/from-cents :price-list/lunch)]
+                 ["Oběd dospělý" (comp cljc-util/from-cents :price-list/lunch-adult)]]]]])))
 
 (defn- from-cents [cents]
   (str (cljc-util/from-cents cents)))
@@ -99,10 +100,16 @@
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/half-day (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
-          [re-com/label :label "Oběd"]
+          [re-com/label :label "Oběd dětský"]
           [re-com/input-text
            :model (from-cents (:price-list/lunch item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/lunch (cljc-util/to-cents %)])
+           :validation-regex #"^\d{0,4}$"
+           :width "120px"]
+          [re-com/label :label "Oběd dospělý"]
+          [re-com/input-text
+           :model (from-cents (:price-list/lunch-adult item))
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/lunch-adult (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
           [re-com/h-box :align :center :gap "5px"
