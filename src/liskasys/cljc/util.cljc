@@ -91,7 +91,9 @@
            (t/months 1))])
 
 (defn period->text [{:billing-period/keys [from-yyyymm to-yyyymm]}]
-  (str (yyyymm->text from-yyyymm) " - " (yyyymm->text to-yyyymm)))
+  (str (yyyymm->text from-yyyymm)
+       (when (not= from-yyyymm to-yyyymm)
+         (str " - " (yyyymm->text to-yyyymm)))))
 
 (def days ["po" "út" "st" "čt" "pá"])
 
