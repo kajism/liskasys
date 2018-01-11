@@ -168,10 +168,11 @@
 (defn find-next-person-daily-plans [db person-id]
   (let [date-from (service/find-max-lunch-order-date db)
         date-to (service/find-max-person-paid-period-date db person-id)
-        can-cancel-today?-fn (make-can-cancel-today?-fn db)]
-    (cond->>
-        (service/find-person-daily-plans db person-id date-from date-to)
-      (not (can-cancel-today?-fn date-from))
+        can-cancel-today?-fn (make-can-cancel-today?-fn db)
+        out (service/find-person-daily-plans db person-id date-from date-to)]
+    (cond->> out
+      (or (not (can-cancel-today?-fn date-from))
+          (zero? (:daily-plan/lunch-ord (first out))))
       (drop 1))))
 
 (defn find-person-substs [db person-id]
