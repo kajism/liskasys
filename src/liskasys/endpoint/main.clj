@@ -158,7 +158,8 @@
                                                  (map str/trim)
                                                  set)
                                       (pos? (count (:person/_parent person)))
-                                      (conj "parent")))))))
+                                      (conj "parent"))
+                                    :-server-name (:server-name req))))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 

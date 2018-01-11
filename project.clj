@@ -1,6 +1,6 @@
 (defproject liskasys "1.0.41-SNAPSHOT"
   :description "Web information, attendance and lunch cancelation/ordering system for a forest kidergarten"
-  :url "http://obedy.listicka.org"
+  :url "https://github.com/kajism/liskasys"
   :min-lein-version "2.0.0"
   :jvm-opts ["-Duser.timezone=UTC"]
   :dependencies [[cljs-ajax "0.5.2"]
