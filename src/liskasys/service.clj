@@ -486,10 +486,10 @@
               [(get lunch-types k) (reduce + 0 (keep :daily-plan/lunch-req v))]))
        (sort-by-locale first)))
 
-(defn- send-lunch-order-email [date emails plans-with-lunches lunch-types-by-id]
+(defn- send-lunch-order-email [date from tos plans-with-lunches lunch-types-by-id]
   (let [subject (str "Objednávka obědů pro Lištičku na " (time/format-day-date date))
-        msg {:from "daniela.chaloupkova@post.cz"
-             :to emails
+        msg {:from from
+             :to tos
              :subject subject
              :body [{:type "text/plain; charset=utf-8"
                      :content (str subject "\n"
@@ -582,6 +582,8 @@
     (do
       (transact conn nil tx-data)
       (send-lunch-order-email date
+                              (or (:person/email (first (find-persons-with-role db "koordinátor")))
+                                  "robot@obedy.listicka.org")
                               (mapv :person/email (find-persons-with-role db "obědy"))
                               plans-with-lunches
                               (find-lunch-types-by-id db)))))
