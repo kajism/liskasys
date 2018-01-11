@@ -121,10 +121,6 @@
 (pages/add-page :billing-periods #'page-billing-periods)
 
 (secretary/defroute #"/billing-period/(\d*)(e?)" [id edit?]
-  (when-not (cljc-util/parse-int id)
-    (let [[_ from to] (iterate #(t/plus % (t/months 1)) (t/today))]
-      (re-frame/dispatch [:entity-new :billing-period {:billing-period/from-yyyymm (+ (* (t/year from) 100) (t/month from))
-                                                       :billing-period/to-yyyymm (+ (* (t/year to) 100) (t/month to))}])))
   (re-frame/dispatch [:entity-set-edit :billing-period (cljc-util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :billing-period]))
 (pages/add-page :billing-period #'page-billing-period)
