@@ -300,10 +300,9 @@
   (first (find-where db {:price-list/days-1 nil})))
 
 (defn- person-lunch-price [{child? :person/child?} {lunch-child :price-list/lunch lunch-adult :price-list/lunch-adult}]
-  (println child? lunch-adult lunch-child)
   (if child?
     lunch-child
-    lunch-adult))
+    (or lunch-adult lunch-child)))
 
 (defn merge-person-bill-facts [db {:person-bill/keys [lunch-count total att-price status] :as person-bill}]
   (let [tx (apply max (d/q '[:find [?tx ...]
@@ -745,7 +744,7 @@
                                        "Variabilní symbol: " (-> bill :person-bill/person :person/var-symbol) "\n"
                                        "Do poznámky: " (-> bill :person-bill/person cljc-util/person-fullname) " "
                                        (-> bill :person-bill/period cljc-util/period->text) "\n"
-                                       "Splatnost do: 20. dne tohoto měsíce\n\n"
+                                       "Splatnost do: " (or (:price-list/payment-due-date (find-price-list db)) "20. dne tohoto měsíce") "\n\n" 
                                        "Pro QR platbu přejděte na https://obedy.listicka.org/ menu Platby\n\n"
                                        "Toto je automaticky generovaný email ze systému https://obedy.listicka.org/")}]}]
         (timbre/info "Sending info about published payment" msg)

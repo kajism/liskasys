@@ -18,7 +18,7 @@
     (fn []
       [re-com/v-box
        :children
-       [[:h3 "Ceník"]
+       [[:h3 "Ceník a platba"]
         (when-not (seq @price-lists)
           [re-com/hyperlink-href :label [re-com/button :label "Vytvořit"] :href (str "#/price-list/e")])
         [data-table
@@ -39,7 +39,6 @@
                                :tooltip "Editovat"]]
                       #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])]]])
                   :none]
-                 ["Číslo účtu" :price-list/bank-account]
                  ["5 dní" (comp cljc-util/from-cents :price-list/days-5)]
                  ["4 dny" (comp cljc-util/from-cents :price-list/days-4)]
                  ["3 dny" (comp cljc-util/from-cents :price-list/days-3)]
@@ -47,7 +46,9 @@
                  ["1 den" (comp cljc-util/from-cents :price-list/days-1)]
                  ["Půlden" (comp cljc-util/from-cents :price-list/half-day)]
                  ["Oběd dětský" (comp cljc-util/from-cents :price-list/lunch)]
-                 ["Oběd dospělý" (comp cljc-util/from-cents :price-list/lunch-adult)]]]]])))
+                 ["Oběd dospělý" (comp cljc-util/from-cents :price-list/lunch-adult)]
+                 ["Číslo účtu" :price-list/bank-account]
+                 ["Splatnost do" :price-list/payment-due-date]]]]])))
 
 (defn- from-cents [cents]
   (str (cljc-util/from-cents cents)))
@@ -58,12 +59,7 @@
       (let [item @price-list]
         [re-com/v-box :gap "5px"
          :children
-         [[:h3 "Ceník"]
-          [re-com/label :label "Číslo účtu"]
-          [re-com/input-text
-           :model (str (:price-list/bank-account item))
-           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/bank-account %])
-           :width "200px"]
+         [[:h3 "Ceník a platba"]
           [re-com/label :label "5 dní"]
           [re-com/input-text
            :model (from-cents (:price-list/days-5 item))
@@ -112,6 +108,16 @@
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/lunch-adult (cljc-util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
+          [re-com/label :label "Číslo účtu"]
+          [re-com/input-text
+           :model (str (:price-list/bank-account item))
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/bank-account %])
+           :width "200px"]
+          [re-com/label :label "Splatnost do (text v emailu např: 10 dnů nebo 20. dne tohoto měsíce)"]
+          [re-com/input-text
+           :model (str (:price-list/payment-due-date item))
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/payment-due-date %])
+           :width "200px"]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :price-list])]

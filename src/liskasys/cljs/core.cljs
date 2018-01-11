@@ -93,7 +93,7 @@
        [:a.dropdown-toggle {:data-toggle "dropdown" :href "#"}
         "Nastavení" [:span.caret]]
        [:ul.dropdown-menu
-        [:li [:a {:href "#/price-lists"} "Ceník"]]
+        [:li [:a {:href "#/price-lists"} "Ceník a platba"]]
         [:li [:a {:href "#/lunch-types"} "Diety"]]
         [:li [:a {:href "#/school-holidays"} "Prázdniny"]]
         [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
