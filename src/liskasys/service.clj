@@ -889,14 +889,16 @@
 
 (defn find-person-daily-plans [db person-id date-from date-to]
   (when (and person-id date-from date-to)
-    (d/q '[:find [(pull ?e [*]) ...]
-           :in $ ?person ?date-from ?date-to
-           :where
-           [?e :daily-plan/person ?person]
-           [?e :daily-plan/date ?date]
-           [(<= ?date-from ?date)]
-           [(<= ?date ?date-to)]]
-         db person-id date-from date-to)))
+    (->>
+     (d/q '[:find [(pull ?e [*]) ...]
+            :in $ ?person ?date-from ?date-to
+            :where
+            [?e :daily-plan/person ?person]
+            [?e :daily-plan/date ?date]
+            [(<= ?date-from ?date)]
+            [(<= ?date ?date-to)]]
+          db person-id date-from date-to)
+     (sort-by :daily-plan/date))))
 
 (defn find-att-daily-plans [db date-from date-to]
   (when (and date-from date-to)

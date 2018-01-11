@@ -23,17 +23,22 @@
       str
       (str/replace #"\s+" "")))
 
+(defn remove-leading-zeros [s]
+  (-> s
+      str
+      (str/replace #"^0+" "")))
+
 (defn parse-int [s]
-  (when s
+  (when-let [s (not-empty (remove-leading-zeros (remove-spaces s)))]
     #?(:cljs
-       (let [n (js/parseInt (remove-spaces s))]
+       (let [n (js/parseInt s)]
          (if (js/isNaN n)
            nil
            n))
        :clj
-       (let [n (edn/read-string (remove-spaces s))]
-         (when (int? n)
-           n)))))
+       (let [n (edn/read-string s)]
+         (when (number? n)
+           (long n))))))
 
 (defn boolean->text [b]
   (if b "Ano" "Ne"))

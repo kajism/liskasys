@@ -84,9 +84,25 @@
     (fn [date]
       (t/after? (tc/to-local-date date) max-lunch-order-date))))
 
+(defn- HHmm--int [s]
+  (-> s
+      (str/replace ":" "")
+      (cljc-util/parse-int)))
+
+(defn- make-can-cancel-today?-fn [db]
+  (let [cancel-deadline-hours "7:30"]
+    (fn [date]
+      (let [now (Date.)]
+        (or (< (.getTime now) (.getTime date))
+            (and (= (time/to-format now time/ddMMyyyy)
+                    (time/to-format date time/ddMMyyyy))
+                 (<= (HHmm--int (time/to-format now time/HHmm))
+                     (HHmm--int cancel-deadline-hours))))))))
+
 (defn transact-cancellations [conn user-id child-id cancel-dates uncancel-dates excuses-by-date]
   (let [db (d/db conn)
-        can-cancel-lunch?-fn (make-can-cancel-lunch?-fn db)]
+        can-cancel-lunch?-fn (make-can-cancel-lunch?-fn db)
+        can-cancel-today?-fn (make-can-cancel-today?-fn db)]
     (if-not  (contains? (->> user-id
                              (find-active-children-by-person-id db)
                              (map :db/id)
@@ -100,7 +116,11 @@
                   [?e :daily-plan/date ?date]]
                 db child-id (set/union cancel-dates uncancel-dates #{}))
            (mapcat (fn [{:keys [:db/id :daily-plan/date :daily-plan/lunch-req :daily-plan/substituted-by :daily-plan/subst-req-on :daily-plan/excuse]}]
-                     (if (contains? cancel-dates date)
+                     (cond
+                       (and (not (can-cancel-lunch?-fn date))
+                            (not (can-cancel-today?-fn date)))
+                       []
+                       (contains? cancel-dates date)
                        (cond-> [[:db/add id :daily-plan/att-cancelled? true]]
                          (contains? excuses-by-date date)
                          (conj [:db/add id :daily-plan/excuse (get excuses-by-date date)])
@@ -108,6 +128,7 @@
                          (conj [:db/add id :daily-plan/lunch-cancelled? true])
                          subst-req-on
                          (conj [:db.fn/retractEntity id]))
+                       :else
                        (cond-> [[:db/retract id :daily-plan/att-cancelled? true]
                                 [:db/retract id :daily-plan/lunch-cancelled? true]]
                          excuse
@@ -145,10 +166,13 @@
          (sort-by :daily-plan/date))))
 
 (defn find-next-person-daily-plans [db person-id]
-  (let [date-from (time/time-plus (service/find-max-lunch-order-date db) (t/days 1))
-        date-to (service/find-max-person-paid-period-date db person-id)]
-    (->> (service/find-person-daily-plans db person-id date-from date-to)
-         (sort-by :daily-plan/date))))
+  (let [date-from (service/find-max-lunch-order-date db)
+        date-to (service/find-max-person-paid-period-date db person-id)
+        can-cancel-today?-fn (make-can-cancel-today?-fn db)]
+    (cond->>
+        (service/find-person-daily-plans db person-id date-from date-to)
+      (not (can-cancel-today?-fn date-from))
+      (drop 1))))
 
 (defn find-person-substs [db person-id]
   (let [person (service/find-by-id db person-id)
@@ -165,8 +189,7 @@
                            (filter #(and (:daily-plan/att-cancelled? %)
                                          (not (:daily-plan/substituted-by %))
                                          (not (:daily-plan/subst-req-on %))
-                                         (not (:daily-plan/refund? %))))
-                           (sort-by :daily-plan/date))
+                                         (not (:daily-plan/refund? %)))))
         all-plans (service/find-att-daily-plans db
                                                 (some-> (service/find-max-lunch-order-date db)
                                                         (tc/to-local-date)
