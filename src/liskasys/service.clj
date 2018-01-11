@@ -715,7 +715,7 @@
   (->> (generate-person-bills-tx (d/db conn) period-id)
        (transact-period-person-bills conn user-id period-id)))
 
-(defn publish-all-bills [conn user-id period-id]
+(defn publish-all-bills [conn {user-id :db/id user-email :person/email :as user} period-id]
   (let [db (d/db conn)
         billing-period (find-by-id db period-id)
         new-bill-ids (d/q '[:find [?e ...]
@@ -732,7 +732,7 @@
       (let [bill (first (find-by-type db :person-bill {:db/id id}))
             price-list (find-price-list db)
             subject (str "Lištička: Platba školkovného a obědů na období " (-> bill :person-bill/period cljc-util/period->text))
-            msg {:from "nemcova.mysi@gmail.com"
+            msg {:from user-email
                  :to (or (-> bill :person-bill/person :person/email)
                          (mapv :person/email (-> bill :person-bill/person :person/parent)))
                  :subject subject
