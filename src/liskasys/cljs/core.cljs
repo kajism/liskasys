@@ -17,6 +17,7 @@
             [liskasys.cljs.price-list]
             [liskasys.cljs.school-holiday]
             [liskasys.cljs.transaction]
+            [liskasys.cljs.config]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]
@@ -98,7 +99,8 @@
         [:li [:a {:href "#/school-holidays"} "Prázdniny"]]
         [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
         [:li [:a {:href "#/groups"} "Třídy"]]
-        [:li [:a {:href "#/transactions"} "Transakce"]]]]
+        [:li [:a {:href "#/transactions"} "Transakce"]]
+        [:li [:a {:href "#/configs"} "Základní nastavení"]]]]
       [:li
        [:a
         {:href "/logout"} "Odhlásit se"]]]]]])

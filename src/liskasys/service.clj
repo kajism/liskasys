@@ -278,7 +278,8 @@
    :price-list :price-list/days-1
    :person-bill :person-bill/total
    :school-holiday :school-holiday/label
-   :group :group/label})
+   :group :group/label
+   :config :config/org-name})
 
 (defn find-by-type-default
   ([db ent-type where-m]
@@ -375,8 +376,15 @@
   (->> (new-lunch-order-ent date nil)
        (transact-entity conn nil)))
 
+(defn auto-sender-email [db]
+  (or (not-empty (:person/email (first (find-persons-with-role db "koordinátor"))))
+      (not-empty (:config/automat-email (d/pull db '[*] :liskasys/config)))))
+
 (defn- process-group-substitutions [conn date group daily-plans]
-  (let [att?-fn #(and (some-> % :daily-plan/child-att pos?)
+  (let [db (d/db conn)
+        {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
+        sender (auto-sender-email db)
+        att?-fn #(and (some-> % :daily-plan/child-att pos?)
                       (not (:daily-plan/att-cancelled? %)))
         lunch?-fn #(and (some-> % :daily-plan/lunch-req pos?)
                         (not (:daily-plan/lunch-cancelled? %)))
@@ -385,18 +393,19 @@
                                (sort-by :daily-plan/subst-req-on)
                                (partition-all (or (:group/max-capacity group)
                                                   (count daily-plans))))
-        not-going-subst-msgs (map (fn [dp] {:from "robot@obedy.listicka.org"
-                                      :to (map :person/email (-> dp :daily-plan/person :person/parent))
-                                      :subject "Lištička: Zítřejší náhrada bohužel není možná"
-                                      :body [{:type "text/plain; charset=utf-8"
-                                              :content (str (-> dp :daily-plan/person cljc-util/person-fullname)
-                                                            " si bohužel zítra nemůže nahradit docházku z důvodu nedostatku volných míst.")}]})
-                            not-going)
+        not-going-subst-msgs (map (fn [dp] {:from sender
+                                            :to (map :person/email (-> dp :daily-plan/person :person/parent))
+                                            :subject (str org-name ": Zítřejší náhrada bohužel není možná")
+                                            :body [{:type "text/plain; charset=utf-8"
+                                                    :content (str (-> dp :daily-plan/person cljc-util/person-fullname)
+                                                                  " si bohužel zítra nemůže nahradit docházku z důvodu nedostatku volných míst."
+                                                                  "\n\nToto je automaticky generovaný email ze systému " full-url)}]})
+                                  not-going)
         going-subst-msgs (->> going
                               (filter :daily-plan/subst-req-on)
-                              (map (fn [dp] {:from "robot@obedy.listicka.org"
+                              (map (fn [dp] {:from sender
                                              :to (map :person/email (-> dp :daily-plan/person :person/parent))
-                                             :subject "Lištička: Zítřejsí náhrada platí!"
+                                             :subject (str org-name ": Zítřejsí náhrada platí!")
                                              :body [{:type "text/plain; charset=utf-8"
                                                      :content (str (-> dp :daily-plan/person cljc-util/person-fullname)
                                                                    " má zítra ve školce nahradní "
@@ -404,8 +413,9 @@
                                                                    " docházku "
                                                                    (if (lunch?-fn dp)
                                                                      "včetně oběda."
-                                                                     "bez oběda."))}]})))
-        admin-subj (str "Denní souhrn na " (time/format-day-date date) " pro skupinu " (:group/label group))
+                                                                     "bez oběda.")
+                                                                   "\n\nToto je automaticky generovaný email ze systému " full-url)}]})))
+        admin-subj (str org-name ": Denní souhrn na " (time/format-day-date date) " pro skupinu " (:group/label group))
         going->str-fn #(str (-> % :daily-plan/person cljc-util/person-fullname)
                             (when (= (:daily-plan/child-att %) 2)
                               ", půldenní")
@@ -413,10 +423,10 @@
                               ", bez oběda"
                               (when-let [type (some-> % :daily-plan/person :person/lunch-type :lunch-type/label)]
                                 (str ", strava " type))))
-        summary-msg {:from "robot@obedy.listicka.org"
+        summary-msg {:from sender
                      :to (-> #{}
-                             #_(into (map :person/email (find-persons-with-role (d/db conn) "admin")))
-                             (into (map :person/email (find-persons-with-role (d/db conn) "průvodce")))
+                             #_(into (map :person/email (find-persons-with-role db "admin")))
+                             (into (map :person/email (find-persons-with-role db "průvodce")))
                              (vec))
                      :subject admin-subj
                      :body [{:type "text/plain; charset=utf-8"
@@ -446,7 +456,8 @@
                                            (when-let [xs (not-empty (->> not-going
                                                                          (map (comp cljc-util/person-fullname :daily-plan/person))
                                                                          (sort-by-locale identity)))]
-                                             (str "\n\nNáhradníci, kteří se nevešli (" (count xs) ") ------\n" (str/join "\n" xs))))}]}]
+                                             (str "\n\nNáhradníci, kteří se nevešli (" (count xs) ") ------\n" (str/join "\n" xs)))
+                                           "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
     (if-not (seq daily-plans)
       (timbre/info "No daily plans for " date ". Sending skipped.")
       (do
@@ -486,8 +497,8 @@
               [(get lunch-types k) (reduce + 0 (keep :daily-plan/lunch-req v))]))
        (sort-by-locale first)))
 
-(defn- send-lunch-order-email [date from tos plans-with-lunches lunch-types-by-id]
-  (let [subject (str "Objednávka obědů pro Lištičku na " (time/format-day-date date))
+(defn- send-lunch-order-email [date org-name from tos plans-with-lunches lunch-types-by-id]
+  (let [subject (str org-name ": Objednávka obědů na " (time/format-day-date date))
         msg {:from from
              :to tos
              :subject subject
@@ -578,12 +589,13 @@
 (defn- process-lunch-order [conn date]
   (let [db (d/db conn)
         plans-with-lunches (find-person-daily-plans-with-lunches db date)
-        {:keys [tx-data total]} (lunch-order-tx-total date (find-price-list db) plans-with-lunches)]
+        {:keys [tx-data total]} (lunch-order-tx-total date (find-price-list db) plans-with-lunches)
+        {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)]
     (do
       (transact conn nil tx-data)
       (send-lunch-order-email date
-                              (or (:person/email (first (find-persons-with-role db "koordinátor")))
-                                  "robot@obedy.listicka.org")
+                              org-name
+                              (auto-sender-email db)
                               (mapv :person/email (find-persons-with-role db "obědy"))
                               plans-with-lunches
                               (find-lunch-types-by-id db)))))
@@ -719,6 +731,7 @@
 
 (defn publish-all-bills [conn {user-id :db/id user-email :person/email :as user} period-id]
   (let [db (d/db conn)
+        {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
         billing-period (find-by-id db period-id)
         new-bill-ids (d/q '[:find [?e ...]
                             :in $ ?period-id
@@ -733,7 +746,7 @@
     (doseq [id new-bill-ids]
       (let [bill (first (find-by-type db :person-bill {:db/id id}))
             price-list (find-price-list db)
-            subject (str "Lištička: Platba školkovného a obědů na období " (-> bill :person-bill/period cljc-util/period->text))
+            subject (str org-name ": Platba školkovného a obědů na období " (-> bill :person-bill/period cljc-util/period->text))
             msg {:from user-email
                  :to (or (-> bill :person-bill/person :person/email)
                          (mapv :person/email (-> bill :person-bill/person :person/parent)))
@@ -747,8 +760,8 @@
                                        "Do poznámky: " (-> bill :person-bill/person cljc-util/person-fullname) " "
                                        (-> bill :person-bill/period cljc-util/period->text) "\n"
                                        "Splatnost do: " (or (:price-list/payment-due-date (find-price-list db)) "20. dne tohoto měsíce") "\n\n" 
-                                       "Pro QR platbu přejděte na https://obedy.listicka.org/ menu Platby\n\n"
-                                       "Toto je automaticky generovaný email ze systému https://obedy.listicka.org/")}]}]
+                                       "Pro QR platbu přejděte na " full-url " menu Platby"
+                                       "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
         (timbre/info "Sending info about published payment" msg)
         (timbre/info (postal/send-message msg))))
     out))

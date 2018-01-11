@@ -104,9 +104,11 @@
        (let [db (d/db conn)
              person-bill (first (service/find-by-type db :person-bill {:db/id id}))
              price-list (service/find-price-list db)
+             {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
              qr-code-file (qr-code/save-qr-code (:price-list/bank-account price-list)
                                                 (/ (:person-bill/total person-bill) 100)
                                                 (str (-> person-bill :person-bill/person :person/var-symbol))
+                                                org-name
                                                 (str (-> person-bill :person-bill/person cljc-util/person-fullname) " "
                                                      (-> person-bill :person-bill/period cljc-util/period->text)))
              qr-code-bytes (main-service/file-to-byte-array qr-code-file)]
