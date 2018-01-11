@@ -172,7 +172,7 @@
         out (service/find-person-daily-plans db person-id date-from date-to)]
     (cond->> out
       (or (not (can-cancel-today?-fn date-from))
-          (zero? (or (:daily-plan/lunch-ord (first out)) 0)))
+          (not (pos-int? (:daily-plan/lunch-ord (first out)))))
       (drop 1))))
 
 (defn find-person-substs [db person-id]
