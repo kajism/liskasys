@@ -16,13 +16,14 @@
   (start [component]
     (let [sched (-> (twarc/make-scheduler quartz-props)
                     twarc/start)]
-      (timbre/info "Scheduling periodic tasks")
-      ;; cron expression: sec min hour day-of-mon mon day-of-week ?year
-      (process-lunch-order-and-substitutions-job sched
-                                                 [(:conn datomic)]
-                                                 :trigger {:cron {:expression "0 0 8 * * ?" ;; at 8:00:00 AM
-                                                                  :misfire-handling :fire-and-process
-                                                                  :time-zone (TimeZone/getTimeZone "Europe/Prague")}})
+      (doseq [[db-key conn] (:conns datomic)]
+        (timbre/info db-key "Scheduling periodic tasks")
+        ;; cron expression: sec min hour day-of-mon mon day-of-week ?year
+        (process-lunch-order-and-substitutions-job sched
+                                                   [conn]
+                                                   :trigger {:cron {:expression "0 0 8 * * ?" ;; at 8:00:00 AM
+                                                                    :misfire-handling :fire-and-process
+                                                                    :time-zone (TimeZone/getTimeZone "Europe/Prague")}}))
       (assoc component :twarc-scheduler sched)))
   (stop [component]
     (when twarc-scheduler

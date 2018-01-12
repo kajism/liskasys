@@ -9,6 +9,7 @@
             [compojure.core :refer :all]
             [datomic.api :as d]
             [environ.core :refer [env]]
+            [liskasys.cljc.domains :as domains]
             [liskasys.cljc.time :as time]
             [liskasys.cljc.validation :as validation]
             [liskasys.endpoint.main-hiccup :as main-hiccup]
@@ -34,13 +35,13 @@
     {:user-children user-children
      :selected-id (or (edn/read-string selected-id) (:db/id (first user-children)))}))
 
-(defn main-endpoint [{{conn :conn} :datomic}]
+(defn main-endpoint [{{conns :conns} :datomic}]
   (routes
-   (context "" {{{roles :-roles :as user} :user} :session flash-msg :flash}
+   (context "" {{{roles :-roles :as user} :user} :session flash-msg :flash server-name :server-name}
      (GET "/" {:keys [params]}
        (if-not (roles "parent")
          (response/redirect "/jidelni-listek")
-         (let [db (d/db conn)
+         (let [db (d/db (conns (domains/dbk server-name)))
                ucd (user-children-data db (:db/id user) (:child-id params))
                child-daily-plans (main-service/find-next-person-daily-plans db (:selected-id ucd))]
            (main-hiccup/liskasys-frame
@@ -57,7 +58,7 @@
              cancel-dates (make-date-sets (:cancel-dates params))
              already-cancelled-dates (make-date-sets (:already-cancelled-dates params))
              child-id (edn/read-string (:child-id params))
-             out (main-service/transact-cancellations conn
+             out (main-service/transact-cancellations (conns (domains/dbk server-name))
                                                       (:db/id user)
                                                       child-id
                                                       (set/difference cancel-dates already-cancelled-dates)
@@ -68,7 +69,7 @@
            (assoc :flash (str "Změny byly uloženy.")))))
 
      (GET "/nahrady" {:keys [params]}
-       (let [db (d/db conn)
+          (let [db (d/db (conns (domains/dbk server-name)))
              ucd (user-children-data db (:db/id user) (:child-id params))
              substs (main-service/find-person-substs db (:selected-id ucd))]
          (main-hiccup/liskasys-frame
@@ -87,21 +88,21 @@
                                     edn/read-string)]
            (cond
              subst-remove-id
-             (service/retract-entity conn (:db/id user) subst-remove-id)
+             (service/retract-entity (conns (domains/dbk server-name)) (:db/id user) subst-remove-id)
              subst-req-date
-             (main-service/request-substitution conn (:db/id user) child-id subst-req-date)
+             (main-service/request-substitution (conns (domains/dbk server-name)) (:db/id user) child-id subst-req-date)
              :else
              (timbre/error "Invalid post to /nahrady without req-date or remove-id"))
            (response/redirect (str "/nahrady" (when child-id (str "?child-id=" child-id))))))
 
      (GET "/platby" {:keys [params]}
-       (let [person-bills (main-service/find-person-bills (d/db conn) (:db/id user))]
+          (let [person-bills (main-service/find-person-bills (d/db (conns (domains/dbk server-name))) (:db/id user))]
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/person-bills person-bills))))
 
      (GET "/qr-code" [id :<< as-int]
-       (let [db (d/db conn)
+          (let [db (d/db (conns (domains/dbk server-name)))
              person-bill (first (service/find-by-type db :person-bill {:db/id id}))
              price-list (service/find-price-list db)
              {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
@@ -118,7 +119,7 @@
              (response/header "Content-Length" (count qr-code-bytes)))))
 
      (GET "/jidelni-listek" [history]
-       (let [{:keys [lunch-menu previous? history]} (main-service/find-last-lunch-menu (d/db conn) (edn/read-string history))]
+          (let [{:keys [lunch-menu previous? history]} (main-service/find-last-lunch-menu (d/db (conns (domains/dbk server-name))) (edn/read-string history))]
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/lunch-menu lunch-menu previous? history))))
@@ -130,7 +131,7 @@
                (response/header "Content-Disposition" (str "inline; filename=" (:orig-filename lunch-menu))))))
 
      (POST "/jidelni-listek" [menu upload]
-       (let [id (service/transact-entity conn (:db/id user) {:lunch-menu/text menu
+           (let [id (service/transact-entity (conns (domains/dbk server-name)) (:db/id user) {:lunch-menu/text menu
                                                              :lunch-menu/from (-> (t/today) tc/to-date)
                                                              ;; :orig-filename (not-empty (:filename upload))
                                                              ;; :content-type (when (not-empty (:filename upload))
@@ -148,7 +149,7 @@
 
      (POST "/login" [username pwd :as req]
        (try
-         (let [person (main-service/login (d/db conn) username pwd)]
+         (let [person (main-service/login (d/db (conns (domains/dbk server-name))) username pwd)]
            (when-not person
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (-> (response/redirect "/" :see-other)
@@ -161,7 +162,7 @@
                                                  set)
                                       (pos? (count (:person/_parent person)))
                                       (conj "parent"))
-                                    :-server-name (:server-name req))))))
+                                    :-server-name server-name)))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 
@@ -176,7 +177,7 @@
 
      (POST "/passwd" [old-pwd new-pwd new-pwd2]
        (try
-         (main-service/change-user-passwd conn (:db/id user) (:person/email user) old-pwd new-pwd new-pwd2)
+         (main-service/change-user-passwd (conns (domains/dbk server-name)) (:db/id user) (:person/email user) old-pwd new-pwd new-pwd2)
          (main-hiccup/liskasys-frame
           user
           (hiccup/passwd-form {:type :success :msg "Heslo bylo změněno"}))
@@ -188,7 +189,7 @@
      (GET "/profile" []
        (main-hiccup/liskasys-frame
         user
-        (hiccup/user-profile-form (-> (service/find-by-id (d/db conn) (:db/id user))
+        (hiccup/user-profile-form (-> (service/find-by-id (d/db (conns (domains/dbk server-name))) (:db/id user))
                                       (set/rename-keys {:person/firstname :firstname
                                                         :person/lastname :lastname
                                                         :person/email :email
@@ -204,7 +205,7 @@
            (throw (Exception. "Vyplňte správně kontaktní emailovou adresu")))
          (when-not (validation/valid-phone? phone)
            (throw (Exception. "Vyplňte správně kontaktní telefonní číslo")))
-         (service/transact-entity conn (:db/id user) {:db/id (:db/id user)
+         (service/transact-entity (conns (domains/dbk server-name)) (:db/id user) {:db/id (:db/id user)
                                                       :person/firstname firstname
                                                       :person/lastname lastname
                                                       :person/email (str/trim email)
@@ -225,7 +226,7 @@
             (subvec 1 3))
         (str/join "; "))))
 
-   (context "/admin.app" {{user :user} :session}
+   (context "/admin.app" {{user :user} :session server-name :server-name}
      (GET "/" []
        (if-not ((:-roles user) "admin")
          (response/redirect "/")
@@ -234,7 +235,8 @@
      (POST "/api" [req-msg]
        (let [[msg-id ?data] req-msg
              ent-type (keyword (namespace msg-id))
-             action (name msg-id)]
+             action (name msg-id)
+             conn (conns (domains/dbk server-name))]
          (when-not ((:-roles user) "admin")
            (throw (Exception. "Not authorized")))
          (response/response
