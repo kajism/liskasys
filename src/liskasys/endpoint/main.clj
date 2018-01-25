@@ -150,7 +150,8 @@
 
      (POST "/login" [username pwd :as req]
        (try
-         (let [person (main-service/login (d/db (conns (domains/dbk server-name))) username pwd)]
+         (let [db (d/db (conns (domains/dbk server-name)))
+               person (main-service/login db username pwd)]
            (when-not person
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (-> (response/redirect "/" :see-other)
@@ -163,7 +164,8 @@
                                                  set)
                                       (pos? (count (:person/_parent person)))
                                       (conj "parent"))
-                                    :-server-name server-name)))))
+                                    :-server-name server-name
+                                    :-org-name (:config/org-name (d/pull db '[:config/org-name] :liskasys/config)))))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 

@@ -19,7 +19,7 @@
   ([{roles :-roles :as user} body-hiccup flash-msg]
    (hiccup/hiccup-response
     (hiccup/hiccup-frame
-     system-title
+     (str system-title ": " (:-org-name user))
      [:div
       [:nav.navbar.navbar-default
        [:div.container-fluid
