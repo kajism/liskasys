@@ -8,7 +8,7 @@
   [body]
   (-> (hiccup/html5 {:lang "cs"}
                     body)
-      response/response
+      (response/response)
       (response/content-type "text/html")
       (response/charset "utf-8")))
 
