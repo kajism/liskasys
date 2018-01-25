@@ -33,7 +33,7 @@
 (defn- user-children-data [db user-id selected-id]
   (let [user-children (main-service/find-active-children-by-person-id db user-id)]
     {:user-children user-children
-     :selected-id (or (edn/read-string selected-id) (:db/id (first user-children)))}))
+     :selected-id (or selected-id (:db/id (first user-children)))}))
 
 (defn main-endpoint [{{conns :conns} :datomic}]
   (routes
@@ -57,19 +57,18 @@
                           (into {}))
              cancel-dates (make-date-sets (:cancel-dates params))
              already-cancelled-dates (make-date-sets (:already-cancelled-dates params))
-             child-id (edn/read-string (:child-id params))
              out (main-service/transact-cancellations (conns (domains/dbk server-name))
                                                       (:db/id user)
-                                                      child-id
+                                                      (:child-id params)
                                                       (set/difference cancel-dates already-cancelled-dates)
                                                       (set/difference already-cancelled-dates cancel-dates)
                                                       excuses)]
-         (cond-> (response/redirect (str "/" (when child-id (str "?child-id=" child-id))))
+         (cond-> (response/redirect "/")
            (> out 0)
            (assoc :flash (str "Změny byly uloženy.")))))
 
      (GET "/nahrady" {:keys [params]}
-          (let [db (d/db (conns (domains/dbk server-name)))
+       (let [db (d/db (conns (domains/dbk server-name)))
              ucd (user-children-data db (:db/id user) (:child-id params))
              substs (main-service/find-person-substs db (:selected-id ucd))]
          (main-hiccup/liskasys-frame
@@ -77,32 +76,34 @@
           (main-hiccup/substitutions ucd substs))))
 
      (POST "/nahrady" {:keys [params]}
-         (let [child-id (edn/read-string (:child-id params))
-               subst-req-date (-> params
-                                  :subst-request
+       (let [subst-req-date (-> params
+                                :subst-request
+                                ffirst
+                                (time/from-format time/ddMMyyyy))
+             subst-remove-id  (-> params
+                                  :subst-remove
                                   ffirst
-                                  (time/from-format time/ddMMyyyy))
-               subst-remove-id  (-> params
-                                    :subst-remove
-                                    ffirst
-                                    edn/read-string)]
-           (cond
-             subst-remove-id
-             (service/retract-entity (conns (domains/dbk server-name)) (:db/id user) subst-remove-id)
-             subst-req-date
-             (main-service/request-substitution (conns (domains/dbk server-name)) (:db/id user) child-id subst-req-date)
-             :else
-             (timbre/error "Invalid post to /nahrady without req-date or remove-id"))
-           (response/redirect (str "/nahrady" (when child-id (str "?child-id=" child-id))))))
+                                  edn/read-string)]
+         (cond
+           subst-remove-id
+           (service/retract-entity (conns (domains/dbk server-name)) (:db/id user) subst-remove-id)
+           subst-req-date
+           (main-service/request-substitution (conns (domains/dbk server-name))
+                                              (:db/id user)
+                                              (:child-id params)
+                                              subst-req-date)
+           :else
+           (timbre/error "Invalid post to /nahrady without req-date or remove-id"))
+         (response/redirect "/nahrady")))
 
      (GET "/platby" {:keys [params]}
-          (let [person-bills (main-service/find-person-bills (d/db (conns (domains/dbk server-name))) (:db/id user))]
+       (let [person-bills (main-service/find-person-bills (d/db (conns (domains/dbk server-name))) (:db/id user))]
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/person-bills person-bills))))
 
      (GET "/qr-code" [id :<< as-int]
-          (let [db (d/db (conns (domains/dbk server-name)))
+       (let [db (d/db (conns (domains/dbk server-name)))
              person-bill (first (service/find-by-type db :person-bill {:db/id id}))
              price-list (service/find-price-list db)
              {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
@@ -119,7 +120,7 @@
              (response/header "Content-Length" (count qr-code-bytes)))))
 
      (GET "/jidelni-listek" [history]
-          (let [{:keys [lunch-menu previous? history]} (main-service/find-last-lunch-menu (d/db (conns (domains/dbk server-name))) (edn/read-string history))]
+       (let [{:keys [lunch-menu previous? history]} (main-service/find-last-lunch-menu (d/db (conns (domains/dbk server-name))) (edn/read-string history))]
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/lunch-menu lunch-menu previous? history))))
@@ -131,8 +132,8 @@
                (response/header "Content-Disposition" (str "inline; filename=" (:orig-filename lunch-menu))))))
 
      (POST "/jidelni-listek" [menu upload]
-           (let [id (service/transact-entity (conns (domains/dbk server-name)) (:db/id user) {:lunch-menu/text menu
-                                                             :lunch-menu/from (-> (t/today) tc/to-date)
+       (let [id (service/transact-entity (conns (domains/dbk server-name)) (:db/id user) {:lunch-menu/text menu
+                                                                                          :lunch-menu/from (-> (t/today) tc/to-date)
                                                              ;; :orig-filename (not-empty (:filename upload))
                                                              ;; :content-type (when (not-empty (:filename upload))
                                                              ;;                 (:content-type upload))
@@ -206,10 +207,10 @@
          (when-not (validation/valid-phone? phone)
            (throw (Exception. "Vyplňte správně kontaktní telefonní číslo")))
          (service/transact-entity (conns (domains/dbk server-name)) (:db/id user) {:db/id (:db/id user)
-                                                      :person/firstname firstname
-                                                      :person/lastname lastname
-                                                      :person/email (str/trim email)
-                                                      :person/phone phone})
+                                                                                   :person/firstname firstname
+                                                                                   :person/lastname lastname
+                                                                                   :person/email (str/trim email)
+                                                                                   :person/phone phone})
          (main-hiccup/liskasys-frame
           user
           (hiccup/user-profile-form params {:type :success :msg "Změny byly uloženy"}))

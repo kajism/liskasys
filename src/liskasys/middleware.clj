@@ -1,6 +1,7 @@
 (ns liskasys.middleware
   (:require [ring.util.response :as response]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [clojure.edn :as edn]))
 
 (defn wrap-logging [handler]
   (fn [request]
@@ -36,3 +37,14 @@
         (if api-call?
           access-denied-response
           login-redirect)))))
+
+(defn wrap-child-id [handler]
+  (fn [{:keys [session params] :as request}]
+    (let [child-id (or (edn/read-string (:child-id params))
+                       (:child-id session))
+          response (-> request
+                       (assoc-in [:params :child-id] child-id)
+                       (handler))]
+      (cond-> response
+        (:child-id params)
+        (assoc :session (assoc session :child-id child-id))))))
