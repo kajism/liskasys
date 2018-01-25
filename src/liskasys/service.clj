@@ -499,36 +499,26 @@
 
 (defn- send-lunch-order-email [date org-name from tos plans-with-lunches lunch-types-by-id]
   (let [subject (str org-name ": Objednávka obědů na " (time/format-day-date date))
+        plans-by-child? (group-by #(boolean (get-in % [:daily-plan/person :person/child?])) plans-with-lunches)
         msg {:from from
              :to tos
              :subject subject
              :body [{:type "text/plain; charset=utf-8"
                      :content (str subject "\n"
                                    "-------------------------------------------------\n\n"
-                                   "* DĚTI"
-                                   (apply str
-                                          (for [[t c] (->> plans-with-lunches
-                                                           (filter (comp :person/child? :daily-plan/person))
-                                                           (find-lunch-counts-by-diet-label lunch-types-by-id))]
-                                            (str "\n  " t ": " c)))
-                                   #_(apply str
-                                    (for [[group group-plans] (->> plans-with-lunches
-                                                                   (filter (comp :person/child? :daily-plan/person))
-                                                                   (group-by (comp :person/group :daily-plan/person)))]
-                                      (str "\n\n** Třída: " (:group/label group)
-                                           (apply str
-                                                  (for [[t c] (->> group-plans
-                                                                   (find-lunch-counts-by-diet-label lunch-types-by-id))]
-                                                    (str "\n   " t ": " c))))))
-
-                                   "\n\n* DOSPĚLÍ\n"
-                                   #_"Dle diety:\n"
-                                   (apply str
-                                          (for [[t c] (->> plans-with-lunches
-                                                           (filter (complement (comp :person/child? :daily-plan/person)))
-                                                           (find-lunch-counts-by-diet-label lunch-types-by-id))]
-                                            (str "  " t ": " c "\n")))
-                                   "-------------------------------------------------\n"
+                                   (when-let [plans (get plans-by-child? true)]
+                                     (str
+                                      "* DĚTI\n"
+                                      (str/join "\n"
+                                                (for [[t c] (find-lunch-counts-by-diet-label lunch-types-by-id plans)]
+                                                  (str "  " t ": " c)))))
+                                   (when-let [plans (get plans-by-child? false)]
+                                     (str
+                                      "\n\n* DOSPĚLÍ\n"
+                                      (str/join "\n"
+                                                (for [[t c] (find-lunch-counts-by-diet-label lunch-types-by-id plans)]
+                                                  (str "  " t ": " c)))))
+                                   "\n-------------------------------------------------\n"
                                    "CELKEM: " (count plans-with-lunches) "\n\n")}]}]
     #_(print (get-in msg [:body 0 :content]))
     (if-not (seq plans-with-lunches)
