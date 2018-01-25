@@ -49,8 +49,11 @@
 
 (reloaded.repl/set-init! new-system)
 
-(defn conn []
-  (-> system :datomic :conn))
+(defn conns []
+  (-> system :datomic :conns))
 
-(defn db []
-  (d/db (conn)))
+(defn conn [db-key]
+  (get (conns) db-key))
+
+(defn db [db-key]
+  (d/db (conn db-key)))
