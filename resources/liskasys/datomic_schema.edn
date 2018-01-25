@@ -467,4 +467,11 @@
          [{:db/id #db/id [:db.part/user]
            :db/ident :liskasys/config
            :config/org-name "LMŠ Testeři"
-           :config/full-url "http://localhost:3000/"}]]}}
+           :config/full-url "http://localhost:3000/"}
+          {:db/id #db/id [:db.part/user]
+           :person/firstname "Admin"
+           :person/lastname "Admin"
+           :person/email "admin"
+           :person/passwd "$s0$f0801$dCCI1ZjX9VdtOibDHKubVA==$G6fU4AsRZRQ6Sbco5nAZ6Liqs93AT2rmsXBRvIRVQdE="
+           :person/roles "admin"
+           :person/active? true}]]}}
