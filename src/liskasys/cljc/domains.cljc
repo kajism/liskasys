@@ -9,4 +9,5 @@
    "obedy-stromik" :stromik
    "kvitek.monter21.cz" :kvitek
    "obedy-kvitek" :kvitek
+   "vzavetri.monter21.cz" :vzavetri
    })
