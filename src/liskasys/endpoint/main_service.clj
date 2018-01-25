@@ -171,8 +171,9 @@
         can-cancel-today?-fn (make-can-cancel-today?-fn db)
         out (service/find-person-daily-plans db person-id date-from date-to)]
     (cond->> out
-      (or (not (can-cancel-today?-fn date-from))
-          (not (pos-int? (:daily-plan/lunch-ord (first out)))))
+      (and (= date-from (:daily-plan/lunch-ord (first out)))
+           (or (not (pos-int? (:daily-plan/lunch-ord (first out))))
+               (not (can-cancel-today?-fn date-from))))
       (drop 1))))
 
 (defn find-person-substs [db person-id]
