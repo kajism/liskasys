@@ -75,7 +75,7 @@
          [:th "Omluvit?"]
          [:th "Důvod nepřítomnosti"]]]
        [:tbody
-        (for [{:keys [:daily-plan/date :daily-plan/att-cancelled? :daily-plan/lunch-cancelled? :daily-plan/excuse]} child-daily-plans
+        (for [{:daily-plan/keys [date att-cancelled? lunch-cancelled? excuse]} child-daily-plans
               :let [date-str (time/to-format date time/ddMMyyyy)]]
           [:tr
            [:td
