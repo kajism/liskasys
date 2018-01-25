@@ -29,8 +29,9 @@
   (stop [component]
     (reduce
      (fn [out [db-key conn]]
-       (timbre/info db-key "Releasing datomic connection")
-       (d/release conn)
+       (when conn
+         (timbre/info db-key "Releasing datomic connection")
+         (d/release conn))
        (assoc-in out [:conns db-key] nil))
      component
      conns)))
