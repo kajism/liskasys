@@ -233,7 +233,7 @@
      (GET "/" []
        (if-not ((:-roles user) "admin")
          (response/redirect "/")
-         (hiccup/cljs-landing-page (str main-hiccup/system-title " Admin"))))
+         (hiccup/cljs-landing-page (str main-hiccup/system-title " Admin: " (:-org-name user)))))
 
      (POST "/api" [req-msg]
        (let [[msg-id ?data] req-msg
