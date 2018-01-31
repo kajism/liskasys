@@ -1,5 +1,6 @@
 (ns liskasys.config
-  (:require [environ.core :refer [env]]))
+  (:require [clojure.string :as str]
+            [environ.core :refer [env]]))
 
 (def defaults
   ^:displace {:http {:port 3000}})
@@ -8,3 +9,6 @@
   {:http {:port (some-> env :port Integer.)}
    :datomic {:uri (env :datomic-uri)}
    :nrepl-port (some-> env :nrepl-port Integer.)})
+
+(def dbs (zipmap (str/split (:app-domains env) #"\s+")
+                 (str/split (:app-dbs env) #"\s+")))

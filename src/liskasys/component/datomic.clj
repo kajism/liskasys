@@ -3,36 +3,31 @@
             [datomic.api :as d]
             [environ.core :refer [env]]
             [io.rkn.conformity :as conformity]
-            [liskasys.cljc.domains :as domains]
+            [liskasys.config :as config]
             [liskasys.service :as service]
-            [taoensso.timbre :as timbre]
-            [clojure.string :as str]))
+            [taoensso.timbre :as timbre]))
 
 (defrecord Datomic [uri conns]
   component/Lifecycle
   (start [component]
     (let [norms-map (conformity/read-resource "liskasys/datomic_schema.edn")]
       (reduce
-       (fn [out server-name]
-         (if-let [db-key (domains/dbk server-name)]
-           (let [uri (str uri (name db-key))
-                 _ (d/create-database uri)
-                 conn (d/connect uri)]
-             (timbre/info db-key "Connected to datomic, going to run conformity")
-             (conformity/ensure-conforms conn norms-map)
-             (assoc-in out [:conns db-key] conn))
-           (do
-             (timbre/fatal "No database key found for server name" server-name)
-             out)))
+       (fn [out [server-name db-name]]
+         (let [uri (str uri db-name)
+               _ (d/create-database uri)
+               conn (d/connect uri)]
+           (timbre/info server-name "connected to datomic DB" db-name ", going to run conformity")
+           (conformity/ensure-conforms conn norms-map)
+           (assoc-in out [:conns server-name] conn)))
        component
-       (str/split (:app-domains env) #"\s+"))))
+       config/dbs)))
   (stop [component]
     (reduce
-     (fn [out [db-key conn]]
+     (fn [out [server-name conn]]
        (when conn
-         (timbre/info db-key "Releasing datomic connection")
+         (timbre/info "Releasing datomic connection of" server-name)
          (d/release conn))
-       (assoc-in out [:conns db-key] nil))
+       (assoc-in out [:conns server-name] nil))
      component
      conns)))
 
