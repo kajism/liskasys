@@ -10,5 +10,5 @@
    :datomic {:uri (env :datomic-uri)}
    :nrepl-port (some-> env :nrepl-port Integer.)})
 
-(def dbs (zipmap (str/split (:app-domains env) #"\s+")
-                 (str/split (:app-dbs env) #"\s+")))
+(def dbs (zipmap (str/split (or (:app-domains env) "") #"\s+")
+                 (str/split (or (:app-dbs env) "") #"\s+")))
