@@ -14,8 +14,6 @@
                 :label label
                 :on-click #(reset! showing? true)]
        :popover [re-com/popover-content-wrapper
-                 :showing? showing?
-                 :position position
                  :on-cancel #(reset! showing? false)
                  :body [re-com/v-box
                         :gap "10px"
@@ -45,8 +43,6 @@
                 :tooltip "Smazat"
                 :on-click #(reset! showing? true)]
        :popover [re-com/popover-content-wrapper
-                 :showing? showing?
-                 :position position
                  :on-cancel #(reset! showing? false)
                  :body [re-com/v-box
                         :gap "10px"
