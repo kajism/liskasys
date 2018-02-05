@@ -35,7 +35,7 @@
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
                         (when (contains? (:-roles @user) "superadmin")
-                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :lunch-order (:db/id row)])])]]))
+                          [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :lunch-order (:db/id row)]) :emphasise? true])]]))
                   :csv-export]
                  ["Datum" :lunch-order/date]
                  ["Počet obědů" :lunch-order/total]]

@@ -37,7 +37,7 @@
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])]]])
+                      #_[buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])]]])
                   :none]
                  ["5 dní" (comp cljc-util/from-cents :price-list/days-5)]
                  ["4 dny" (comp cljc-util/from-cents :price-list/days-4)]

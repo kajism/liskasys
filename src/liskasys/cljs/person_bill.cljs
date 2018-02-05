@@ -68,8 +68,9 @@
                            :href (str "#/person-bill/" (get-in row [:person-bill/period :db/id]) "/" (:db/id row) "e")
                            :label [re-com/md-icon-button
                                    :md-icon-name "zmdi-edit"
-                                   :tooltip "Editovat"]])
-                        [buttons/delete-button #(re-frame/dispatch [::delete-bill row])]]]))
+                                   :tooltip "Editovat"
+                                   :emphasise? true]])
+                        [buttons/delete-button :on-confirm #(re-frame/dispatch [::delete-bill row]) :emphasise? true]]]))
                   :none]
                  {:header "Jméno"
                   :val-fn #(row->person-fullname % @persons)

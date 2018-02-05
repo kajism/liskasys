@@ -39,7 +39,7 @@
                          :label [re-com/md-icon-button
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
-                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :bank-holiday (:db/id row)])]]]))
+                        [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :bank-holiday (:db/id row)])]]]))
                   :none]
                  ["Název" :bank-holiday/label]
                  ["Měsíc" :bank-holiday/month]

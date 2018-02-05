@@ -64,7 +64,7 @@
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
                         (when (contains? (:-roles @user) "superadmin")
-                          [buttons/delete-button #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)])])]]))
+                          [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)]) :emphasise? true])]]))
                   :none]
                  ["Od" (comp cljc-util/yyyymm->text :billing-period/from-yyyymm)]
                  ["Do" (comp cljc-util/yyyymm->text :billing-period/to-yyyymm)]]

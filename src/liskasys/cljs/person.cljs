@@ -83,7 +83,7 @@
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
                       (when (contains? (:-roles @user) "superadmin")
-                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :person (:db/id row)])])]]))
+                        [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :person (:db/id row)]) :emphasise? true])]]))
                 :none]
                ["Příjmení" :person/lastname]
                ["Jméno" :person/firstname]
@@ -303,9 +303,9 @@
                           :href (str "#/person/" (:db/id parent) "e")
                           :label (cljc-util/person-fullname parent)]
                          [buttons/delete-button
-                          #(re-frame/dispatch [:common/retract-ref-many :person {:db/id (:db/id item)
-                                                                                 :person/parent (:db/id parent)}])
-                          :below-center]]))]
+                          :on-confirm #(re-frame/dispatch [:common/retract-ref-many :person {:db/id (:db/id item)
+                                                                                             :person/parent (:db/id parent)}])
+                          :position :below-center]]))]
                     [re-com/single-dropdown
                      :model nil
                      :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/parent (fn [v] (conj v {:db/id %}))])

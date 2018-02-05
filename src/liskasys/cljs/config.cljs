@@ -37,7 +37,7 @@
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      #_[buttons/delete-button #(re-frame/dispatch [:entity-delete :config (:db/id row)])]]])
+                      #_[buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :config (:db/id row)])]]])
                   :none]
                  ["Název organizace" :config/org-name]
                  ["Celé URL" :config/full-url]

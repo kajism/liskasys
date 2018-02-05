@@ -41,7 +41,7 @@
                          :label [re-com/md-icon-button
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
-                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :school-holiday (:db/id row)])]]]))
+                        [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :school-holiday (:db/id row)])]]]))
                   :none]
                  ["Název" :school-holiday/label]
                  ["Od" :school-holiday/from]

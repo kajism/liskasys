@@ -53,7 +53,7 @@
         persons (re-frame/subscribe [:entities :person])
         user (re-frame/subscribe [:auth-user])]
     (fn [ent-id]
-      (when (and ent-id (contains? (:-roles @user) "superadmin"))
+      (when (and ent-id #_(contains? (:-roles @user) "superadmin"))
         (if (not= ent-id (:db/id @history))
           [:div
            [:br]

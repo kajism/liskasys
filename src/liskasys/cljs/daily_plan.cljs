@@ -58,7 +58,7 @@
                                            :md-icon-name "zmdi-edit"
                                            :tooltip "Editovat"]])
                                 (when (contains? (:-roles @user) "superadmin")
-                                  [buttons/delete-button #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)])])]]))
+                                  [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)]) :emphasise? true])]]))
                   :none]
                  ["Datum" :daily-plan/date]
                  {:header "Jméno"

@@ -41,7 +41,7 @@
                          :label [re-com/md-icon-button
                                  :md-icon-name "zmdi-edit"
                                  :tooltip "Editovat"]]
-                        [buttons/delete-button #(re-frame/dispatch [:entity-delete :group (:db/id row)])]]]))
+                        [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :group (:db/id row)])]]]))
                   :none]
                  ["Název" :group/label]
                  ["Kapacita" :group/max-capacity]]]]])))
