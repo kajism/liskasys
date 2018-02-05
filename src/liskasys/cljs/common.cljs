@@ -7,7 +7,8 @@
             [re-frame.core :as re-frame]
             [reagent.ratom :as ratom]
             [schema.core :as s]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [clojure.string :as str]))
 
 (def debug-mw [(when ^boolean goog.DEBUG re-frame/debug)
                #_(when ^boolean goog.DEBUG (re-frame/after
@@ -110,7 +111,9 @@
    ((if (fn? val) update-in assoc-in)
     db
     (if id [kw id attr] [:new-ents kw attr])
-    val)))
+    (cond-> val
+      (string? val)
+      (str/trim)))))
 
 (re-frame/register-handler
  :entity-save
