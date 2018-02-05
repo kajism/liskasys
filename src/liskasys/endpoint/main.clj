@@ -27,8 +27,8 @@
        (map #(time/from-format % time/ddMMyyyy))
        (set)))
 
-(defn- upload-dir []
-  (or (:upload-dir env) "./uploads/"))
+(defn- upload-dir [server-name]
+  (or (:upload-dir env) "./uploads/" (get config/dbs server-name) "/"))
 
 (defn- user-children-data [db user-id selected-id]
   (let [user-children (main-service/find-active-children-by-person-id db user-id)]
@@ -127,7 +127,7 @@
 
      #_(GET "/jidelni-listek/:id" [id :<< as-int]
          (let [lunch-menu (first (jdbc-common/select db-spec :lunch-menu {:id id}))]
-           (-> (response/file-response (str (upload-dir) "lunch-menu/" (:id lunch-menu) ".dat") {:root "."})
+           (-> (response/file-response (str (upload-dir server-name) "lunch-menu/" (:id lunch-menu) ".dat") {:root "."})
                (response/content-type (:content-type lunch-menu))
                (response/header "Content-Disposition" (str "inline; filename=" (:orig-filename lunch-menu))))))
 
@@ -138,7 +138,7 @@
                                                              ;; :content-type (when (not-empty (:filename upload))
                                                              ;;                 (:content-type upload))
 })
-             ;;server-file (str (upload-dir) "lunch-menu/" id ".dat")
+             ;;server-file (str (upload-dir server-name) "lunch-menu/" id ".dat")
 ]
          #_(when (not-empty (:filename upload))
              (io/make-parents server-file)

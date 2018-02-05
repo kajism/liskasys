@@ -1,7 +1,6 @@
 (ns liskasys.component.datomic
   (:require [com.stuartsierra.component :as component]
             [datomic.api :as d]
-            [environ.core :refer [env]]
             [io.rkn.conformity :as conformity]
             [liskasys.config :as config]
             [liskasys.service :as service]
