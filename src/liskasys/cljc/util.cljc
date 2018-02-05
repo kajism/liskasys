@@ -9,7 +9,10 @@
 #_(def max-children-per-day 19)
 
 (defn person-fullname [{:keys [:person/lastname :person/firstname]}]
-  (str lastname " " firstname))
+  (let [out (str lastname " " firstname)]
+    (if (re-find #"^\s*$" out)
+      "<no name>"
+      out)))
 
 (defn dissoc-temp-keys [m]
   (into {} (remove (fn [[k v]]
