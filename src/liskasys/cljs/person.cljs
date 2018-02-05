@@ -229,7 +229,10 @@
              :model (:person/active? item)
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/active? %])]
             [re-com/label :label "Variabilní symbol"]
-            [input-text item :person :person/var-symbol cljc-util/parse-int]
+            [re-com/input-text
+             :model (str (:person/var-symbol item))
+             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/var-symbol (cljc-util/parse-int %)])
+             :validation-regex #"^(\d{0,10})$"]
             [re-com/label :label "Dieta"]
             [re-com/single-dropdown
              :model (some-> item :person/lunch-type :db/id)
