@@ -55,12 +55,13 @@
         last-date (second (first id-dates))
         new-history (min (dec (count id-dates))
                          (or history
-                             (if (and last-date
-                                      (t/before? (t/now)
-                                                 (t/minus (tc/from-date last-date)
-                                                          (t/days 2)))) ;;don't show new before Saturday
-                               1
-                               0)))
+                             (->> id-dates
+                                  (map second)
+                                  (take-while #(t/before? (t/now)
+                                                          (t/minus (tc/from-date %)
+                                                                   (t/days 2) ;;don't show new before Saturday
+                                                                   )))
+                                  (count))))
         last-two (->> id-dates
                       (drop new-history)
                       (take 2)
