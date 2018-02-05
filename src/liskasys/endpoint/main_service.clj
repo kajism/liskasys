@@ -115,7 +115,7 @@
                   [?e :daily-plan/person ?person]
                   [?e :daily-plan/date ?date]]
                 db child-id (set/union cancel-dates uncancel-dates #{}))
-           (mapcat (fn [{:keys [:db/id :daily-plan/date :daily-plan/lunch-req :daily-plan/substituted-by :daily-plan/subst-req-on :daily-plan/excuse]}]
+           (mapcat (fn [{:keys [:db/id] :daily-plan/keys [date lunch-req lunch-ord substituted-by subst-req-on excuse]}]
                      (cond
                        (and (not (can-cancel-lunch?-fn date))
                             (not (can-cancel-today?-fn date)))
@@ -126,8 +126,9 @@
                          (conj [:db/add id :daily-plan/excuse (get excuses-by-date date)])
                          (and (some? lunch-req) (pos? lunch-req) (can-cancel-lunch?-fn date))
                          (conj [:db/add id :daily-plan/lunch-cancelled? true])
-                         subst-req-on
-                         (conj [:db.fn/retractEntity id]))
+                         ;; (and subst-req-on (not lunch-ord))
+                         ;; (conj [:db.fn/retractEntity id])
+                         )
                        :else
                        (cond-> [[:db/retract id :daily-plan/att-cancelled? true]
                                 [:db/retract id :daily-plan/lunch-cancelled? true]]
