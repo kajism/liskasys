@@ -415,7 +415,6 @@
                                                                      "včetně oběda."
                                                                      "bez oběda.")
                                                                    "\n\nToto je automaticky generovaný email ze systému " full-url)}]})))
-        admin-subj (str org-name ": Denní souhrn na " (time/format-day-date date) " pro skupinu " (:group/label group))
         going->str-fn #(str (-> % :daily-plan/person cljc-util/person-fullname)
                             (when (= (:daily-plan/child-att %) 2)
                               ", půldenní")
@@ -423,43 +422,37 @@
                               ", bez oběda"
                               (when-let [type (some-> % :daily-plan/person :person/lunch-type :lunch-type/label)]
                                 (str ", strava " type))))
-        summary-msg {:from sender
-                     :to (-> #{}
-                             #_(into (map :person/email (find-persons-with-role db "admin")))
-                             (into (map :person/email (find-persons-with-role db "průvodce")))
-                             (vec))
-                     :subject admin-subj
-                     :body [{:type "text/plain; charset=utf-8"
-                             :content (str admin-subj "\n\n"
-                                           (when-let [xs (not-empty (->> going
-                                                                         (remove :daily-plan/subst-req-on)
-                                                                         (map going->str-fn)
-                                                                         (sort-by-locale identity)))]
-                                             (str "Docházka (" (count xs) ") ------------------------------\n" (str/join "\n" xs)))
-                                           (when-let [xs (not-empty (->> going
-                                                                         (filter :daily-plan/subst-req-on)
-                                                                         (map going->str-fn)
-                                                                         (sort-by-locale identity)))]
-                                             (str "\n\nNáhradnící (" (count xs) ") ------------------------\n" (str/join "\n" xs)))
-                                           (when-let [xs (not-empty (->> daily-plans
-                                                                         (remove att?-fn)
-                                                                         (filter lunch?-fn)
-                                                                         (map going->str-fn)
-                                                                         (sort-by-locale identity)))]
-                                             (str "\n\nOstatní obědy (" (count xs) ") ---------------------\n" (str/join "\n" xs)))
-                                           "\n\n===========================================\n"
-                                           (when-let [xs (not-empty (->> daily-plans
-                                                                         (filter :daily-plan/att-cancelled?)
-                                                                         (map (comp cljc-util/person-fullname :daily-plan/person))
-                                                                         (sort-by-locale identity)))]
-                                             (str "\nOmluvenky (" (count xs) ") ---------------------------\n" (str/join "\n" xs)))
-                                           (when-let [xs (not-empty (->> not-going
-                                                                         (map (comp cljc-util/person-fullname :daily-plan/person))
-                                                                         (sort-by-locale identity)))]
-                                             (str "\n\nNáhradníci, kteří se nevešli (" (count xs) ") ------\n" (str/join "\n" xs)))
-                                           "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
+        group-summary-text (str (:group/label group)
+                                "\n===========================================\n\n"
+                                (when-let [xs (not-empty (->> going
+                                                              (remove :daily-plan/subst-req-on)
+                                                              (map going->str-fn)
+                                                              (sort-by-locale identity)))]
+                                  (str "Docházka (" (count xs) ") ------------------------------\n" (str/join "\n" xs)))
+                                (when-let [xs (not-empty (->> going
+                                                              (filter :daily-plan/subst-req-on)
+                                                              (map going->str-fn)
+                                                              (sort-by-locale identity)))]
+                                  (str "\n\nNáhradnící (" (count xs) ") ------------------------\n" (str/join "\n" xs)))
+                                (when-let [xs (not-empty (->> daily-plans
+                                                              (remove att?-fn)
+                                                              (filter lunch?-fn)
+                                                              (map going->str-fn)
+                                                              (sort-by-locale identity)))]
+                                  (str "\n\nOstatní obědy (" (count xs) ") ---------------------\n" (str/join "\n" xs)))
+                                "\n\n-------------------------------------------\n"
+                                (when-let [xs (not-empty (->> daily-plans
+                                                              (filter :daily-plan/att-cancelled?)
+                                                              (map (comp cljc-util/person-fullname :daily-plan/person))
+                                                              (sort-by-locale identity)))]
+                                  (str "\nOmluvenky (" (count xs) ") ---------------------------\n" (str/join "\n" xs)))
+                                (when-let [xs (not-empty (->> not-going
+                                                              (map (comp cljc-util/person-fullname :daily-plan/person))
+                                                              (sort-by-locale identity)))]
+                                  (str "\n\nNáhradníci, kteří se nevešli (" (count xs) ") ------\n" (str/join "\n" xs)))
+                                "\n\n")]
     (if-not (seq daily-plans)
-      (timbre/info "No daily plans for " date ". Sending skipped.")
+      (timbre/info "No daily plans for" date "group" (:group/label group))
       (do
         (transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
         (doseq [msg  not-going-subst-msgs]
@@ -468,8 +461,7 @@
         (doseq [msg  going-subst-msgs]
           (timbre/info "Sending to going" msg)
           (timbre/info (postal/send-message msg)))
-        (timbre/info "Sending summary msg" summary-msg)
-        (timbre/info (postal/send-message summary-msg))))))
+        group-summary-text))))
 
 
 (defn- process-substitutions [conn date]
@@ -480,9 +472,28 @@
                                                          {:person/lunch-type [:lunch-type/label]
                                                           :person/parent [:person/email]
                                                           :person/group [:db/id]}]}])
-        dps-by-group (group-by (comp :db/id :person/group :daily-plan/person) daily-plans)]
-    (doseq [group groups]
-      (process-group-substitutions conn date group (get dps-by-group (:db/id group))))))
+        dps-by-group (group-by (comp :db/id :person/group :daily-plan/person) daily-plans)
+        summary-text (reduce (fn [out group]
+                               (str out (process-group-substitutions conn date group (get dps-by-group (:db/id group)))))
+                             ""
+                             groups)
+        {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
+        sender (auto-sender-email db)
+        admin-subj (str org-name ": Denní souhrn na " (time/format-day-date date))
+        summary-msg {:from sender
+                     :to (-> #{}
+                             #_(into (map :person/email (find-persons-with-role db "admin")))
+                             (into (map :person/email (find-persons-with-role db "průvodce")))
+                             (vec))
+                     :subject admin-subj
+                     :body [{:type "text/plain; charset=utf-8"
+                             :content (str admin-subj "\n\n"
+                                           summary-text
+                                           "\n\nToto je automaticky generovaný email ze systému " full-url)}]}
+]
+
+    (timbre/info "Sending summary msg" summary-msg)
+    (timbre/info (postal/send-message summary-msg))))
 
 (defn- find-lunch-types-by-id [db]
   (->> (find-where db {:lunch-type/label nil})
