@@ -7,7 +7,8 @@
             [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc-util]
             [postal.core :as postal]
-            [taoensso.timbre :as timbre])
+            [taoensso.timbre :as timbre]
+            [crypto.password.scrypt :as scrypt])
   (:import java.text.Collator
            java.util.concurrent.ExecutionException
            java.util.Locale
@@ -17,6 +18,25 @@
 
 (defn sort-by-locale [key-fn coll]
   (sort-by key-fn cs-collator coll))
+
+(def ent-type--attr
+  {:bank-holiday :bank-holiday/label
+   :billing-period :billing-period/from-yyyymm
+   :daily-plan :daily-plan/date
+   :lunch-menu :lunch-menu/from
+   :lunch-order :lunch-order/date
+   :lunch-type :lunch-type/label
+   :person :person/active?
+   :price-list :price-list/days-1
+   :person-bill :person-bill/total
+   :school-holiday :school-holiday/label
+   :group :group/label
+   :config :config/org-name})
+
+(def ent-attr--type (reduce (fn [out [ent-type attr]]
+                              (assoc out attr ent-type))
+                            {}
+                            ent-type--attr))
 
 (defn all-work-days-since [ld]
   (->> ld
@@ -83,6 +103,47 @@
 (defn- school-holiday? [school-holidays local-date]
   (seq (filter #(*school-holiday? % local-date) school-holidays)))
 
+(defn- build-query [db pull-pattern where-m]
+  (reduce (fn [query [where-attr where-val]]
+            (let [?where-attr (symbol (str "?" (name where-attr)))]
+              (cond-> query
+                where-val
+                (update-in [:query :in] conj ?where-attr)
+                (not= '?id ?where-attr)
+                (update-in [:query :where] conj (if where-val
+                                                  ['?id where-attr ?where-attr]
+                                                  ['?id where-attr]))
+                where-val
+                (update-in [:args] conj where-val))))
+          {:query {:find [[(list 'pull '?id pull-pattern) '...]]
+                   :in ['$]
+                   :where []}
+           :args [db]
+           :timeout 2000}
+          where-m))
+
+(defn find-where
+  ([db where-m]
+   (find-where db where-m '[*]))
+  ([db where-m pull-pattern]
+   (d/query (build-query db pull-pattern where-m))))
+
+(defn find-by-type-default
+  ([db ent-type where-m]
+   (find-by-type-default db ent-type where-m '[*]))
+  ([db ent-type where-m pull-pattern]
+   (let [attr (get ent-type--attr ent-type ent-type)]
+     (find-where db (merge {attr nil} where-m) pull-pattern))))
+
+(defmulti find-by-type (fn [db ent-type where-m] ent-type))
+
+(defmethod find-by-type :default [db ent-type where-m]
+  (find-by-type-default db ent-type where-m))
+
+(defmethod find-by-type :person [db ent-type where-m]
+  (->> (find-by-type-default db ent-type where-m)
+       (map #(dissoc % :person/passwd))))
+
 (defn transact [conn user-id tx-data]
   (if (seq tx-data)
     (let [tx-data (cond-> (vec tx-data)
@@ -103,9 +164,12 @@
        count
        (+ -2)))
 
+(defn ent-type [ent]
+  (get ent-attr--type (first (keys (select-keys ent (keys ent-attr--type))))
+       (timbre/error "ent-type not found for" ent)))
+
 (defmulti retract-entity (fn [conn user-id ent-id]
-                           (first (keys (select-keys (d/pull (d/db conn) '[*] ent-id)
-                                                     [:person-bill/total])))))
+                           (ent-type (d/pull (d/db conn) '[*] ent-id))))
 
 (defmethod retract-entity :default [conn user-id ent-id]
   (retract-entity* conn user-id ent-id))
@@ -151,16 +215,19 @@
               (not id)
               (assoc :db/id (d/tempid :db.part/user)))
         tx-result (transact conn user-id (entity->tx-data (d/db conn) ent))
-        db (:db-after tx-result)]
-    (d/pull db '[*] (or id (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id ent))))))
+        db (:db-after tx-result)
+        id (or id (d/resolve-tempid db (:tempids tx-result) (:db/id ent)))]
+    (first (if-let [et (ent-type ent)]
+             (find-by-type db et {:db/id id})
+             (d/pull db '[*] id)))))
 
 (defmulti transact-entity (fn [conn user-id ent]
-                            (first (keys (select-keys ent [:daily-plan/date :person/lastname])))))
+                            (ent-type ent)))
 
 (defmethod transact-entity :default [conn user-id ent]
   (transact-entity* conn user-id ent))
 
-(defmethod transact-entity :daily-plan/date [conn user-id ent]
+(defmethod transact-entity :daily-plan [conn user-id ent]
   (let [old-id (d/q '[:find ?e .
                       :in $ ?date ?pid
                       :where
@@ -181,9 +248,9 @@
                                          remove-substitution?
                                          (dissoc :daily-plan/substituted-by)))))))
 
-(defmethod transact-entity :person/lastname [conn user-id ent]
+(defmethod transact-entity :person [conn user-id ent]
   (try
-    (transact-entity* conn user-id ent)
+    (transact-entity* conn user-id (update ent :person/passwd #(when % (scrypt/encrypt %))))
     (catch ExecutionException e
       (let [cause (.getCause e)]
         (if (instance? IllegalStateException cause)
@@ -192,7 +259,7 @@
             {:error/msg "Osoba se zadaným variabilním symbolem nebo emailem již v databázi existuje."})
           (throw cause))))))
 
-(declare merge-person-bill-facts find-by-type)
+(declare merge-person-bill-facts)
 
 (defn find-max-lunch-order-date [db]
   (or (d/q '[:find (max ?date) .
@@ -224,7 +291,7 @@
                 [:db.fn/retractEntity dp-id]))
          (into tx-data))))
 
-(defmethod retract-entity :person-bill/total [conn user-id ent-id]
+(defmethod retract-entity :person-bill [conn user-id ent-id]
   (->> (retract-person-bill-tx (d/db conn) ent-id)
        (transact conn user-id)
        :tx-data
@@ -241,61 +308,6 @@
        :tx-data
        count
        (+ -2)))
-
-(defn- build-query [db pull-pattern where-m]
-  (reduce (fn [query [where-attr where-val]]
-            (let [?where-attr (symbol (str "?" (name where-attr)))]
-              (cond-> query
-                where-val
-                (update-in [:query :in] conj ?where-attr)
-                (not= '?id ?where-attr)
-                (update-in [:query :where] conj (if where-val
-                                                  ['?id where-attr ?where-attr]
-                                                  ['?id where-attr]))
-                where-val
-                (update-in [:args] conj where-val))))
-          {:query {:find [[(list 'pull '?id pull-pattern) '...]]
-                   :in ['$]
-                   :where []}
-           :args [db]
-           :timeout 2000}
-          where-m))
-
-(defn find-where
-  ([db where-m]
-   (find-where db where-m '[*]))
-  ([db where-m pull-pattern]
-   (d/query (build-query db pull-pattern where-m))))
-
-(def ent-type->attr
-  {:bank-holiday :bank-holiday/label
-   :billing-period :billing-period/from-yyyymm
-   :daily-plan :daily-plan/date
-   :lunch-menu :lunch-menu/from
-   :lunch-order :lunch-order/date
-   :lunch-type :lunch-type/label
-   :person :person/active?
-   :price-list :price-list/days-1
-   :person-bill :person-bill/total
-   :school-holiday :school-holiday/label
-   :group :group/label
-   :config :config/org-name})
-
-(defn find-by-type-default
-  ([db ent-type where-m]
-   (find-by-type-default db ent-type where-m '[*]))
-  ([db ent-type where-m pull-pattern]
-   (let [attr (get ent-type->attr ent-type ent-type)]
-     (find-where db (merge {attr nil} where-m) pull-pattern))))
-
-(defmulti find-by-type (fn [db ent-type where-m] ent-type))
-
-(defmethod find-by-type :default [db ent-type where-m]
-  (find-by-type-default db ent-type where-m))
-
-(defmethod find-by-type :person [db ent-type where-m]
-  (->> (find-by-type-default db ent-type where-m)
-       (map #(dissoc % :person/passwd))))
 
 (defn find-price-list [db]
   (first (find-where db {:price-list/days-1 nil})))

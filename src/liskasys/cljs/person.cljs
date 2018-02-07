@@ -323,6 +323,8 @@
                :children
                [[re-com/label :label "Email"]
                 [input-text item :person :person/email]
+                [re-com/label :label "Změna hesla"]
+                [input-text item :person :person/passwd]
                 [re-com/label :label "Telefon"]
                 [input-text item :person :person/phone]
                 [re-com/label :label "Role"]
