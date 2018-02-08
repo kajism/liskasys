@@ -19,15 +19,6 @@
 (defn sort-by-locale [key-fn coll]
   (sort-by key-fn cs-collator coll))
 
-(defn all-work-days-since [ld]
-  (->> ld
-       (iterate #(t/plus % (t/days 1)))
-       (keep #(when (<= (t/day-of-week %) 5) %))))
-
-(defn att-day-with-lunch? [att-day]
-  (and (:lunch? att-day)
-       (not (:lunch-cancelled? att-day))))
-
 ;; Source: https://gist.github.com/werand/2387286
 (defn- easter-sunday-for-year [year]
   (let [golden-year (+ 1 (mod year 19))
