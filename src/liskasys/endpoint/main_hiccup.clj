@@ -63,8 +63,10 @@
        (for [person (:user-children user-children-data)]
          [:option {:value (:db/id person)
                    :selected (= (:selected-id user-children-data) (:db/id person))} (cljc-util/person-fullname person)])]]]
-    [:form {:method "post"
-            :role "form"}
+    [:form (merge {:method "post"
+                   :role "form"}
+                  (when (some-> user-children-data :selected-child :person/group :group/mandatory-excuse?)
+                    {:onsubmit "return validateExcuses()"}))
      [:div.form-group
       [:input.form-control {:type "hidden" :name "child-id" :value (:selected-id user-children-data)}]
       #_[:label {:for "from"} "Docházka bude (nebo již je) omluvena v označených dnech"]
@@ -87,9 +89,9 @@
                                            :value date-str
                                            :checked (boolean att-cancelled?)}]
             #_[:label.nowrap
-             " "
-             (when lunch-cancelled?
-               "(oběd odhlášen)")]]
+               " "
+               (when lunch-cancelled?
+                 "(oběd odhlášen)")]]
            [:td
             [:input.form-control {:type "text"
                                   :name (str "excuse[" date-str  "]")
@@ -99,7 +101,19 @@
      (when (seq child-daily-plans)
        [:button.btn.btn-danger {:type "submit"} "Uložit"])
      [:br]
-     [:br]]]])
+     [:br]
+     [:script
+      "function validateExcuses() {
+var xs = document.getElementsByName(\"cancel-dates[]\");
+for (var i=0; i < xs.length; i++) {
+  var exc = document.getElementsByName(\"excuse[\" + xs[i].value  + \"]\")[0].value;
+  if (xs[i].checked && (!exc || /^\\s*$/.test(exc))) {
+    alert(\"Vyplňte prosím důvody nepřítomnosti.\");
+    return false;
+  }
+}
+return true;
+}"]]]])
 
 (defn substitutions [user-children-data {:keys [dp-gap-days can-subst? substable-dps group]}]
   [:div.container
@@ -178,11 +192,11 @@
            (= "image/" (subs (:content-type lunch-menu) 0 6))
            [:div
             [:img {:src (str "/jidelni-listek/" (:db/id lunch-menu))}]
-            [:br][:br]]
+            [:br] [:br]]
            :else
            [:div
             [:a {:target "_blank" :href (str "/jidelni-listek/" (:db/id lunch-menu))} "Stáhnout"]
-            [:br][:br]])
+            [:br] [:br]])
        [:div.row
         [:div.col-md-6
          (when previous?

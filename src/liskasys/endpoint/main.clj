@@ -33,6 +33,7 @@
 (defn- user-children-data [db user-id selected-id]
   (let [user-children (main-service/find-active-children-by-person-id db user-id)]
     {:user-children user-children
+     :selected-child (some #(when (= (:db/id %) selected-id) %) user-children)
      :selected-id (or selected-id (:db/id (first user-children)))}))
 
 (defn main-endpoint [{{conns :conns} :datomic}]

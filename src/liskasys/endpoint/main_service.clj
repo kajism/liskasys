@@ -75,7 +75,7 @@
      :history new-history}))
 
 (defn find-active-children-by-person-id [db parent-id]
-  (->> (d/q '[:find [(pull ?e [*]) ...]
+  (->> (d/q '[:find [(pull ?e [* {:person/group [*]}]) ...]
               :in $ ?parent
               :where
               [?e :person/parent ?parent]

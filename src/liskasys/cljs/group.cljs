@@ -44,7 +44,8 @@
                         [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :group (:db/id row)])]]]))
                   :none]
                  ["Název" :group/label]
-                 ["Kapacita" :group/max-capacity]]]]])))
+                 ["Kapacita" :group/max-capacity]
+                 ["Povinný důvod omluvenky?" :group/mandatory-excuse?]]]]])))
 
 (defn page-group []
   (let [group (re-frame/subscribe [:entity-edit :group])
@@ -72,6 +73,11 @@
              :status (when error-msg :warning)
              :status-icon? true
              :status-tooltip error-msg])
+          [re-com/checkbox
+           :label "povinný důvod omluvenky?"
+           :model (:group/mandatory-excuse? item)
+           :on-change #(re-frame/dispatch [:entity-change :group (:db/id item) :group/mandatory-excuse? %])]
+          [:br]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :group validation-fn])]
