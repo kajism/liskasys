@@ -2,7 +2,9 @@
   (:require [com.stuartsierra.component :as component]
             [liskasys.service :as service]
             [taoensso.timbre :as timbre]
-            [twarc.core :as twarc])
+            [twarc.core :as twarc]
+            [datomic.api :as d]
+            [clojure.string :as str])
   (:import java.util.TimeZone))
 
 (twarc/defjob process-lunch-order-and-substitutions-job [scheduler conn]
@@ -16,12 +18,16 @@
   (start [component]
     (let [sched (-> (twarc/make-scheduler quartz-props)
                     twarc/start)]
-      (doseq [[db-key conn] (:conns datomic)]
+      (doseq [[db-key conn] (:conns datomic)
+              :let [db (d/db conn)
+                    {:config/keys [cancel-time order-time]} (d/pull db '[*] :liskasys/config)
+                    [cancel-hour cancel-min] (str/split cancel-time #":")
+                    [order-hour order-min] (str/split order-time #":")]]
         (timbre/info db-key "Scheduling periodic tasks")
         ;; cron expression: sec min hour day-of-mon mon day-of-week ?year
         (process-lunch-order-and-substitutions-job sched
                                                    [conn]
-                                                   :trigger {:cron {:expression "0 0 8 * * ?" ;; at 8:00:00 AM
+                                                   :trigger {:cron {:expression (str "0 " order-min " " order-hour " * * ?")
                                                                     :misfire-handling :fire-and-process
                                                                     :time-zone (TimeZone/getTimeZone "Europe/Prague")}}))
       (assoc component :twarc-scheduler sched)))

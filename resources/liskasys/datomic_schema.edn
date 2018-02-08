@@ -474,4 +474,17 @@
            :person/email "admin"
            :person/passwd "$s0$f0801$dCCI1ZjX9VdtOibDHKubVA==$G6fU4AsRZRQ6Sbco5nAZ6Liqs93AT2rmsXBRvIRVQdE="
            :person/roles "admin"
-           :person/active? true}]]}}
+           :person/active? true}]
+         [{:db/ident :config/cancel-time
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :config/order-time
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/id :liskasys/config
+           :config/cancel-time "7:30"
+           :config/order-time "8:00"}]]}}

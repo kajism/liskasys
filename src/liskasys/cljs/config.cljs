@@ -41,7 +41,9 @@
                   :none]
                  ["Název organizace" :config/org-name]
                  ["Celé URL" :config/full-url]
-                 ["Odesilatel automatických emalů" :config/automat-email]]]]])))
+                 ["Odesilatel emalů" :config/automat-email]
+                 ["Čas konce oml." :config/cancel-time]
+                 ["Čas obj. obědů" :config/order-time]]]]])))
 
 (defn page-config []
   (let [config (re-frame/subscribe [:entity-edit :config])]
@@ -65,6 +67,18 @@
            :model (str (:config/automat-email item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/automat-email %])
            :width "200px"]
+          [re-com/label :label "Čas konce omlouvání na dnešek [hh:mm]"]
+          [re-com/input-text
+           :model (str (:config/cancel-time item))
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/cancel-time %])
+           :width "200px"
+           :validation-regex #"^([012]?\d?:\d{0,2})$"]
+          [re-com/label :label "Čas objednávky obědů za další den školky [hh:mm]"]
+          [re-com/input-text
+           :model (str (:config/order-time item))
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/order-time %])
+           :width "200px"
+           :validation-regex #"^([012]?\d?:\d{0,2})$"]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :config])]
