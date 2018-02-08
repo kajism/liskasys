@@ -94,14 +94,14 @@
       (cljc.util/parse-int)))
 
 (defn- make-can-cancel-today?-fn [db]
-  (let [cancel-deadline-hours "7:30"]
+  (let [{:config/keys [cancel-time]} (d/pull db '[*] :liskasys/config)]
     (fn [date]
       (let [now (Date.)]
         (or (< (.getTime now) (.getTime date))
             (and (= (time/to-format now time/ddMMyyyy)
                     (time/to-format date time/ddMMyyyy))
                  (<= (HHmm--int (time/to-format now time/HHmm))
-                     (HHmm--int cancel-deadline-hours))))))))
+                     (HHmm--int cancel-time))))))))
 
 (defn transact-cancellations [conn user-id child-id cancel-dates uncancel-dates excuses-by-date]
   (let [db (d/db conn)
