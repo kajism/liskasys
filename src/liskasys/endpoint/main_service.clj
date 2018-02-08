@@ -118,7 +118,7 @@
                   :where
                   [?e :daily-plan/person ?person]
                   [?e :daily-plan/date ?date]]
-                db child-id (set/union cancel-dates uncancel-dates #{}))
+                db child-id (set/union cancel-dates uncancel-dates (keys excuses-by-date)))
            (mapcat (fn [{:keys [:db/id] :daily-plan/keys [date lunch-req lunch-ord substituted-by subst-req-on excuse]}]
                      (cond
                        (and (not (can-cancel-lunch?-fn date))
@@ -132,14 +132,16 @@
                          (conj [:db/add id :daily-plan/lunch-cancelled? true])
                          ;; (and subst-req-on (not lunch-ord))
                          ;; (conj [:db.fn/retractEntity id])
-)
-                       :else
+                         )
+                       (contains? uncancel-dates date)
                        (cond-> [[:db/retract id :daily-plan/att-cancelled? true]
                                 [:db/retract id :daily-plan/lunch-cancelled? true]]
                          excuse
                          (conj [:db/retract id :daily-plan/excuse excuse])
                          substituted-by
-                         (conj [:db.fn/retractEntity (:db/id substituted-by)])))))
+                         (conj [:db.fn/retractEntity (:db/id substituted-by)]))
+                       :else
+                       [[:db/add id :daily-plan/excuse (get excuses-by-date date)]])))
            (db/transact conn user-id)
            :tx-data
            count))))
