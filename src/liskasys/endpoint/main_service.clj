@@ -8,6 +8,7 @@
             [environ.core :refer [env]]
             [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc-util]
+            [liskasys.db :as db]
             [liskasys.service :as service]
             [taoensso.timbre :as timbre])
   (:import java.io.FileInputStream
@@ -45,8 +46,8 @@
       (throw (Exception. "Zadaná hesla se neshodují.")))
     (when (or (str/blank? new-pwd) (< (count (str/trim new-pwd)) 6))
       (throw (Exception. "Nové heslo je příliš krátké.")))
-    (service/transact-entity conn user-id {:db/id (:db/id person)
-                                           :person/passwd (scrypt/encrypt new-pwd)})))
+    (db/transact-entity conn user-id {:db/id (:db/id person)
+                                      :person/passwd (scrypt/encrypt new-pwd)})))
 
 (defn find-last-lunch-menu [db history]
   (let [id-dates (->> (d/q '[:find ?e ?date :where [?e :lunch-menu/from ?date]] db)
@@ -60,7 +61,7 @@
                                   (take-while #(t/before? (t/now)
                                                           (t/minus (tc/from-date %)
                                                                    (t/days 2) ;;don't show new before Saturday
-                                                                   )))
+)))
                                   (count))))
         last-two (->> id-dates
                       (drop new-history)
@@ -129,7 +130,7 @@
                          (conj [:db/add id :daily-plan/lunch-cancelled? true])
                          ;; (and subst-req-on (not lunch-ord))
                          ;; (conj [:db.fn/retractEntity id])
-                         )
+)
                        :else
                        (cond-> [[:db/retract id :daily-plan/att-cancelled? true]
                                 [:db/retract id :daily-plan/lunch-cancelled? true]]
@@ -137,7 +138,7 @@
                          (conj [:db/retract id :daily-plan/excuse excuse])
                          substituted-by
                          (conj [:db.fn/retractEntity (:db/id substituted-by)])))))
-           (service/transact conn user-id)
+           (db/transact conn user-id)
            :tx-data
            count))))
 
@@ -161,11 +162,11 @@
        reverse))
 
 #_(defn find-next-weeks-person-daily-plans [db person-id weeks]
-  (let [to-date (-> (t/today)
-                    (t/plus (t/weeks weeks))
-                    tc/to-date)]
-    (->> (service/find-person-daily-plans db person-id (time/tomorrow) to-date)
-         (sort-by :daily-plan/date))))
+    (let [to-date (-> (t/today)
+                      (t/plus (t/weeks weeks))
+                      tc/to-date)]
+      (->> (service/find-person-daily-plans db person-id (time/tomorrow) to-date)
+           (sort-by :daily-plan/date))))
 
 (defn find-next-person-daily-plans [db person-id]
   (let [date-from (service/find-max-lunch-order-date db)
@@ -179,8 +180,8 @@
       (drop 1))))
 
 (defn find-person-substs [db person-id]
-  (let [person (service/find-by-id db person-id)
-        group (service/find-by-id db (get-in person [:person/group :db/id]))
+  (let [person (db/find-by-id db person-id)
+        group (db/find-by-id db (get-in person [:person/group :db/id]))
         date-from (some-> (or (first (service/find-previous-periods db (Date.)))
                               (service/find-current-period db)
                               {:billing-period/from-yyyymm 200001
@@ -232,16 +233,16 @@
         lunch-req? (some #(and (some-> % :daily-plan/lunch-req pos?)
                                (= (:daily-plan/child-att %) (:daily-plan/child-att substituted)))
                          substable-dps) ;; if have lunch some day with the same att type
-        ]
+]
     (when (and can-subst? (contains? dp-gap-days req-date))
-      (service/transact conn user-id [(cond-> {:db/id db-id
-                                               :daily-plan/person child-id
-                                               :daily-plan/date req-date
-                                               :daily-plan/child-att (:daily-plan/child-att substituted)
-                                               :daily-plan/subst-req-on (Date.)}
-                                        lunch-req?
-                                        (assoc :daily-plan/lunch-req 1))
-                                      [:db.fn/cas (:db/id substituted) :daily-plan/substituted-by nil db-id]]))))
+      (db/transact conn user-id [(cond-> {:db/id db-id
+                                          :daily-plan/person child-id
+                                          :daily-plan/date req-date
+                                          :daily-plan/child-att (:daily-plan/child-att substituted)
+                                          :daily-plan/subst-req-on (Date.)}
+                                   lunch-req?
+                                   (assoc :daily-plan/lunch-req 1))
+                                 [:db.fn/cas (:db/id substituted) :daily-plan/substituted-by nil db-id]]))))
 
 (defn file-to-byte-array [f]
   (let [ary (byte-array (.length f))

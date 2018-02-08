@@ -9,6 +9,7 @@
             [compojure.core :refer :all]
             [datomic.api :as d]
             [environ.core :refer [env]]
+            [liskasys.db :as db]
             [liskasys.config :as config]
             [liskasys.cljc.time :as time]
             [liskasys.cljc.validation :as validation]
@@ -86,7 +87,7 @@
                                   edn/read-string)]
          (cond
            subst-remove-id
-           (service/retract-entity (conns server-name) (:db/id user) subst-remove-id)
+           (db/retract-entity (conns server-name) (:db/id user) subst-remove-id)
            subst-req-date
            (main-service/request-substitution (conns server-name)
                                               (:db/id user)
@@ -104,7 +105,7 @@
 
      (GET "/qr-code" [id :<< as-int]
        (let [db (d/db (conns server-name))
-             person-bill (first (service/find-by-type db :person-bill {:db/id id}))
+             person-bill (first (db/find-by-type db :person-bill {:db/id id}))
              price-list (service/find-price-list db)
              {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
              qr-code-file (qr-code/save-qr-code (:price-list/bank-account price-list)
@@ -132,8 +133,8 @@
                (response/header "Content-Disposition" (str "inline; filename=" (:orig-filename lunch-menu))))))
 
      (POST "/jidelni-listek" [menu upload]
-       (let [id (service/transact-entity (conns server-name) (:db/id user) {:lunch-menu/text menu
-                                                                                          :lunch-menu/from (-> (t/today) tc/to-date)
+       (let [id (db/transact-entity (conns server-name) (:db/id user) {:lunch-menu/text menu
+                                                                       :lunch-menu/from (-> (t/today) tc/to-date)
                                                              ;; :orig-filename (not-empty (:filename upload))
                                                              ;; :content-type (when (not-empty (:filename upload))
                                                              ;;                 (:content-type upload))
@@ -192,7 +193,7 @@
      (GET "/profile" []
        (main-hiccup/liskasys-frame
         user
-        (hiccup/user-profile-form (-> (service/find-by-id (d/db (conns server-name)) (:db/id user))
+        (hiccup/user-profile-form (-> (db/find-by-id (d/db (conns server-name)) (:db/id user))
                                       (set/rename-keys {:person/firstname :firstname
                                                         :person/lastname :lastname
                                                         :person/email :email
@@ -208,11 +209,11 @@
            (throw (Exception. "Vyplňte správně kontaktní emailovou adresu")))
          (when-not (validation/valid-phone? phone)
            (throw (Exception. "Vyplňte správně kontaktní telefonní číslo")))
-         (service/transact-entity (conns server-name) (:db/id user) {:db/id (:db/id user)
-                                                                                   :person/firstname firstname
-                                                                                   :person/lastname lastname
-                                                                                   :person/email (str/trim email)
-                                                                                   :person/phone phone})
+         (db/transact-entity (conns server-name) (:db/id user) {:db/id (:db/id user)
+                                                                :person/firstname firstname
+                                                                :person/lastname lastname
+                                                                :person/email (str/trim email)
+                                                                :person/phone phone})
          (main-hiccup/liskasys-frame
           user
           (hiccup/user-profile-form params {:type :success :msg "Změny byly uloženy"}))
@@ -244,17 +245,17 @@
            (throw (Exception. "Not authorized")))
          (response/response
           (case action
-            "select" (service/find-by-type (d/db conn) ent-type ?data)
-            "save" (service/transact-entity conn (:db/id user) ?data)
-            "delete" (service/retract-entity conn (:db/id user) ?data)
+            "select" (db/find-by-type (d/db conn) ent-type ?data)
+            "save" (db/transact-entity conn (:db/id user) ?data)
+            "delete" (db/retract-entity conn (:db/id user) ?data)
             (case msg-id
               :user/auth user
-              :entity/retract (service/retract-entity conn (:db/id user) ?data)
-              :entity/retract-attr (service/retract-attr conn (:db/id user) ?data)
-              :entity/history (service/entity-history (d/db conn) ?data)
+              :entity/retract (db/retract-entity conn (:db/id user) ?data)
+              :entity/retract-attr (db/retract-attr conn (:db/id user) ?data)
+              :entity/history (db/entity-history (d/db conn) ?data)
               :person-bill/generate (service/re-generate-person-bills conn (:db/id user) (:person-bill/period ?data))
               :person-bill/publish-all-bills (service/publish-all-bills conn (:db/id user) (:person-bill/period ?data))
               :person-bill/set-bill-as-paid (service/set-bill-as-paid conn (:db/id user) (:db/id ?data))
-              :tx/datoms (service/tx-datoms conn ?data)
-              :tx/range (service/last-txes conn (:from-idx ?data) (:n ?data))
+              :tx/datoms (db/tx-datoms conn ?data)
+              :tx/range (db/last-txes conn (:from-idx ?data) (:n ?data))
               (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))

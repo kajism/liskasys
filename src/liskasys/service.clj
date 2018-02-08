@@ -1,14 +1,14 @@
 (ns liskasys.service
   (:require [clj-time.coerce :as tc]
             [clj-time.core :as t]
-            [clojure.set :as set]
             [clojure.string :as str]
+            [crypto.password.scrypt :as scrypt]
             [datomic.api :as d]
             [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc-util]
+            [liskasys.db :as db]
             [postal.core :as postal]
-            [taoensso.timbre :as timbre]
-            [crypto.password.scrypt :as scrypt])
+            [taoensso.timbre :as timbre])
   (:import java.text.Collator
            java.util.concurrent.ExecutionException
            java.util.Locale
@@ -18,25 +18,6 @@
 
 (defn sort-by-locale [key-fn coll]
   (sort-by key-fn cs-collator coll))
-
-(def ent-type--attr
-  {:bank-holiday :bank-holiday/label
-   :billing-period :billing-period/from-yyyymm
-   :daily-plan :daily-plan/date
-   :lunch-menu :lunch-menu/from
-   :lunch-order :lunch-order/date
-   :lunch-type :lunch-type/label
-   :person :person/active?
-   :price-list :price-list/days-1
-   :person-bill :person-bill/total
-   :school-holiday :school-holiday/label
-   :group :group/label
-   :config :config/org-name})
-
-(def ent-attr--type (reduce (fn [out [ent-type attr]]
-                              (assoc out attr ent-type))
-                            {}
-                            ent-type--attr))
 
 (defn all-work-days-since [ld]
   (->> ld
@@ -103,162 +84,6 @@
 (defn- school-holiday? [school-holidays local-date]
   (seq (filter #(*school-holiday? % local-date) school-holidays)))
 
-(defn- build-query [db pull-pattern where-m]
-  (reduce (fn [query [where-attr where-val]]
-            (let [?where-attr (symbol (str "?" (name where-attr)))]
-              (cond-> query
-                where-val
-                (update-in [:query :in] conj ?where-attr)
-                (not= '?id ?where-attr)
-                (update-in [:query :where] conj (if where-val
-                                                  ['?id where-attr ?where-attr]
-                                                  ['?id where-attr]))
-                where-val
-                (update-in [:args] conj where-val))))
-          {:query {:find [[(list 'pull '?id pull-pattern) '...]]
-                   :in ['$]
-                   :where []}
-           :args [db]
-           :timeout 2000}
-          where-m))
-
-(defn find-where
-  ([db where-m]
-   (find-where db where-m '[*]))
-  ([db where-m pull-pattern]
-   (d/query (build-query db pull-pattern where-m))))
-
-(defn find-by-type-default
-  ([db ent-type where-m]
-   (find-by-type-default db ent-type where-m '[*]))
-  ([db ent-type where-m pull-pattern]
-   (let [attr (get ent-type--attr ent-type ent-type)]
-     (find-where db (merge {attr nil} where-m) pull-pattern))))
-
-(defmulti find-by-type (fn [db ent-type where-m] ent-type))
-
-(defmethod find-by-type :default [db ent-type where-m]
-  (find-by-type-default db ent-type where-m))
-
-(defmethod find-by-type :person [db ent-type where-m]
-  (->> (find-by-type-default db ent-type where-m)
-       (map #(dissoc % :person/passwd))))
-
-(defn transact [conn user-id tx-data]
-  (if (seq tx-data)
-    (let [tx-data (cond-> (vec tx-data)
-                    user-id
-                    (conj {:db/id (d/tempid :db.part/tx) :tx/person user-id}))
-          _ (timbre/info "Transacting" tx-data)
-          tx-result @(d/transact conn tx-data)]
-      (timbre/debug tx-result)
-      tx-result)
-    {:db-after (d/db conn)}))
-
-(defn retract-entity*
-  "Returns the number of retracted datoms (attributes)."
-  [conn user-id ent-id]
-  (->> [[:db.fn/retractEntity ent-id]]
-       (transact conn user-id)
-       :tx-data
-       count
-       (+ -2)))
-
-(defn ent-type [ent]
-  (get ent-attr--type (first (keys (select-keys ent (keys ent-attr--type))))
-       (timbre/error "ent-type not found for" ent)))
-
-(defmulti retract-entity (fn [conn user-id ent-id]
-                           (ent-type (d/pull (d/db conn) '[*] ent-id))))
-
-(defmethod retract-entity :default [conn user-id ent-id]
-  (retract-entity* conn user-id ent-id))
-
-(def tempid? map?)
-
-(defn- coll->tx-data [eid k v old]
-  (timbre/debug k v old)
-  (let [vs (set v)
-        os (set old)]
-    (concat
-     (map
-      #(vector :db/add eid k (if (and (map? %) (not (tempid? (:db/id %))))
-                               (:db/id %)
-                               %))
-      (set/difference vs os))
-     (map
-      #(vector :db/retract eid k (if (map? %)
-                                   (:db/id %)
-                                   %))
-      (set/difference os vs)))))
-
-(defn- entity->tx-data [db ent]
-  (let [eid (:db/id ent)
-        old (when-not (tempid? eid) (d/pull db '[*] eid))]
-    (mapcat (fn [[k v]]
-              (if (or (nil? v) (= v {:db/id nil}))
-                (when-let [old-v (get old k)]
-                  (list [:db/retract eid k (if (map? old-v)
-                                             (:db/id old-v)
-                                             old-v)]))
-                (when-not (= v (get old k))
-                  (if (and (coll? v) (not (map? v)))
-                    (coll->tx-data eid k v (get old k))
-                    (list [:db/add eid k (if (and (map? v) (not (tempid? (:db/id v))))
-                                           (:db/id v)
-                                           v)])))))
-            (dissoc ent :db/id))))
-
-(defn- transact-entity* [conn user-id ent]
-  (let [id (:db/id ent)
-        ent (cond-> ent
-              (not id)
-              (assoc :db/id (d/tempid :db.part/user)))
-        tx-result (transact conn user-id (entity->tx-data (d/db conn) ent))
-        db (:db-after tx-result)
-        id (or id (d/resolve-tempid db (:tempids tx-result) (:db/id ent)))]
-    (first (if-let [et (ent-type ent)]
-             (find-by-type db et {:db/id id})
-             (d/pull db '[*] id)))))
-
-(defmulti transact-entity (fn [conn user-id ent]
-                            (ent-type ent)))
-
-(defmethod transact-entity :default [conn user-id ent]
-  (transact-entity* conn user-id ent))
-
-(defmethod transact-entity :daily-plan [conn user-id ent]
-  (let [old-id (d/q '[:find ?e .
-                      :in $ ?date ?pid
-                      :where
-                      [?e :daily-plan/date ?date]
-                      [?e :daily-plan/person ?pid]]
-                    (d/db conn)
-                    (:daily-plan/date ent)
-                    (:db/id (:daily-plan/person ent)))
-        remove-substitution? (and (:daily-plan/refund? ent)
-                                  (:daily-plan/substituted-by ent))]
-    (if (and old-id
-             (not= old-id (:db/id ent)))
-      {:error/msg "Pro tuto osobu a den již v denním plánu existuje jiný záznam."}
-      (do
-        (when remove-substitution?
-          (retract-entity conn user-id (get-in ent [:daily-plan/substituted-by :db/id])))
-        (transact-entity* conn user-id (cond-> ent
-                                         remove-substitution?
-                                         (dissoc :daily-plan/substituted-by)))))))
-
-(defmethod transact-entity :person [conn user-id ent]
-  (try
-    (transact-entity* conn user-id (update ent :person/passwd #(when % (scrypt/encrypt %))))
-    (catch ExecutionException e
-      (let [cause (.getCause e)]
-        (if (instance? IllegalStateException cause)
-          (do
-            (timbre/info "Tx failed" (.getMessage cause))
-            {:error/msg "Osoba se zadaným variabilním symbolem nebo emailem již v databázi existuje."})
-          (throw cause))))))
-
 (declare merge-person-bill-facts)
 
 (defn find-max-lunch-order-date [db]
@@ -291,26 +116,47 @@
                 [:db.fn/retractEntity dp-id]))
          (into tx-data))))
 
-(defmethod retract-entity :person-bill [conn user-id ent-id]
-  (->> (retract-person-bill-tx (d/db conn) ent-id)
-       (transact conn user-id)
-       :tx-data
-       count
-       (+ -2)))
+(defmethod db/transact-entity :daily-plan [conn user-id ent]
+  (let [old-id (d/q '[:find ?e .
+                      :in $ ?date ?pid
+                      :where
+                      [?e :daily-plan/date ?date]
+                      [?e :daily-plan/person ?pid]]
+                    (d/db conn)
+                    (:daily-plan/date ent)
+                    (:db/id (:daily-plan/person ent)))
+        remove-substitution? (and (:daily-plan/refund? ent)
+                                  (:daily-plan/substituted-by ent))]
+    (if (and old-id
+             (not= old-id (:db/id ent)))
+      {:error/msg "Pro tuto osobu a den již v denním plánu existuje jiný záznam."}
+      (do
+        (when remove-substitution?
+          (db/retract-entity conn user-id (get-in ent [:daily-plan/substituted-by :db/id])))
+        (db/transact-entity* conn user-id (cond-> ent
+                                            remove-substitution?
+                                            (dissoc :daily-plan/substituted-by)))))))
 
-(defn retract-attr [conn user-id ent]
-  (timbre/debug ent)
-  "Returns the number of retracted datoms (attributes)."
-  (->> (mapv (fn [[attr-key attr-val]]
-               [:db/retract (:db/id ent) attr-key attr-val])
-             (dissoc ent :db/id))
-       (transact conn user-id)
+(defmethod db/transact-entity :person [conn user-id ent]
+  (try
+    (db/transact-entity* conn user-id (update ent :person/passwd #(when % (scrypt/encrypt %))))
+    (catch ExecutionException e
+      (let [cause (.getCause e)]
+        (if (instance? IllegalStateException cause)
+          (do
+            (timbre/info "Tx failed" (.getMessage cause))
+            {:error/msg "Osoba se zadaným variabilním symbolem nebo emailem již v databázi existuje."})
+          (throw cause))))))
+
+(defmethod db/retract-entity :person-bill [conn user-id ent-id]
+  (->> (retract-person-bill-tx (d/db conn) ent-id)
+       (db/transact conn user-id)
        :tx-data
        count
        (+ -2)))
 
 (defn find-price-list [db]
-  (first (find-where db {:price-list/days-1 nil})))
+  (first (db/find-where db {:price-list/days-1 nil})))
 
 (defn- person-lunch-price [{child? :person/child?} {lunch-child :price-list/lunch lunch-adult :price-list/lunch-adult}]
   (if child?
@@ -325,9 +171,9 @@
                            db (:db/id person-bill)))
         as-of-db (d/as-of db tx)
         person (d/pull as-of-db
-                         [:person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email :person/child?
-                          {:person/parent [:person/email]}]
-                         (get-in person-bill [:person-bill/person :db/id]))
+                       [:person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email :person/child?
+                        {:person/parent [:person/email]}]
+                       (get-in person-bill [:person-bill/person :db/id]))
         lunch-price (person-lunch-price person (find-price-list db))
         total-lunch-price (* lunch-price lunch-count)
         paid-status (d/entid db :person-bill.status/paid)]
@@ -338,20 +184,17 @@
                 :-from-previous (- total (+ att-price total-lunch-price))
                 :-paid? (= (:db/id status) paid-status)}))))
 
-(defmethod find-by-type :person-bill [db ent-type where-m]
-  (->> (find-by-type-default db ent-type where-m '[* {:person-bill/period [*]
-                                                      :person-bill/status [:db/id :db/ident]}])
+(defmethod db/find-by-type :person-bill [db ent-type where-m]
+  (->> (db/find-by-type-default db ent-type where-m '[* {:person-bill/period [*]
+                                                         :person-bill/status [:db/id :db/ident]}])
        (map (partial merge-person-bill-facts db))))
 
-(defmethod find-by-type :daily-plan [db ent-type where-m]
-  (find-by-type-default db ent-type where-m '[* {:daily-plan/_substituted-by [:db/id]}]))
-
-(defn find-by-id [db eid]
-  (d/pull db '[*] eid))
+(defmethod db/find-by-type :daily-plan [db ent-type where-m]
+  (db/find-by-type-default db ent-type where-m '[* {:daily-plan/_substituted-by [:db/id]}]))
 
 (defn make-holiday?-fn [db]
-  (let [bank-holidays (find-where db {:bank-holiday/label nil})
-        school-holidays (find-where db {:school-holiday/label nil})]
+  (let [bank-holidays (db/find-where db {:bank-holiday/label nil})
+        school-holidays (db/find-where db {:school-holiday/label nil})]
     (fn [ld]
       (or (bank-holiday? bank-holidays ld)
           (school-holiday? school-holidays ld)))))
@@ -386,7 +229,7 @@
 
 (defn- close-lunch-order [conn date]
   (->> (new-lunch-order-ent date nil)
-       (transact-entity conn nil)))
+       (db/transact-entity conn nil)))
 
 (defn auto-sender-email [db]
   (or (not-empty (:person/email (first (find-persons-with-role db "koordinátor"))))
@@ -466,7 +309,7 @@
     (if-not (seq daily-plans)
       (timbre/info "No daily plans for" date "group" (:group/label group))
       (do
-        (transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
+        (db/transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
         (doseq [msg  not-going-subst-msgs]
           (timbre/info "Sending to not going" msg)
           (timbre/info (postal/send-message msg)))
@@ -475,15 +318,14 @@
           (timbre/info (postal/send-message msg)))
         group-summary-text))))
 
-
 (defn- process-substitutions [conn date]
   (let [db (d/db conn)
-        groups (find-where db {:group/label nil})
-        daily-plans (find-where db {:daily-plan/date date}
-                                '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
-                                                         {:person/lunch-type [:lunch-type/label]
-                                                          :person/parent [:person/email]
-                                                          :person/group [:db/id]}]}])
+        groups (db/find-where db {:group/label nil})
+        daily-plans (db/find-where db {:daily-plan/date date}
+                                   '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
+                                                            {:person/lunch-type [:lunch-type/label]
+                                                             :person/parent [:person/email]
+                                                             :person/group [:db/id]}]}])
         dps-by-group (group-by (comp :db/id :person/group :daily-plan/person) daily-plans)
         summary-text (reduce (fn [out group]
                                (str out (process-group-substitutions conn date group (get dps-by-group (:db/id group)))))
@@ -501,14 +343,13 @@
                      :body [{:type "text/plain; charset=utf-8"
                              :content (str admin-subj "\n\n"
                                            summary-text
-                                           "\n\nToto je automaticky generovaný email ze systému " full-url)}]}
-]
+                                           "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
 
     (timbre/info "Sending summary msg" summary-msg)
     (timbre/info (postal/send-message summary-msg))))
 
 (defn- find-lunch-types-by-id [db]
-  (->> (find-where db {:lunch-type/label nil})
+  (->> (db/find-where db {:lunch-type/label nil})
        (into [{:db/id nil :lunch-type/label "běžná"}])
        (map (juxt :db/id :lunch-type/label))
        (into {})))
@@ -605,7 +446,7 @@
         {:keys [tx-data total]} (lunch-order-tx-total date (find-price-list db) plans-with-lunches)
         {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)]
     (do
-      (transact conn nil tx-data)
+      (db/transact conn nil tx-data)
       (send-lunch-order-email date
                               org-name
                               (auto-sender-email db)
@@ -674,24 +515,24 @@
        db period-id))
 
 (defn- generate-person-bills-tx [db period-id]
-  (let [billing-period (find-by-id db period-id)
+  (let [billing-period (db/find-by-id db period-id)
         dates (apply period-dates (make-holiday?-fn db) (cljc-util/period-start-end billing-period))
         second-month-start (-> (cljc-util/period-start-end billing-period)
                                (first)
                                (t/plus (t/months 1)))
         person-id--2nd-previous-dps (some->> (find-previous-periods db (first dates))
-                                         (second)
-                                         :db/id
-                                         (find-period-daily-plans db)
-                                         (group-by #(get-in % [:daily-plan/person :db/id]))
-                                         (into {}))
+                                             (second)
+                                             :db/id
+                                             (find-period-daily-plans db)
+                                             (group-by #(get-in % [:daily-plan/person :db/id]))
+                                             (into {}))
         published-status (d/entid db :person-bill.status/published)
-        person-id--bill (atom (->> (find-where db {:person-bill/period period-id})
+        person-id--bill (atom (->> (db/find-where db {:person-bill/period period-id})
                                    (map #(vector (get-in % [:person-bill/person :db/id]) %))
                                    (into {})))
         price-list (find-price-list db)
         out (->>
-             (for [person (->> (find-where db {:person/active? true})
+             (for [person (->> (db/find-where db {:person/active? true})
                                (remove cljc-util/zero-patterns?))
                    :let [daily-plans (generate-daily-plans person dates)
                          previous-dps (get person-id--2nd-previous-dps (:db/id person))
@@ -720,9 +561,9 @@
                  (when (or (not existing-bill)
                            (< (get-in existing-bill [:person-bill/status :db/id]) published-status))
                    (merge (or existing-bill {:db/id (d/tempid :db.part/user)
-                                        :person-bill/person (:db/id person)
-                                        :person-bill/period period-id
-                                        :person-bill/status :person-bill.status/new})
+                                             :person-bill/person (:db/id person)
+                                             :person-bill/period period-id
+                                             :person-bill/status :person-bill.status/new})
                           {:person-bill/lunch-count lunch-count-next
                            :person-bill/att-price att-price
                            :person-bill/total (+ att-price
@@ -730,13 +571,13 @@
                                                        (+ lunch-count-next (find-lunch-count-planned db (:db/id person))))
                                                     (or (:person/lunch-fund person) 0)))}))))
              (filterv some?))]
-        (->> (vals @person-id--bill)
-             (mapcat #(retract-person-bill-tx db (:db/id %)))
-             (into out))))
+    (->> (vals @person-id--bill)
+         (mapcat #(retract-person-bill-tx db (:db/id %)))
+         (into out))))
 
 (defn- transact-period-person-bills [conn user-id period-id tx-data]
-  (let [tx-result (transact conn user-id tx-data)]
-    (find-by-type (:db-after tx-result) :person-bill {:person-bill/period period-id})))
+  (let [tx-result (db/transact conn user-id tx-data)]
+    (db/find-by-type (:db-after tx-result) :person-bill {:person-bill/period period-id})))
 
 (defn re-generate-person-bills [conn user-id period-id]
   (->> (generate-person-bills-tx (d/db conn) period-id)
@@ -745,7 +586,7 @@
 (defn publish-all-bills [conn user-id period-id]
   (let [db (d/db conn)
         {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
-        billing-period (find-by-id db period-id)
+        billing-period (db/find-by-id db period-id)
         new-bill-ids (d/q '[:find [?e ...]
                             :in $ ?period-id
                             :where
@@ -757,7 +598,7 @@
                          [:db/add id :person-bill/status :person-bill.status/published]))
                  (transact-period-person-bills conn user-id period-id))]
     (doseq [id new-bill-ids]
-      (let [bill (first (find-by-type db :person-bill {:db/id id}))
+      (let [bill (first (db/find-by-type db :person-bill {:db/id id}))
             price-list (find-price-list db)
             subject (str org-name ": Platba školkovného a obědů na období " (-> bill :person-bill/period cljc-util/period->text))
             msg {:from (auto-sender-email db)
@@ -772,7 +613,7 @@
                                        "Variabilní symbol: " (-> bill :person-bill/person :person/var-symbol) "\n"
                                        "Do poznámky: " (-> bill :person-bill/person cljc-util/person-fullname) " "
                                        (-> bill :person-bill/period cljc-util/period->text) "\n"
-                                       "Splatnost do: " (or (:price-list/payment-due-date (find-price-list db)) "20. dne tohoto měsíce") "\n\n" 
+                                       "Splatnost do: " (or (:price-list/payment-due-date (find-price-list db)) "20. dne tohoto měsíce") "\n\n"
                                        "Pro QR platbu přejděte na " full-url " menu Platby"
                                        "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
         (timbre/info "Sending info about published payment" msg)
@@ -790,7 +631,7 @@
                [?e :person-bill/status :person-bill.status/published]]
              db bill-id)
         order-date (tc/to-local-date (find-max-lunch-order-date db))
-        dates (cond->> (apply period-dates (make-holiday?-fn db) (cljc-util/period-start-end (find-by-id db period-id)))
+        dates (cond->> (apply period-dates (make-holiday?-fn db) (cljc-util/period-start-end (db/find-by-id db period-id)))
                 order-date
                 (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
         tx-result (->> (generate-daily-plans person dates)
@@ -800,8 +641,8 @@
                               [:db.fn/cas (:db/id person) :person/lunch-fund
                                (:person/lunch-fund person) (+ (or (:person/lunch-fund person) 0)
                                                               (- total att-price))]])
-                       (transact conn user-id))]
-    (find-by-type (:db-after tx-result) :person-bill {:db/id bill-id})))
+                       (db/transact conn user-id))]
+    (db/find-by-type (:db-after tx-result) :person-bill {:db/id bill-id})))
 
 #_(defn all-period-bills-paid [conn user-id period-id]
     (let [db (d/db conn)
@@ -842,49 +683,6 @@
        (map (partial merge-person-bill-facts db))
        (sort-by (comp :db/id :person-bill/period))
        reverse))
-
-(defn entity-history [db ent-id]
-  (->>
-   (d/q '[:find ?tx ?aname ?v ?added
-          :in $ ?e
-          :where
-          [?e ?a ?v ?tx ?added]
-          [?a :db/ident ?aname]]
-        (d/history db)
-        ent-id)
-   (map (fn [[txid a v added?]]
-          (let [tx (d/pull db '[:db/id :db/txInstant :tx/person] txid)]
-            {:a a
-             :v v
-             :tx tx
-             :added? added?})))
-   (sort-by last)))
-
-(defn tx-datoms [conn t]
-  (let [db (d/db conn)]
-    (->> (some-> (d/log conn) (d/tx-range t nil) first :data)
-         (map (fn [datom]
-                {:e (:e datom)
-                 :a (d/ident db (:a datom))
-                 :v (:v datom)
-                 :added? (:added datom)}))
-         (sort-by :added?))))
-
-(defn last-txes
-  ([conn]
-   (last-txes conn 0))
-  ([conn from-idx]
-   (last-txes conn from-idx 50))
-  ([conn from-idx n]
-   (let [db (d/db conn)]
-     (->> (some-> (d/log conn) (d/tx-range nil nil))
-          reverse
-          (filter #(> (count (:data %)) 1))
-          (drop from-idx)
-          (take n)
-          (map (fn [row]
-                 (-> (d/pull db '[*] (-> row :t d/t->tx))
-                     (assoc :datom-count (count (:data row))))))))))
 
 (defn find-max-person-paid-period-date [db person-id]
   (when-let [to-yyyymm (d/q '[:find (max ?yyyymm) .
@@ -943,7 +741,7 @@
                (not next-school-day-date)
                (and (> (.getTime next-school-day-date) (.getTime last-order-date))
                     (< (- (.getTime next-school-day-date) (.getTime from-date)) (* 14 24 60 60 1000)) ;; max 14 days ahead
-                    ))
+))
        next-school-day-date))))
 
 (defn process-lunch-order-and-substitutions [conn]
