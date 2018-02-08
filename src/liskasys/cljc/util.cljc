@@ -1,9 +1,11 @@
 (ns liskasys.cljc.util
   (:require [clojure.string :as str]
             #?@(:clj [[clojure.edn :as edn]
-                      [clj-time.core :as t]]
+                      [clj-time.core :as t]
+                      [clj-time.coerce :as tc]]
                 :cljs
                 [[cljs-time.core :as t]
+                 [cljs-time.coerce :as tc]
                  [cljs.tools.reader.edn :as edn]])))
 
 #_(def max-children-per-day 19)
@@ -132,3 +134,8 @@
     1 "celodenní"
     2 "půldenní"
     "-"))
+
+(defn date-yyyymm [date]
+  (let [ld (tc/to-local-date date)]
+    (+ (* (t/year ld) 100)
+       (t/month ld))))

@@ -17,7 +17,6 @@
             [liskasys.endpoint.main-service :as main-service]
             [liskasys.hiccup :as hiccup]
             [liskasys.qr-code :as qr-code]
-            [liskasys.service :as service]
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]
             [liskasys.cljc.util :as cljc-util])
@@ -106,7 +105,7 @@
      (GET "/qr-code" [id :<< as-int]
        (let [db (d/db (conns server-name))
              person-bill (first (db/find-by-type db :person-bill {:db/id id}))
-             price-list (service/find-price-list db)
+             price-list (db/find-price-list db)
              {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
              qr-code-file (qr-code/save-qr-code (:price-list/bank-account price-list)
                                                 (/ (:person-bill/total person-bill) 100)
@@ -253,9 +252,9 @@
               :entity/retract (db/retract-entity conn (:db/id user) ?data)
               :entity/retract-attr (db/retract-attr conn (:db/id user) ?data)
               :entity/history (db/entity-history (d/db conn) ?data)
-              :person-bill/generate (service/re-generate-person-bills conn (:db/id user) (:person-bill/period ?data))
-              :person-bill/publish-all-bills (service/publish-all-bills conn (:db/id user) (:person-bill/period ?data))
-              :person-bill/set-bill-as-paid (service/set-bill-as-paid conn (:db/id user) (:db/id ?data))
+              :person-bill/generate (main-service/re-generate-person-bills conn (:db/id user) (:person-bill/period ?data))
+              :person-bill/publish-all-bills (main-service/publish-all-bills conn (:db/id user) (:person-bill/period ?data))
+              :person-bill/set-bill-as-paid (main-service/set-bill-as-paid conn (:db/id user) (:db/id ?data))
               :tx/datoms (db/tx-datoms conn ?data)
               :tx/range (db/last-txes conn (:from-idx ?data) (:n ?data))
               (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))
