@@ -100,8 +100,8 @@
         (or (< (.getTime now) (.getTime date))
             (and (= (time/to-format now time/ddMMyyyy)
                     (time/to-format date time/ddMMyyyy))
-                 (<= (HHmm--int (time/to-format now time/HHmm))
-                     (HHmm--int cancel-time))))))))
+                 (< (HHmm--int (time/to-format now time/HHmm))
+                    (HHmm--int cancel-time))))))))
 
 (defn transact-cancellations [conn user-id child-id cancel-dates uncancel-dates excuses-by-date]
   (let [db (d/db conn)

@@ -7,6 +7,12 @@
             [clojure.string :as str])
   (:import java.util.TimeZone))
 
+(twarc/defjob process-cancellation-closing-job [scheduler conn]
+  (try
+    (service/process-cancellation-closing conn)
+    (catch Exception e
+      (timbre/error "process-cancellation-closing-job error" e))))
+
 (twarc/defjob process-lunch-order-and-substitutions-job [scheduler conn]
   (try
     (service/process-lunch-order-and-substitutions conn)
@@ -25,6 +31,11 @@
                     [order-hour order-min] (str/split order-time #":")]]
         (timbre/info db-key "Scheduling periodic tasks")
         ;; cron expression: sec min hour day-of-mon mon day-of-week ?year
+        (process-cancellation-closing-job sched
+                                          [conn]
+                                          :trigger {:cron {:expression (str "0 " cancel-min " " cancel-hour " * * ?")
+                                                           :misfire-handling :fire-and-process
+                                                           :time-zone (TimeZone/getTimeZone "Europe/Prague")}})
         (process-lunch-order-and-substitutions-job sched
                                                    [conn]
                                                    :trigger {:cron {:expression (str "0 " order-min " " order-hour " * * ?")

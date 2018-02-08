@@ -138,13 +138,14 @@
        date))
 
 (defn find-persons-with-role [db role]
-  (d/q '[:find [(pull ?e [*]) ...]
-         :in $ ?role
-         :where
-         [?e :person/roles ?roles]
-         [(clojure.string/index-of ?roles ?role)]]
-       db
-       role))
+  (when (not-empty role)
+    (d/q '[:find [(pull ?e [*]) ...]
+           :in $ ?role
+           :where
+           [?e :person/roles ?roles]
+           [(clojure.string/index-of ?roles ?role)]]
+         db
+         role)))
 
 (defn- new-lunch-order-ent [date total]
   (cond-> {:db/id (d/tempid :db.part/user)
@@ -258,15 +259,15 @@
                              groups)
         {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
         sender (auto-sender-email db)
-        admin-subj (str org-name ": Denní souhrn na " (time/format-day-date date))
+        subj (str org-name ": Denní souhrn na " (time/format-day-date date))
         summary-msg {:from sender
                      :to (-> #{}
                              #_(into (map :person/email (find-persons-with-role db "admin")))
                              (into (map :person/email (find-persons-with-role db "průvodce")))
                              (vec))
-                     :subject admin-subj
+                     :subject subj
                      :body [{:type "text/plain; charset=utf-8"
-                             :content (str admin-subj "\n\n"
+                             :content (str subj "\n\n"
                                            summary-text
                                            "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
 
@@ -450,3 +451,26 @@
     (Thread/sleep 5000)
     (process-substitutions conn date)
     (process-lunch-order conn date)))
+
+(defn process-cancellation-closing [conn]
+  (let [db (d/db conn)
+        today (time/today)
+        today-atts (->>(find-att-daily-plans db today today)
+                       (filter #(not (:daily-plan/lunch-cancelled? %))))
+        groups (db/find-where db {:group/label nil})
+        atts-by-group-id (group-by (comp :db/id :person/group :daily-plan/person) today-atts)
+        sender (auto-sender-email db)
+        {:config/keys [org-name full-url closing-msg-role]} (d/pull db '[*] :liskasys/config)
+        subj (str org-name ": Celkový dnešní počet dětí je " (count today-atts))
+        msg {:from sender
+             :to (mapv :person/email (find-persons-with-role db closing-msg-role))
+             :subject subj
+             :body [{:type "text/plain; charset=utf-8"
+                     :content (str subj "\n\n"
+                                   (reduce (fn [out group]
+                                             (str out (:group/label group) ": " (count (get atts-by-group-id (:db/id group))) "\n"))
+                                           ""
+                                           groups)
+                                   "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
+    (timbre/info "Sending cancellation closing msg" msg)
+    (timbre/info (postal/send-message msg))))

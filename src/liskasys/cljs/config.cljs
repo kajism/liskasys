@@ -43,7 +43,8 @@
                  ["Celé URL" :config/full-url]
                  ["Odesilatel emalů" :config/automat-email]
                  ["Čas konce oml." :config/cancel-time]
-                 ["Čas obj. obědů" :config/order-time]]]]])))
+                 ["Čas obj. obědů" :config/order-time]
+                 ["Příjemce finálního počtu" :config/closing-msg-role]]]]])))
 
 (defn page-config []
   (let [config (re-frame/subscribe [:entity-edit :config])]
@@ -79,6 +80,11 @@
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/order-time %])
            :width "200px"
            :validation-regex #"^([012]?\d?:\d{0,2})$"]
+          [re-com/label :label "Role příjemce emailu s finálním počtem dětí po konci omlování"]
+          [re-com/input-text
+           :model (str (:config/closing-msg-role item))
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/closing-msg-role %])
+           :width "200px"]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :config])]

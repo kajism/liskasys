@@ -97,6 +97,7 @@
                ["Třída" #(:group/label (get @groups (some-> % :person/group :db/id)))]
                ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
                ["Fond obědů" #(some-> % :person/lunch-fund cljc-util/from-cents)]
+               ["Role" :person/roles]
                #_["Aktivní?" :person/active?]
                #_["Dítě?" :person/child?]]])))
 
