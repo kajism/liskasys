@@ -81,7 +81,7 @@
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/order-time %])
            :width "200px"
            :validation-regex #"^([012]?\d?:\d{0,2})$"]
-          [re-com/label :label "Role příjemce emailu s finálním počtem dětí po konci omlování"]
+          [re-com/label :label "Role příjemce emailu s finálním počtem dětí po konci omlouvání"]
           [re-com/input-text
            :model (str (:config/closing-msg-role item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/closing-msg-role %])
