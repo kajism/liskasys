@@ -85,8 +85,8 @@
        (+ -2)))
 
 (defn ent-type [ent]
-  (get ent-attr--type (first (keys (select-keys ent (keys ent-attr--type))))
-       (timbre/error "ent-type not found for" ent)))
+  (or (get ent-attr--type (first (keys (select-keys ent (keys ent-attr--type)))))
+      (timbre/error "ent-type not found for" ent)))
 
 (defmulti retract-entity (fn [conn user-id ent-id]
                            (ent-type (d/pull (d/db conn) '[*] ent-id))))
