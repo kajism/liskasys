@@ -203,7 +203,7 @@
                               ", bez oběda"
                               (when-let [type (some-> % :daily-plan/person :person/lunch-type :lunch-type/label)]
                                 (str ", strava " type))))
-        group-summary-text (str (:group/label group)
+        group-summary-text (str (:group/label group) " (" (count going) ")"
                                 "\n===========================================\n\n"
                                 (when-let [xs (not-empty (->> going
                                                               (remove :daily-plan/subst-req-on)
@@ -221,7 +221,6 @@
                                                               (map going->str-fn)
                                                               (sort-by-locale identity)))]
                                   (str "\n\nOstatní obědy (" (count xs) ") ---------------------\n" (str/join "\n" xs)))
-                                "\n\n-------------------------------------------\n"
                                 (when-let [xs (not-empty (->> daily-plans
                                                               (filter :daily-plan/att-cancelled?)
                                                               (map (comp cljc.util/person-fullname :daily-plan/person))
@@ -242,7 +241,8 @@
         (doseq [msg  going-subst-msgs]
           (timbre/info "Sending to going" msg)
           (timbre/info (postal/send-message msg)))
-        group-summary-text))))
+        {:text group-summary-text
+         :count (count going)}))))
 
 (defn- process-substitutions [conn date]
   (let [db (d/db conn)
@@ -253,13 +253,11 @@
                                                              :person/parent [:person/email]
                                                              :person/group [:db/id]}]}])
         dps-by-group (group-by (comp :db/id :person/group :daily-plan/person) daily-plans)
-        summary-text (reduce (fn [out group]
-                               (str out (process-group-substitutions conn date group (get dps-by-group (:db/id group)))))
-                             ""
-                             groups)
+        group-results (keep #(process-group-substitutions conn date % (get dps-by-group (:db/id %)))
+                            groups)
         {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
         sender (auto-sender-email db)
-        subj (str org-name ": Denní souhrn na " (time/format-day-date date))
+        subj (str org-name ": Denní souhrn na " (time/format-day-date date) " (" (->> group-results (map :count) (reduce +)) " dětí)")
         summary-msg {:from sender
                      :to (-> #{}
                              #_(into (map :person/email (find-persons-with-role db "admin")))
@@ -268,7 +266,7 @@
                      :subject subj
                      :body [{:type "text/plain; charset=utf-8"
                              :content (str subj "\n\n"
-                                           summary-text
+                                           (->> group-results (map :text) (reduce str))
                                            "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
 
     (timbre/info "Sending summary msg" summary-msg)
