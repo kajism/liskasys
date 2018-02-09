@@ -1,7 +1,7 @@
 (ns liskasys.cljs.config
   (:require [clojure.string :as str]
             [liskasys.cljc.time :as time]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -44,7 +44,8 @@
                  ["Odesilatel emalů" :config/automat-email]
                  ["Čas konce oml." :config/cancel-time]
                  ["Čas obj. obědů" :config/order-time]
-                 ["Příjemce finálního počtu" :config/closing-msg-role]]]]])))
+                 ["Příjemce finálního počtu" :config/closing-msg-role]
+                 ["Období náhrad" :config/max-subst-periods]]]]])))
 
 (defn page-config []
   (let [config (re-frame/subscribe [:entity-edit :config])]
@@ -85,6 +86,12 @@
            :model (str (:config/closing-msg-role item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/closing-msg-role %])
            :width "200px"]
+          [re-com/label :label "Počet předchozích platebních období, za které je možné nahrazovat omluvenky"]
+          [re-com/input-text
+           :model (str (:config/max-subst-periods item))
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/max-subst-periods (cljc.util/parse-int %)])
+           :width "200px"
+           :validation-regex #"^(\d{0,2})$"]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :config])]
@@ -97,7 +104,7 @@
 (pages/add-page :configs #'page-configs)
 
 (secretary/defroute #"/config/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :config (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :config (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :config]))
 (pages/add-page :config #'page-config)
 (common/add-kw-url :config "config")

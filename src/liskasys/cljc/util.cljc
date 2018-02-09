@@ -31,7 +31,7 @@
 (defn remove-leading-zeros [s]
   (-> s
       str
-      (str/replace #"^0+" "")))
+      (str/replace #"^0+(\d)" "$1")))
 
 (defn parse-int [s]
   (when-let [s (not-empty (remove-leading-zeros (remove-spaces s)))]
@@ -139,3 +139,12 @@
   (let [ld (tc/to-local-date date)]
     (+ (* (t/year ld) 100)
        (t/month ld))))
+
+(defn last-september [yyyymm]
+  (let [y (quot yyyymm 100)
+        m (rem yyyymm 100)]
+    (+ (* (if (>= m 9)
+            y
+            (dec y))
+          100)
+       9)))

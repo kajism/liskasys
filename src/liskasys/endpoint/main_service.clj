@@ -183,20 +183,25 @@
                (not (can-cancel-today?-fn date-from))))
       (drop 1))))
 
-(defn find-previous-periods [db before-date]
-  (->> (d/q '[:find [(pull ?e [*]) ...]
-              :in $ ?before-date
-              :where
-              [?e :billing-period/to-yyyymm ?to]
-              [(< ?to ?before-date)]]
-            db (cljc.util/date-yyyymm before-date))
-       (sort-by :billing-period/to-yyyymm)
-       (reverse)))
+(defn find-school-year-previous-periods [db before-date]
+  (let [to-yyyymm (cljc.util/date-yyyymm before-date)
+        from-yyyymm (cljc.util/last-september to-yyyymm)]
+    (->> (d/q '[:find [(pull ?e [*]) ...]
+                :in $ ?start ?end
+                :where
+                [?e :billing-period/from-yyyymm ?from]
+                [(>= ?from ?start)]
+                [?e :billing-period/to-yyyymm ?to]
+                [(< ?to ?end)]]
+              db from-yyyymm to-yyyymm)
+         (sort-by :billing-period/to-yyyymm)
+         (reverse))))
 
 (defn find-person-substs [db person-id]
   (let [person (db/find-by-id db person-id)
         group (db/find-by-id db (get-in person [:person/group :db/id]))
-        date-from (some-> (or (first (find-previous-periods db (Date.)))
+        {:config/keys [max-subst-periods]} (d/pull db '[*] :liskasys/config)
+        date-from (some-> (or (last (take max-subst-periods (find-school-year-previous-periods db (Date.))))
                               (service/find-current-period db)
                               {:billing-period/from-yyyymm 200001
                                :billing-period/to-yyyymm 200001})
@@ -370,7 +375,7 @@
         second-month-start (-> (cljc.util/period-start-end billing-period)
                                (first)
                                (t/plus (t/months 1)))
-        person-id--2nd-previous-dps (some->> (find-previous-periods db (first dates))
+        person-id--2nd-previous-dps (some->> (find-school-year-previous-periods db (first dates))
                                              (second)
                                              :db/id
                                              (find-period-daily-plans db)
