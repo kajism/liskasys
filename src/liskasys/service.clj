@@ -454,21 +454,23 @@
   (let [db (d/db conn)
         today (time/today)
         today-atts (->>(find-att-daily-plans db today today)
-                       (filter #(not (:daily-plan/lunch-cancelled? %))))
-        groups (db/find-where db {:group/label nil})
-        atts-by-group-id (group-by (comp :db/id :person/group :daily-plan/person) today-atts)
-        sender (auto-sender-email db)
-        {:config/keys [org-name full-url closing-msg-role]} (d/pull db '[*] :liskasys/config)
-        subj (str org-name ": Celkový dnešní počet dětí je " (count today-atts))
-        msg {:from sender
-             :to (mapv :person/email (find-persons-with-role db closing-msg-role))
-             :subject subj
-             :body [{:type "text/plain; charset=utf-8"
-                     :content (str subj "\n\n"
-                                   (reduce (fn [out group]
-                                             (str out (:group/label group) ": " (count (get atts-by-group-id (:db/id group))) "\n"))
-                                           ""
-                                           groups)
-                                   "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
-    (timbre/info "Sending cancellation closing msg" msg)
-    (timbre/info (postal/send-message msg))))
+                       (remove :daily-plan/att-cancelled?))
+        {:config/keys [org-name full-url closing-msg-role]} (d/pull db '[*] :liskasys/config)]
+    (if (> (count today-atts) 0)
+      (let [groups (db/find-where db {:group/label nil})
+            atts-by-group-id (group-by (comp :db/id :person/group :daily-plan/person) today-atts)
+            sender (auto-sender-email db)
+            subj (str org-name ": Celkový dnešní počet dětí je " (count today-atts))
+            msg {:from sender
+                 :to (mapv :person/email (find-persons-with-role db closing-msg-role))
+                 :subject subj
+                 :body [{:type "text/plain; charset=utf-8"
+                         :content (str subj "\n\n"
+                                       (reduce (fn [out group]
+                                                 (str out (:group/label group) ": " (count (get atts-by-group-id (:db/id group))) "\n"))
+                                               ""
+                                               groups)
+                                       "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
+        (timbre/info org-name ": sending cancellation closing msg" msg)
+        (timbre/info (postal/send-message msg)))
+      (timbre/info org-name ": no attendance today"))))
