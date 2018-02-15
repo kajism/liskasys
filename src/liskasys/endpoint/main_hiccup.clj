@@ -52,6 +52,21 @@
 
 (defn cancellation-page [user-children-data child-daily-plans]
   [:div.container
+   [:script
+    "console.log(\"Fn declaration\");
+function validateExcuses() {
+var xs = document.getElementsByName(\"cancel-dates[]\");
+console.log(\"Validating \" + xs.length + \" elements\");
+for (var i=0; i < xs.length; i++) {
+  var exc = document.getElementsByName(\"excuse[\" + xs[i].value  + \"]\")[0].value;
+  if (xs[i].checked && (!exc || /^\\s*$/.test(exc))) {
+    alert(\"Vyplňte prosím důvody nepřítomnosti.\");
+    return false;
+  }
+}
+console.log(\"Ok\");
+return true;
+}"]
    [:h3 "Omluvenky"]
    [:div
     [:div.form-group
@@ -101,19 +116,7 @@
      (when (seq child-daily-plans)
        [:button.btn.btn-danger {:type "submit"} "Uložit"])
      [:br]
-     [:br]
-     [:script
-      "function validateExcuses() {
-var xs = document.getElementsByName(\"cancel-dates[]\");
-for (var i=0; i < xs.length; i++) {
-  var exc = document.getElementsByName(\"excuse[\" + xs[i].value  + \"]\")[0].value;
-  if (xs[i].checked && (!exc || /^\\s*$/.test(exc))) {
-    alert(\"Vyplňte prosím důvody nepřítomnosti.\");
-    return false;
-  }
-}
-return true;
-}"]]]])
+     [:br]]]])
 
 (defn substitutions [user-children-data {:keys [dp-gap-days can-subst? substable-dps group]}]
   [:div.container

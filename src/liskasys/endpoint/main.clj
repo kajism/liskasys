@@ -31,10 +31,11 @@
   (or (:upload-dir env) "./uploads/" (get config/dbs server-name) "/"))
 
 (defn- user-children-data [db user-id selected-id]
-  (let [user-children (main-service/find-active-children-by-person-id db user-id)]
+  (let [user-children (main-service/find-active-children-by-person-id db user-id)
+        sid (or selected-id (:db/id (first user-children)))]
     {:user-children user-children
-     :selected-child (some #(when (= (:db/id %) selected-id) %) user-children)
-     :selected-id (or selected-id (:db/id (first user-children)))}))
+     :selected-child (some #(when (= (:db/id %) sid) %) user-children)
+     :selected-id sid}))
 
 (defn main-endpoint [{{conns :conns} :datomic}]
   (routes
