@@ -225,7 +225,7 @@
                                                               (filter :daily-plan/att-cancelled?)
                                                               (map (comp cljc.util/person-fullname :daily-plan/person))
                                                               (sort-by-locale identity)))]
-                                  (str "\nOmluvenky (" (count xs) ") ---------------------------\n" (str/join "\n" xs)))
+                                  (str "\n\nOmluvenky (" (count xs) ") ---------------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> not-going
                                                               (map (comp cljc.util/person-fullname :daily-plan/person))
                                                               (sort-by-locale identity)))]
