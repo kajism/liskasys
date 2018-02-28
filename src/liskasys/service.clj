@@ -80,7 +80,7 @@
         (if (instance? IllegalStateException cause)
           (do
             (timbre/info "Tx failed" (.getMessage cause))
-            {:error/msg "Osoba se zadaným variabilním symbolem nebo emailem již v databázi existuje."})
+            {:error/msg "Osoba se zadaným variabilním symbolem, telefonem nebo emailem již v databázi existuje."})
           (throw cause))))))
 
 (defmethod db/retract-entity :person-bill [conn user-id ent-id]
