@@ -44,6 +44,7 @@
                  ["Odesilatel emalů" :config/automat-email]
                  ["Čas konce oml." :config/cancel-time]
                  ["Čas obj. obědů" :config/order-time]
+                 ["Obj. v prac. dny?" :config/order-workdays-only?]
                  ["Příjemce finálního počtu" :config/closing-msg-role]
                  ["Období náhrad" :config/max-subst-periods]]]]])))
 
@@ -81,12 +82,17 @@
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/order-time %])
            :width "200px"
            :validation-regex #"^([012]?\d?:\d{0,2})$"]
-          [re-com/label :label "Role příjemce emailu s finálním počtem dětí po konci omlouvání"]
+          [re-com/label :label "Objednávat obědy pouze v pracovní dny?"]
+          [re-com/checkbox
+           :label "tzn. objednávka na pondělí již v pátek?"
+           :model (:config/order-workdays-only? item)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/order-workdays-only? %])]
+          [re-com/label :label "Role (pouze jedna) příjemce emailu s finálním počtem dětí po konci omlouvání"]
           [re-com/input-text
            :model (str (:config/closing-msg-role item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/closing-msg-role %])
            :width "200px"]
-          [re-com/label :label "Počet předchozích platebních období, za které je možné nahrazovat omluvenky"]
+          [re-com/label :label "Počet předchozích platebních období, za které je možné nahrazovat omluvenky (pouze v rámci školního roku)"]
           [re-com/input-text
            :model (str (:config/max-subst-periods item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/max-subst-periods (cljc.util/parse-int %)])

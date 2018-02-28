@@ -9,7 +9,6 @@
             [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc.util]
             [liskasys.db :as db]
-            [liskasys.easter :as easter]
             [liskasys.service :as service]
             [postal.core :as postal]
             [taoensso.timbre :as timbre])
@@ -270,54 +269,6 @@
     (.close is)
     ary))
 
-(defn- *bank-holiday? [{:keys [:bank-holiday/day :bank-holiday/month :bank-holiday/easter-delta]} local-date]
-  (or (and (= (t/day local-date) day)
-           (= (t/month local-date) month))
-      (and (some? easter-delta)
-           (t/equal? local-date
-                     (t/plus (easter/easter-monday-for-year-ld (t/year local-date))
-                             (t/days easter-delta))))))
-
-(defn- bank-holiday? [bank-holidays local-date]
-  (seq (filter #(*bank-holiday? % local-date) bank-holidays)))
-
-(defn- *school-holiday? [{:keys [:school-holiday/from :school-holiday/to :school-holiday/every-year?]} local-date]
-  (let [from (tc/from-date from)
-        dt (tc/to-date-time local-date)
-        from (if-not every-year?
-               from
-               (let [from (t/date-time (t/year dt) (t/month from) (t/day from))]
-                 (if-not (t/after? from dt)
-                   from
-                   (t/minus from (t/years 1)))))
-        to (tc/from-date to)
-        to (if-not every-year?
-             to
-             (let [to (t/date-time (t/year from) (t/month to) (t/day to))]
-               (if-not (t/before? to from)
-                 to
-                 (t/plus to (t/years 1)))))]
-    (t/within? from to dt)))
-
-(defn- school-holiday? [school-holidays local-date]
-  (seq (filter #(*school-holiday? % local-date) school-holidays)))
-
-(defn make-holiday?-fn [db]
-  (let [bank-holidays (db/find-where db {:bank-holiday/label nil})
-        school-holidays (db/find-where db {:school-holiday/label nil})]
-    (fn [ld]
-      (or (bank-holiday? bank-holidays ld)
-          (school-holiday? school-holidays ld)))))
-
-(defn- period-dates [holiday?-fn from to]
-  "Returns all local-dates except holidays from - to (exclusive)."
-  (->> from
-       (iterate (fn [ld]
-                  (t/plus ld (t/days 1))))
-       (take-while (fn [ld]
-                     (t/before? ld to)))
-       (remove holiday?-fn)))
-
 (defn- find-period-daily-plans [db period-id]
   (d/q '[:find [(pull ?e [*]) ...]
          :in $ ?period-id
@@ -371,7 +322,7 @@
 
 (defn- generate-person-bills-tx [db period-id]
   (let [billing-period (db/find-by-id db period-id)
-        dates (apply period-dates (make-holiday?-fn db) (cljc.util/period-start-end billing-period))
+        dates (apply service/period-dates (service/make-holiday?-fn db) (cljc.util/period-start-end billing-period))
         second-month-start (-> (cljc.util/period-start-end billing-period)
                                (first)
                                (t/plus (t/months 1)))
@@ -486,7 +437,7 @@
                [?e :person-bill/status :person-bill.status/published]]
              db bill-id)
         order-date (tc/to-local-date (service/find-max-lunch-order-date db))
-        dates (cond->> (apply period-dates (make-holiday?-fn db) (cljc.util/period-start-end (db/find-by-id db period-id)))
+        dates (cond->> (apply service/period-dates (service/make-holiday?-fn db) (cljc.util/period-start-end (db/find-by-id db period-id)))
                 order-date
                 (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
         tx-result (->> (generate-daily-plans person dates)

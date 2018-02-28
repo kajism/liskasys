@@ -21,6 +21,12 @@
   (when date
     (tc/to-date date)))
 
+(defn to-ld
+  "Prevede z java.util.Date resp. js/Date do cljs.time LocalDate"
+  [date]
+  (when date
+    (tc/to-local-date date)))
+
 (defn from-date
   "Prevede z js Date do cljs.time date"
   [date]

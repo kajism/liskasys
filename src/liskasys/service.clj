@@ -1,12 +1,14 @@
 (ns liskasys.service
   (:require [clj-time.coerce :as tc]
             [clj-time.core :as t]
+            [clj-time.predicates :as tp]
             [clojure.string :as str]
             [crypto.password.scrypt :as scrypt]
             [datomic.api :as d]
             [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc.util]
             [liskasys.db :as db]
+            [liskasys.easter :as easter]
             [postal.core :as postal]
             [taoensso.timbre :as timbre])
   (:import java.text.Collator
@@ -20,6 +22,54 @@
   (sort-by key-fn cs-collator coll))
 
 (declare merge-person-bill-facts)
+
+(defn- *bank-holiday? [{:keys [:bank-holiday/day :bank-holiday/month :bank-holiday/easter-delta]} local-date]
+  (or (and (= (t/day local-date) day)
+           (= (t/month local-date) month))
+      (and (some? easter-delta)
+           (t/equal? local-date
+                     (t/plus (easter/easter-monday-for-year-ld (t/year local-date))
+                             (t/days easter-delta))))))
+
+(defn- bank-holiday? [bank-holidays local-date]
+  (seq (filter #(*bank-holiday? % local-date) bank-holidays)))
+
+(defn- *school-holiday? [{:keys [:school-holiday/from :school-holiday/to :school-holiday/every-year?]} local-date]
+  (let [from (tc/from-date from)
+        dt (tc/to-date-time local-date)
+        from (if-not every-year?
+               from
+               (let [from (t/date-time (t/year dt) (t/month from) (t/day from))]
+                 (if-not (t/after? from dt)
+                   from
+                   (t/minus from (t/years 1)))))
+        to (tc/from-date to)
+        to (if-not every-year?
+             to
+             (let [to (t/date-time (t/year from) (t/month to) (t/day to))]
+               (if-not (t/before? to from)
+                 to
+                 (t/plus to (t/years 1)))))]
+    (t/within? from to dt)))
+
+(defn- school-holiday? [school-holidays local-date]
+  (seq (filter #(*school-holiday? % local-date) school-holidays)))
+
+(defn make-holiday?-fn [db]
+  (let [bank-holidays (db/find-where db {:bank-holiday/label nil})
+        school-holidays (db/find-where db {:school-holiday/label nil})]
+    (fn [ld]
+      (or (bank-holiday? bank-holidays ld)
+          (school-holiday? school-holidays ld)))))
+
+(defn period-dates [holiday?-fn from-ld to-ld]
+  "Returns all local-dates except holidays from - to (exclusive)."
+  (->> from-ld
+       (iterate (fn [ld]
+                  (t/plus ld (t/days 1))))
+       (take-while (fn [ld]
+                     (t/before? ld to-ld)))
+       (remove holiday?-fn)))
 
 (defn find-max-lunch-order-date [db]
   (or (d/q '[:find (max ?date) .
@@ -429,16 +479,37 @@
          [(< ?from-date ?date)]]
        db from-date))
 
+(defn- days-to-go [db excl-from incl-to]
+  (let [{:config/keys [order-workdays-only?]} (d/pull db '[*] :liskasys/config)]
+    (period-dates (if order-workdays-only?
+                    (some-fn tp/weekend?
+                             (partial bank-holiday? (db/find-where db {:bank-holiday/label nil})))
+                    (constantly false))
+                  (t/plus (time/to-ld excl-from) (t/days 1))
+                  (t/plus (time/to-ld incl-to) (t/days 1)))))
+
 (defn- next-lunch-order-date
+  "This returns the day for which the lunches should be ordered as late as possible according to the flag order-workdays-only?"
   ([db]
    (next-lunch-order-date db (time/today)))
-  ([db from-date]
+  ([db at-date]
+   (when-let [next-school-day-date (find-next-school-day-date db at-date)]
+     (when (= (count (days-to-go db
+                                 (second (sort [(find-max-lunch-order-date db) at-date])) ;; choose higher date
+                                 next-school-day-date))
+              1)
+       next-school-day-date))))
+
+#_(defn- next-lunch-order-date-old
+  ([db]
+   (next-lunch-order-date-old db (time/today)))
+  ([db at-date]
    (let [last-order-date (find-max-lunch-order-date db)
-         next-school-day-date (find-next-school-day-date db from-date)]
+         next-school-day-date (find-next-school-day-date db at-date)]
      (when (or (not last-order-date)
                (not next-school-day-date)
                (and (> (.getTime next-school-day-date) (.getTime last-order-date))
-                    (< (- (.getTime next-school-day-date) (.getTime from-date)) (* 14 24 60 60 1000)) ;; max 14 days ahead
+                    (< (- (.getTime next-school-day-date) (.getTime at-date)) (* 14 24 60 60 1000)) ;; max 14 days ahead
 ))
        next-school-day-date))))
 
