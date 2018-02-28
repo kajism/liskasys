@@ -92,11 +92,13 @@ return true;
          [:th "Omluvit?"]
          [:th "Důvod nepřítomnosti"]]]
        [:tbody
-        (for [{:daily-plan/keys [date att-cancelled? lunch-cancelled? excuse]} child-daily-plans
+        (for [{:daily-plan/keys [date att-cancelled? lunch-ord excuse]} child-daily-plans
               :let [date-str (time/to-format date time/ddMMyyyy)]]
           [:tr
            [:td
-            [:label.nowrap (time/format-day-date date)]]
+            [:label.nowrap (time/format-day-date date)]
+            (when (some-> lunch-ord (> 0))
+              [:span.label.label-danger "Objednané obědy: "lunch-ord])]
            [:td
             (when att-cancelled?
               [:input {:type "hidden" :name "already-cancelled-dates[]" :value date-str}])
