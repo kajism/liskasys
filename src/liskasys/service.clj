@@ -124,7 +124,10 @@
 
 (defmethod db/transact-entity :person [conn user-id ent]
   (try
-    (db/transact-entity* conn user-id (update ent :person/passwd #(when % (scrypt/encrypt %))))
+    (db/transact-entity* conn user-id (if (and (contains? ent :person/passwd)
+                                               (not (str/blank? (:person/passwd ent))))
+                                        (update ent :person/passwd scrypt/encrypt)
+                                        ent))
     (catch ExecutionException e
       (let [cause (.getCause e)]
         (if (instance? IllegalStateException cause)
