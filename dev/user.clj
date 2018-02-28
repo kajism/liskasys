@@ -52,8 +52,8 @@
 (defn conns []
   (-> system :datomic :conns))
 
-(defn conn [db-key]
-  (get (conns) db-key))
+(defn conn [server-name]
+  (get (conns) server-name))
 
-(defn db [db-key]
-  (d/db (conn db-key)))
+(defn db [server-name]
+  (d/db (conn server-name)))
