@@ -99,10 +99,12 @@
          (response/redirect "/nahrady")))
 
      (GET "/platby" {:keys [params]}
-       (let [person-bills (main-service/find-person-bills (d/db (conns server-name)) (:db/id user))]
+          (let [db (d/db (conns server-name))
+                person-bills (main-service/find-person-bills db (:db/id user))
+                show-qr? (re-find #"[0-9/]+" (get (db/find-price-list db) :price-list/bank-account ""))]
          (main-hiccup/liskasys-frame
           user
-          (main-hiccup/person-bills person-bills))))
+          (main-hiccup/person-bills person-bills show-qr?))))
 
      (GET "/qr-code" [id :<< as-int]
        (let [db (d/db (conns server-name))

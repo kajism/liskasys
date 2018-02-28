@@ -212,7 +212,7 @@ return true;
            [:a {:href (str "?history=" (dec history))}
             [:button.btn.btn-default "Následující"]])]]])]])
 
-(defn person-bills [person-bills]
+(defn person-bills [person-bills show-qr?]
   [:div.container
    [:h3 "Rozpisy plateb"]
    [:table.table.table-striped
@@ -240,6 +240,6 @@ return true;
          [:td.right (cljc-util/cents->text -from-previous)]
          [:td (cljc-util/att-pattern->text (:person/att-pattern person))]
          [:td (cljc-util/lunch-pattern->text (:person/lunch-pattern person))]]
-        (when-not -paid?
+        (when (and show-qr? (not -paid?))
           [:tr
            [:td {:col-span 9} [:img {:src (str "/qr-code?id=" id)}]]])))]]])
