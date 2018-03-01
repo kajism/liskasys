@@ -70,13 +70,13 @@
            :model (str (:config/automat-email item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/automat-email %])
            :width "200px"]
-          [re-com/label :label "Čas konce omlouvání na dnešek [hh:mm]"]
+          [re-com/label :label "Čas konce omlouvání na dnešek [hh:mm] (změna vyžaduje restart aplikace na serveru)"]
           [re-com/input-text
            :model (str (:config/cancel-time item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/cancel-time %])
            :width "200px"
            :validation-regex #"^([012]?\d?:\d{0,2})$"]
-          [re-com/label :label "Čas objednávky obědů za další den školky [hh:mm]"]
+          [re-com/label :label "Čas objednávky obědů za další den školky [hh:mm] (změna vyžaduje restart aplikace na serveru)"]
           [re-com/input-text
            :model (str (:config/order-time item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/order-time %])
