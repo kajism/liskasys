@@ -360,7 +360,7 @@
                                                 (for [[t c] (find-lunch-counts-by-diet-label lunch-types-by-id plans)]
                                                   (str "  " t ": " c)))))
                                    "\n-------------------------------------------------\n"
-                                   "CELKEM: " (count plans-with-lunches) "\n\n")}]}]
+                                   "CELKEM: " (reduce + 0 (keep :daily-plan/lunch-req plans-with-lunches)) "\n\n")}]}]
     #_(print (get-in msg [:body 0 :content]))
     (if-not (seq plans-with-lunches)
       (timbre/info "No lunches for " date ". Sending skipped.")
