@@ -73,7 +73,7 @@
          [re-com/alert-box
           :alert-type :info
           :body @info-msg
-          :style {:position "absolute"}])
+          :style {:position "fixed" :top "70px"}])
        (when-not (str/blank? @error-msg)
          [error-msg-popup "Chyba" @error-msg #(re-frame/dispatch [:set-msg :error nil])])
        (if-not (and @current-page @user)
