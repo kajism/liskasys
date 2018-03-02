@@ -276,7 +276,9 @@
                                   (str "\n\nOstatní obědy (" (count xs) ") ---------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> daily-plans
                                                               (filter :daily-plan/att-cancelled?)
-                                                              (map (comp cljc.util/person-fullname :daily-plan/person))
+                                                              (map #(str (-> % :daily-plan/person cljc.util/person-fullname)
+                                                                         (when-not (str/blank? (:daily-plan/excuse %))
+                                                                           (str ", " (:daily-plan/excuse %)))))
                                                               (sort-by-locale identity)))]
                                   (str "\n\nOmluvenky (" (count xs) ") ---------------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> not-going
