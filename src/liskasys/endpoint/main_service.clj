@@ -129,9 +129,8 @@
                          (conj [:db/add id :daily-plan/excuse (get excuses-by-date date)])
                          (and (some? lunch-req) (pos? lunch-req) (can-cancel-lunch?-fn date))
                          (conj [:db/add id :daily-plan/lunch-cancelled? true])
-                         ;; (and subst-req-on (not lunch-ord))
-                         ;; (conj [:db.fn/retractEntity id])
-                         )
+                         (and subst-req-on (can-cancel-lunch?-fn date))
+                         (conj [:db.fn/retractEntity id]))
                        (contains? uncancel-dates date)
                        (cond-> [[:db/retract id :daily-plan/att-cancelled? true]
                                 [:db/retract id :daily-plan/lunch-cancelled? true]]
@@ -171,7 +170,9 @@
       (->> (service/find-person-daily-plans db person-id (time/tomorrow) to-date)
            (sort-by :daily-plan/date))))
 
-(defn find-next-person-daily-plans [db person-id]
+(defn find-next-person-daily-plans
+  "Select ongoing DPs to be offered for cancellation. Already substituted DPs are excluded."
+  [db person-id]
   (let [date-from (service/find-max-lunch-order-date db)
         date-to (service/find-max-person-paid-period-date db person-id)
         can-cancel-today?-fn (make-can-cancel-today?-fn db)
@@ -180,7 +181,10 @@
       (and (= date-from (:daily-plan/date (first out)))
            (or (not (pos-int? (:daily-plan/lunch-ord (first out))))
                (not (can-cancel-today?-fn date-from))))
-      (drop 1))))
+      (drop 1)
+      true
+      (remove (let [date-from-ms (some-> date-from (.getTime))]
+                #(some-> % :daily-plan/substituted-by :daily-plan/date (.getTime) (<= date-from-ms)))))))
 
 (defn find-school-year-previous-periods [db before-date]
   (let [to-yyyymm (cljc.util/date-yyyymm before-date)

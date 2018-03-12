@@ -454,7 +454,7 @@
 (defn find-person-daily-plans [db person-id date-from date-to]
   (when (and person-id date-from date-to)
     (->>
-     (d/q '[:find [(pull ?e [*]) ...]
+     (d/q '[:find [(pull ?e [* {:daily-plan/substituted-by [:db/id :daily-plan/date]}]) ...]
             :in $ ?person ?date-from ?date-to
             :where
             [?e :daily-plan/person ?person]
