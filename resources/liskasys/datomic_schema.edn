@@ -141,6 +141,36 @@
            :db/valueType :db.type/instant
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/ident :person/birth-no
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/address
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/health-insurance-comp
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/health-warnings
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/vaccination?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :person/photo-publishing?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]]}
  :liskasys/lunch-order
  {:txes [[{:db/ident :lunch-order/date

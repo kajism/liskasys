@@ -212,7 +212,8 @@
         groups (re-frame/subscribe [:entities :group])
         persons (re-frame/subscribe [:entities :person])
         kids (re-frame/subscribe [::kids])
-        user (re-frame/subscribe [:auth-user])]
+        user (re-frame/subscribe [:auth-user])
+        show-personal-info? (re-frame/subscribe [:liskasys.cljs.common/path-value [::show-personal-info]])]
     (fn []
       (if-not (and @persons @lunch-types @groups)
         [re-com/throbber]
@@ -289,10 +290,47 @@
                  :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/start-date (time/from-dMyyyy %)])
                  :validation-regex #"^\d{0,2}$|^\d{0,2}\.\d{0,2}$|^\d{0,2}\.\d{0,2}\.\d{0,4}$"
                  :width "100px"]
+                [re-com/hyperlink :on-click #(re-frame/dispatch [:liskasys.cljs.common/set-path-value [::show-personal-info] not]) :label
+                 [re-com/h-box :gap "5px" :align :center :children
+                  [[re-com/md-icon-button
+                    :md-icon-name (if @show-personal-info? "zmdi-zoom-out" "zmdi-zoom-in")
+                    :tooltip (if @show-personal-info? "Skrýt" "Zobrazit")]
+                   [:h4 "Osobní údaje"]]]]
+                (when @show-personal-info?
+                  [re-com/v-box
+                   :children
+                   [[re-com/label :label "Datum narození / RČ"]
+                    [re-com/input-text
+                     :model (str (:person/birth-no item))
+                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/birth-no %])
+                     :validation-regex #"^[0-9./]{0,11}$"]
+                    [re-com/label :label "Adresa"]
+                    [re-com/input-text
+                     :model (str (:person/address item))
+                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/address %])
+                     :width "500px"]
+                    [re-com/label :label "Zdravotní pojišťovna"]
+                    [re-com/input-text
+                     :model (str (:person/health-insurance-comp item))
+                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/health-insurance-comp %])
+                     :width "500px"]
+                    [re-com/label :label "Zdravotní problémy, alergie, léky apod."]
+                    [re-com/input-text
+                     :model (str (:person/health-warnings item))
+                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/health-warnings %])
+                     :width "500px"]
+                    [re-com/checkbox
+                     :label "dítě je očkované?"
+                     :model (:person/vaccination? item)
+                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/vaccination? %])]
+                    [re-com/checkbox
+                     :label "souhlas se zveřejněním fotek dítěte pro účely propagace?"
+                     :model (:person/photo-publishing? item)
+                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/photo-publishing? %])]]])
                 (when (:db/id item)
                   [re-com/v-box
                    :children
-                   [[:h3 "Rodiče"]
+                   [[:h4 "Rodiče"]
                     [:ul
                      (doall
                       (for [parent (->> (:person/parent item)

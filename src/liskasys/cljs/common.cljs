@@ -178,3 +178,18 @@
                         ent
                         (dissoc retract-attr :db/id))))))
 
+(re-frame/reg-sub
+ ::path-value
+ (fn [db [_ path]]
+   (assert (seqable? path) "Path should be a vector!")
+   (get-in db path)))
+
+(re-frame/reg-event-db
+ ::set-path-value
+ debug-mw
+ (fn [db [_ path value]]
+   (assert (seqable? path) "Path should be a vector!")
+   (if (and (fn? value)
+            (not (keyword? value)))
+     (update-in db path value)
+     (assoc-in db path value))))
