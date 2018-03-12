@@ -203,7 +203,7 @@
 (defn find-person-substs [db person-id]
   (let [person (db/find-by-id db person-id)
         group (db/find-by-id db (get-in person [:person/group :db/id]))
-        {:config/keys [max-subst-periods]} (d/pull db '[*] :liskasys/config)
+        {:config/keys [max-subst-periods future-subst?]} (d/pull db '[*] :liskasys/config)
         date-from (some-> (or (last (take max-subst-periods (find-school-year-previous-periods db (Date.))))
                               (service/find-current-period db)
                               {:billing-period/from-yyyymm 200001
@@ -211,8 +211,10 @@
                           (cljc.util/period-start-end)
                           (first)
                           (tc/to-date))
-        date-to (service/find-max-person-paid-period-date db person-id)
-        substable-dps (->> (service/find-person-daily-plans db person-id date-from date-to)
+        max-paid-date (service/find-max-person-paid-period-date db person-id)
+        substable-dps (->> (service/find-person-daily-plans db person-id date-from (if future-subst?
+                                                                                     max-paid-date
+                                                                                     (time/today)))
                            (filter #(and (:daily-plan/att-cancelled? %)
                                          (not (:daily-plan/substituted-by %))
                                          (not (:daily-plan/subst-req-on %))
@@ -222,8 +224,8 @@
                                                         (tc/to-local-date)
                                                         (t/plus (t/days 1))
                                                         (tc/to-date))
-                                                date-to)]
-    (timbre/debug "finding-person-substs from" date-from "to" date-to "all plans count" (count all-plans))
+                                                max-paid-date)]
+    (timbre/debug "finding-person-substs from" date-from "to" max-paid-date "all plans count" (count all-plans))
     {:group group
      :substable-dps substable-dps
      :dp-gap-days (->> all-plans

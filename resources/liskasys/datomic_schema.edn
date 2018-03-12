@@ -543,4 +543,11 @@
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]
          [{:db/id :liskasys/config
-           :config/order-workdays-only? true}]]}}
+           :config/order-workdays-only? true}]
+         [{:db/ident :config/future-subst?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/id :liskasys/config
+           :config/future-subst? false}]]}}

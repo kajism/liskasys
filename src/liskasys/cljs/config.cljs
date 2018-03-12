@@ -41,12 +41,13 @@
                   :none]
                  ["Název organizace" :config/org-name]
                  ["Celé URL" :config/full-url]
-                 ["Odesilatel emalů" :config/automat-email]
-                 ["Čas konce oml." :config/cancel-time]
-                 ["Čas obj. obědů" :config/order-time]
+                 #_["Odesilatel emalů" :config/automat-email]
+                 ["Konec oml." :config/cancel-time]
+                 ["Obj. obědů" :config/order-time]
                  ["Obj. v prac. dny?" :config/order-workdays-only?]
-                 ["Příjemce finálního počtu" :config/closing-msg-role]
-                 ["Období náhrad" :config/max-subst-periods]]]]])))
+                 ["Příjemce počtu" :config/closing-msg-role]
+                 ["Období náhrad" :config/max-subst-periods]
+                 ["Nahrazovat předem?" :config/future-subst?]]]]])))
 
 (defn page-config []
   (let [config (re-frame/subscribe [:entity-edit :config])]
@@ -98,6 +99,11 @@
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/max-subst-periods (cljc.util/parse-int %)])
            :width "200px"
            :validation-regex #"^(\d{0,2})$"]
+          [re-com/label :label "Možno nahrazovat dříve než omluvený den uplyne?"]
+          [re-com/checkbox
+           :label "tzn. dovolím nahrazovat budoucí omluvenky?"
+           :model (:config/future-subst? item)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/future-subst? %])]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :config])]
