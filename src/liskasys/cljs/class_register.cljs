@@ -1,6 +1,6 @@
 (ns liskasys.cljs.class-register
   (:require [liskasys.cljc.time :as time]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -9,7 +9,22 @@
             [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [secretary.core :as secretary]))
+            [secretary.core :as secretary]
+            [reagent.ratom :as ratom]))
+
+(re-frame/register-sub
+ ::daily-plans
+ (fn [db [_]]
+   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
+         persons (re-frame/subscribe [:entities :person])
+         class-register (re-frame/subscribe [:entity-edit :class-register])]
+     (ratom/reaction
+      (let [date (:class-register/date @class-register)
+            group-id (get-in @class-register [:class-register/group :db/id])]
+        (->> (vals @daily-plans)
+             (filter #(and
+                       (= date (:daily-plan/date %))
+                       (= group-id (some->> % :daily-plan/person :db/id (get @persons) :person/group :db/id))))))))))
 
 (defn page-class-registers []
   (let [class-registers (re-frame/subscribe [:entities :class-register])
@@ -56,9 +71,11 @@
   (let [class-register (re-frame/subscribe [:entity-edit :class-register])
         noop-fn #()
         groups (re-frame/subscribe [:entities :group])
-        user (re-frame/subscribe [:auth-user])]
+        persons (re-frame/subscribe [:entities :person])
+        user (re-frame/subscribe [:auth-user])
+        daily-plans (re-frame/subscribe [::daily-plans])]
     (fn []
-      (if-not (and @groups)
+      (if-not (and @groups @persons @daily-plans)
         [re-com/throbber]
         (let [item @class-register
               errors (:-errors item)]
@@ -86,6 +103,15 @@
              :rows 10
              :width "600px"
              :on-change #(re-frame/dispatch [:entity-change :class-register (:db/id item) :class-register/descr %])]
+            [:h4 "Docházka"]
+            (into [:ul] (map #(-> [:li (some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))])
+                             (->> @daily-plans
+                                  (remove :daily-plan/att-cancelled?))))
+            [:h5 "Omluveni"]
+            (into [:ul] (map #(-> [:li (some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))
+                                   ", " (:daily-plan/excuse %)])
+                             (->> @daily-plans
+                                  (filter :daily-plan/att-cancelled?))))
             [re-com/h-box :align :center :gap "5px"
              :children
              [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :class-register])]
@@ -102,7 +128,7 @@
 (pages/add-page :class-registers #'page-class-registers)
 
 (secretary/defroute #"/class-register/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :class-register (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :class-register (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :class-register]))
 (pages/add-page :class-register #'page-class-register)
 (common/add-kw-url :class-register "class-register")
