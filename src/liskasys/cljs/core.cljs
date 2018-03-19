@@ -9,6 +9,7 @@
             [liskasys.cljs.pages :as pages]
             [liskasys.cljs.bank-holiday]
             [liskasys.cljs.billing-period]
+            [liskasys.cljs.class-register]
             [liskasys.cljs.daily-plan]
             [liskasys.cljs.lunch-menu]
             [liskasys.cljs.lunch-order]
@@ -87,6 +88,7 @@
      [:ul.nav.navbar-nav
       [:li [:a {:href "#/persons"} "Lidé"]]
       [:li [:a {:href "#/daily-plans"} "Denní plány"]]
+      [:li [:a {:href "#/class-registers"} "Třídní kniha"]]
       [:li [:a {:href "#/billing-periods"} "Platební období"]]
       [:li [:a {:href "#/lunch-menus"} "Jídelníček"]]
       [:li [:a {:href "#/lunch-orders"} "Oběd-návky"]]]

@@ -465,6 +465,11 @@
            :db/valueType :db.type/boolean
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/ident :daily-plan/absence?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]]}
  :liskasys/group
  {:txes [[{:db/ident :group/label
@@ -550,4 +555,20 @@
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]
          [{:db/id :liskasys/config
-           :config/future-subst? false}]]}}
+           :config/future-subst? false}]]}
+ :liskasys/class-register
+ {:txes [[{:db/ident :class-register/date
+           :db/valueType :db.type/instant
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :class-register/group
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :class-register/descr
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}}

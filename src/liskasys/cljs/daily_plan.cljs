@@ -184,7 +184,7 @@
             (when (:db/id item)
               [re-com/hyperlink-href
                :href (str "#/daily-plan/e")
-               :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan {:daily-plan/person (:daily-plan/person item)}])]])
+               :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan (select-keys item [:daily-plan/person])])]])
             [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/daily-plans")]]]
           [history/view (:db/id item)]]]))))
 

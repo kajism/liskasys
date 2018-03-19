@@ -16,7 +16,8 @@
    :person-bill :person-bill/total
    :school-holiday :school-holiday/label
    :group :group/label
-   :config :config/org-name})
+   :config :config/org-name
+   :class-register :class-register/date})
 
 (def ent-attr--type (reduce (fn [out [ent-type attr]]
                               (assoc out attr ent-type))
