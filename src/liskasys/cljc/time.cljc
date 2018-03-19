@@ -44,6 +44,7 @@
 (def ddMMyyyyHHmm (tf/formatter "dd.MM.yyyy HH:mm" #?(:clj clj-tz)))
 (def yyyyMMdd-HHmm (tf/formatter "yyyyMMdd-HHmm" #?(:clj clj-tz)))
 (def HHmm (tf/formatter "HH:mm" #?(:clj clj-tz)))
+(def yyyyMM (tf/formatter "yyyyMM"))
 
 (defn to-format [date formatter]
   (if (nil? date)
@@ -138,3 +139,7 @@
          (remove tp/weekend?)
          (first)
          (tc/to-date))))
+
+(defn date-yyyymm-dd [yyyymm day]
+  (-> (t/date-time (quot yyyymm 100) (rem yyyymm 100) day)
+      (tc/to-date)))

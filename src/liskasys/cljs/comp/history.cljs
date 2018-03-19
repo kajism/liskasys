@@ -57,7 +57,7 @@
         (if (not= ent-id (:db/id @history))
           [:div
            [:br]
-           [:a {:on-click #(re-frame/dispatch [::load-entity-history ent-id])} "Zobrazit historii"]]
+           [:a {:on-click #(re-frame/dispatch [::load-entity-history ent-id])} "Zobrazit historii změn záznamu"]]
           [:div
            [:h4 "Historie úprav"]
            [data-table/data-table

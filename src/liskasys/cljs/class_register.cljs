@@ -75,9 +75,7 @@
         user (re-frame/subscribe [:auth-user])
         daily-plans (re-frame/subscribe [::daily-plans])
         noop-fn #()
-        person-li-fn #(-> [:li {:class (cond (:daily-plan/absence? %) "absence"
-                                             (:daily-plan/att-cancelled? %) "cancelled"
-                                             :else "present")}
+        person-li-fn #(-> [:li {:class (util/dp-class %)}
                            (some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))
                            (when-some [excuse (:daily-plan/excuse %)]
                              (str ", " excuse))

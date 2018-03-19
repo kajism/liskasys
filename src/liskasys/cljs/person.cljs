@@ -1,6 +1,6 @@
 (ns liskasys.cljs.person
   (:require [liskasys.cljc.time :as time]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -13,7 +13,8 @@
             [reagent.core :as reagent]
             [reagent.ratom :as ratom]
             [secretary.core :as secretary]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [cljs-time.core :as t]))
 
 (re-frame/register-sub
  ::kids
@@ -25,7 +26,7 @@
            (group-by :person/parent)
            (reduce (fn [out [parent-ids kids]]
                      (reduce (fn [out {parent-id :db/id}]
-                               (update out parent-id #(util/sort-by-locale cljc-util/person-fullname (into (or % []) kids))))
+                               (update out parent-id #(util/sort-by-locale cljc.util/person-fullname (into (or % []) kids))))
                              out
                              parent-ids))
                    {}))))))
@@ -44,6 +45,29 @@
 
 (def empty-person {:person/active? true
                    :person/child? true})
+
+(re-frame/register-sub
+ ::person-dps-by-date
+ (fn [db [_]]
+   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
+         person (re-frame/subscribe [:entity-edit :person])]
+     (ratom/reaction
+      (let [person-id (:db/id @person)]
+        (->> (vals @daily-plans)
+             (filter #(= person-id (get-in % [:daily-plan/person :db/id])))
+             (map (juxt :daily-plan/date identity))
+             (into {})))))))
+
+(re-frame/register-sub
+ ::person-att-months
+ (fn [db [_]]
+   (let [person-dps-by-date (re-frame/subscribe [::person-dps-by-date])]
+     (ratom/reaction
+      (->> (keys @person-dps-by-date)
+           (map #(-> % (time/to-format time/yyyyMM) (cljc.util/parse-int)))
+           (set)
+           (sort)
+           (reverse))))))
 
 (defn table [rows]
   (let [lunch-types (re-frame/subscribe [:entities :lunch-type])
@@ -87,8 +111,8 @@
                 :none]
                ["Příjmení" :person/lastname]
                ["Jméno" :person/firstname]
-               ["Šablona docházky" (comp cljc-util/att-pattern->text :person/att-pattern)]
-               ["Šablona obědů" (comp cljc-util/lunch-pattern->text :person/lunch-pattern)]
+               ["Šablona docházky" (comp cljc.util/att-pattern->text :person/att-pattern)]
+               ["Šablona obědů" (comp cljc.util/lunch-pattern->text :person/lunch-pattern)]
                ["Variabilní symbol" #(str (:person/var-symbol %))]
                ["Email rodičů" #(or (:person/email %)
                                     (parent-attrs % :person/email))]
@@ -96,7 +120,7 @@
                                       (parent-attrs % :person/phone))]
                ["Třída" #(:group/label (get @groups (some-> % :person/group :db/id)))]
                ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
-               ["Fond obědů" #(some-> % :person/lunch-fund cljc-util/from-cents)]
+               ["Fond obědů" #(some-> % :person/lunch-fund cljc.util/from-cents)]
                ["Role" :person/roles]
                #_["Aktivní?" :person/active?]
                #_["Dítě?" :person/child?]]])))
@@ -107,7 +131,7 @@
                                                       (remove (fn [{att-pattern :person/att-pattern}]
                                                                 (or (not att-pattern)
                                                                     (= "0" (nth att-pattern day-idx)))))
-                                                      (util/sort-by-locale cljc-util/person-fullname))))
+                                                      (util/sort-by-locale cljc.util/person-fullname))))
                             (sorted-map)
                             (range 5))]
     [:table.table.tree-table.table-hover.table-striped
@@ -135,7 +159,7 @@
               [:div
                [re-com/hyperlink-href
                 :href (str "#/person/" (:db/id kid) "e")
-                :label (cljc-util/person-fullname kid)]]))]))]]]))
+                :label (cljc.util/person-fullname kid)]]))]))]]]))
 
 (defn daily-summary-per-group [rows]
   (let [groups (re-frame/subscribe [:entities :group])]
@@ -213,7 +237,10 @@
         persons (re-frame/subscribe [:entities :person])
         kids (re-frame/subscribe [::kids])
         user (re-frame/subscribe [:auth-user])
-        show-personal-info? (re-frame/subscribe [:liskasys.cljs.common/path-value [::show-personal-info]])]
+        show-personal-info? (re-frame/subscribe [:liskasys.cljs.common/path-value [::show-personal-info?]])
+        show-att-history? (re-frame/subscribe [:liskasys.cljs.common/path-value [::show-att-history?]])
+        person-att-months (re-frame/subscribe [::person-att-months])
+        person-dps-by-date (re-frame/subscribe [::person-dps-by-date])]
     (fn []
       (if-not (and @persons @lunch-types @groups)
         [re-com/throbber]
@@ -233,7 +260,7 @@
             [re-com/label :label "Variabilní symbol"]
             [re-com/input-text
              :model (str (:person/var-symbol item))
-             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/var-symbol (cljc-util/parse-int %)])
+             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/var-symbol (cljc.util/parse-int %)])
              :validation-regex #"^(\d{0,10})$"]
             [re-com/label :label "Dieta"]
             [re-com/single-dropdown
@@ -256,8 +283,8 @@
             [re-com/h-box :gap "5px"
              :children
              [[re-com/input-text
-               :model (str (cljc-util/from-cents (:person/lunch-fund item)))
-               :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-fund (cljc-util/to-cents %)])
+               :model (str (cljc.util/from-cents (:person/lunch-fund item)))
+               :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/lunch-fund (cljc.util/to-cents %)])
                :validation-regex #"^\d{0,4}$"]
               "Kč"]]
             [re-com/checkbox
@@ -290,7 +317,7 @@
                  :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/start-date (time/from-dMyyyy %)])
                  :validation-regex #"^\d{0,2}$|^\d{0,2}\.\d{0,2}$|^\d{0,2}\.\d{0,2}\.\d{0,4}$"
                  :width "100px"]
-                [re-com/hyperlink :on-click #(re-frame/dispatch [:liskasys.cljs.common/set-path-value [::show-personal-info] not]) :label
+                [re-com/hyperlink :on-click #(re-frame/dispatch [:liskasys.cljs.common/set-path-value [::show-personal-info?] not]) :label
                  [re-com/h-box :gap "5px" :align :center :children
                   [[re-com/md-icon-button
                     :md-icon-name (if @show-personal-info? "zmdi-zoom-out" "zmdi-zoom-in")
@@ -327,6 +354,36 @@
                      :label "souhlas se zveřejněním fotek dítěte pro účely propagace?"
                      :model (:person/photo-publishing? item)
                      :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/photo-publishing? %])]]])
+                [re-com/hyperlink :on-click #(re-frame/dispatch [:liskasys.cljs.common/set-path-value [::show-att-history?] not]) :label
+                 [re-com/h-box :gap "5px" :align :center :children
+                  [[re-com/md-icon-button
+                    :md-icon-name (if @show-att-history? "zmdi-zoom-out" "zmdi-zoom-in")
+                    :tooltip (if @show-att-history? "Skrýt" "Zobrazit")]
+                   [:h4 "Historie docházky"]]]]
+                (when @show-att-history?
+                  (let [days (->> (range 31)
+                                  (map inc))]
+                    [:table.table.tree-table.table-hover.table-striped
+                     [:thead
+                      (->> days
+                           (map #(-> [:th %]))
+                           (into [:tr [:th "Měsíc / dny"]]))]
+                     (->> @person-att-months
+                          (map (fn [yyyymm]
+                                 (let [last-day (t/day (t/last-day-of-the-month (quot yyyymm 100) (rem yyyymm 100)))]
+                                   (->> days
+                                        (take-while #(<= % last-day))
+                                        (map #(let [date (time/date-yyyymm-dd yyyymm %)
+                                                    dp (get @person-dps-by-date date)]
+                                                [:td {:class (util/dp-class dp)}
+                                                 (cond
+                                                   (nil? dp) "-"
+                                                   (:daily-plan/absence? dp) "A"
+                                                   (:daily-plan/att-cancelled? dp) "O"
+                                                   :else "P")]))
+                                        (into [:tr
+                                               [:th (cljc.util/yyyymm->text yyyymm)]])))))
+                          (into [:tbody]))]))
                 (when (:db/id item)
                   [re-com/v-box
                    :children
@@ -335,12 +392,12 @@
                      (doall
                       (for [parent (->> (:person/parent item)
                                         (map (comp @persons :db/id))
-                                        (util/sort-by-locale cljc-util/person-fullname))]
+                                        (util/sort-by-locale cljc.util/person-fullname))]
                         ^{:key (:db/id parent)}
                         [:li
                          [re-com/hyperlink-href
                           :href (str "#/person/" (:db/id parent) "e")
-                          :label (cljc-util/person-fullname parent)]
+                          :label (cljc.util/person-fullname parent)]
                          [buttons/delete-button
                           :on-confirm #(re-frame/dispatch [:common/retract-ref-many :person {:db/id (:db/id item)
                                                                                              :person/parent (:db/id parent)}])
@@ -352,9 +409,9 @@
                                    vals
                                    (filter :person/active?)
                                    (remove :person/child?)
-                                   (util/sort-by-locale cljc-util/person-fullname))
+                                   (util/sort-by-locale cljc.util/person-fullname))
                      :id-fn :db/id
-                     :label-fn cljc-util/person-fullname
+                     :label-fn cljc.util/person-fullname
                      :placeholder "Přidat rodiče..."
                      :filter-box? true
                      :width "250px"]]])]]
@@ -382,7 +439,7 @@
                         [:li
                          [re-com/hyperlink-href
                           :href (str "#/person/" (:db/id kid) "e")
-                          :label (cljc-util/person-fullname kid)]
+                          :label (cljc.util/person-fullname kid)]
                          ]))]]])]])
             [re-com/h-box :align :center :gap "5px"
              :children
@@ -400,7 +457,7 @@
 (pages/add-page :persons #'page-persons)
 
 (secretary/defroute #"/person/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :person (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :person (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :person]))
 (pages/add-page :person #'page-person)
 (common/add-kw-url :person "person")

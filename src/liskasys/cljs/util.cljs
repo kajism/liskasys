@@ -54,3 +54,8 @@
     (parse-float (.-rep x))
     :else
     x))
+
+(defn dp-class [%]
+  (cond (:daily-plan/absence? %) "absence"
+        (:daily-plan/att-cancelled? %) "cancelled"
+        :else "present"))
