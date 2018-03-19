@@ -92,7 +92,7 @@
                                  "zveřejněný, "
                                  [re-com/button
                                   :label "Zaplaceno!"
-                                  :class "btn-danger btn-xs"
+                                  :class "btn-danger btn-sm"
                                   :on-click #(re-frame/dispatch [:liskasys.cljs.billing-period/send-cmd (get-in row [:person-bill/period :db/id]) "set-bill-as-paid" (:db/id row)])]])])}
                  ["Celkem Kč" (comp cljc-util/from-cents :person-bill/total)]
                  ["Cena za docházku" (comp cljc-util/from-cents :person-bill/att-price)]

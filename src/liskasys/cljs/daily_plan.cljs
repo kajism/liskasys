@@ -66,9 +66,8 @@
                   :td-comp (fn [& {:keys [value row row-state]}]
                              [:td
                               (if (and (:selected? row-state) value)
-                                [re-com/hyperlink-href
-                                 :href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")
-                                 :label value]
+                                [:a {:href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")}
+                                 value]
                                 value)])}
                  ["Třída" #(some->> % :daily-plan/person :db/id (get @persons):person/group :db/id (get @groups) :group/label)]
                  #_["Docházka" #(cljc-util/child-att->str (:daily-plan/child-att %))]
