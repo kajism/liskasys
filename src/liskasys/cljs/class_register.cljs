@@ -69,11 +69,21 @@
 
 (defn page-class-register []
   (let [class-register (re-frame/subscribe [:entity-edit :class-register])
-        noop-fn #()
-        groups (re-frame/subscribe [:entities :group])
         persons (re-frame/subscribe [:entities :person])
+        groups (re-frame/subscribe [:entities :group])
         user (re-frame/subscribe [:auth-user])
-        daily-plans (re-frame/subscribe [::daily-plans])]
+        daily-plans (re-frame/subscribe [::daily-plans])
+        noop-fn #()
+        person-li-fn #(-> [:li (when (:daily-plan/absence? %)
+                                 {:style {:color "red"}})
+                           (some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))
+                           (when-some [excuse (:daily-plan/excuse %)]
+                             (str ", " excuse))
+                           [re-com/hyperlink-href
+                            :href (str "#/daily-plan/" (:db/id %) "e")
+                            :label [re-com/md-icon-button
+                                    :md-icon-name "zmdi-edit"
+                                    :tooltip "Editovat"]]])]
     (fn []
       (if-not (and @groups @persons @daily-plans)
         [re-com/throbber]
@@ -103,15 +113,6 @@
              :rows 10
              :width "600px"
              :on-change #(re-frame/dispatch [:entity-change :class-register (:db/id item) :class-register/descr %])]
-            [:h4 "Docházka"]
-            (into [:ul] (map #(-> [:li (some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))])
-                             (->> @daily-plans
-                                  (remove :daily-plan/att-cancelled?))))
-            [:h5 "Omluveni"]
-            (into [:ul] (map #(-> [:li (some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))
-                                   ", " (:daily-plan/excuse %)])
-                             (->> @daily-plans
-                                  (filter :daily-plan/att-cancelled?))))
             [re-com/h-box :align :center :gap "5px"
              :children
              [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :class-register])]
@@ -121,6 +122,14 @@
                  :href (str "#/class-register/e")
                  :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :class-register (select-keys item [:class-register/group])])]])
               [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/class-registers")]]]
+            [:h4 "Docházka"]
+            (into [:ul] (map person-li-fn
+                             (->> @daily-plans
+                                  (remove :daily-plan/att-cancelled?))))
+            [:h5 "Omluveni"]
+            (into [:ul] (map person-li-fn
+                             (->> @daily-plans
+                                  (filter :daily-plan/att-cancelled?))))
             [history/view (:db/id item)]]])))))
 
 (secretary/defroute "/class-registers" []

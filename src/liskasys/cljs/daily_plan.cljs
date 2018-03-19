@@ -158,7 +158,17 @@
                     [:label [:a {:href (str "#/daily-plan/" subst-id)}
                              (some-> (get @daily-plans subst-id)
                                      :daily-plan/date
-                                     (time/to-format time/ddMMyyyy))]]))]]]))
+                                     (time/to-format time/ddMMyyyy))]]))]]
+              [re-com/label :label "Důvod omluvenky / absence"]
+              [re-com/h-box :gap "15px" :align :center
+               :children
+               [[re-com/input-text
+                 :model (str (:daily-plan/excuse item))
+                 :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/excuse %])]
+                [re-com/checkbox
+                 :label "absence?"
+                 :model (:daily-plan/absence? item)
+                 :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/absence? %])]]]]))
           [re-com/label :label "Požadováno obědů"]
           [re-com/h-box :gap "15px" :align :center
            :children
