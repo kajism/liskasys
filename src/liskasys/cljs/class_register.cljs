@@ -24,7 +24,8 @@
         (->> (vals @daily-plans)
              (filter #(and
                        (= date (:daily-plan/date %))
-                       (= group-id (some->> % :daily-plan/person :db/id (get @persons) :person/group :db/id))))))))))
+                       (= group-id (some->> % :daily-plan/person :db/id (get @persons) :person/group :db/id))))
+             (sort-by #(some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname)))))))))
 
 (defn page-class-registers []
   (let [class-registers (re-frame/subscribe [:entities :class-register])
@@ -43,7 +44,7 @@
                    [[re-com/md-icon-button
                      :md-icon-name "zmdi-plus-square"
                      :tooltip "Přidat"
-                     :on-click #(do (re-frame/dispatch [:entity-new :class-register {}])
+                     :on-click #(do (re-frame/dispatch [:entity-new :class-register {:class-register/date (time/today)}])
                                     (set! js/window.location.hash "#/class-register/e"))]
                     [re-com/md-icon-button
                      :md-icon-name "zmdi-refresh"
@@ -74,8 +75,9 @@
         user (re-frame/subscribe [:auth-user])
         daily-plans (re-frame/subscribe [::daily-plans])
         noop-fn #()
-        person-li-fn #(-> [:li (when (:daily-plan/absence? %)
-                                 {:style {:color "red"}})
+        person-li-fn #(-> [:li {:class (cond (:daily-plan/absence? %) "absence"
+                                             (:daily-plan/att-cancelled? %) "cancelled"
+                                             :else "present")}
                            (some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))
                            (when-some [excuse (:daily-plan/excuse %)]
                              (str ", " excuse))
@@ -120,16 +122,15 @@
               (when (:db/id item)
                 [re-com/hyperlink-href
                  :href (str "#/class-register/e")
-                 :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :class-register (select-keys item [:class-register/group])])]])
+                 :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :class-register
+                                                                                    (-> item
+                                                                                        (select-keys [:class-register/group :class-register/date])
+                                                                                        (update :class-register/date time/next-working-day))])]])
               [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/class-registers")]]]
-            [:h4 "Docházka"]
-            (into [:ul] (map person-li-fn
-                             (->> @daily-plans
-                                  (remove :daily-plan/att-cancelled?))))
-            [:h5 "Omluveni"]
-            (into [:ul] (map person-li-fn
-                             (->> @daily-plans
-                                  (filter :daily-plan/att-cancelled?))))
+            [:h4 "Docházka: přítomno " (->> @daily-plans (remove (some-fn :daily-plan/att-cancelled? :daily-plan/absence?)) (count)) ", "
+             [:span.cancelled "omluveno " (->> @daily-plans (filter :daily-plan/att-cancelled?) (count))] ", "
+             [:span.absence "absence " (->> @daily-plans (filter :daily-plan/absence?) (count))]]
+            (into [:ul] (map person-li-fn @daily-plans))
             [history/view (:db/id item)]]])))))
 
 (secretary/defroute "/class-registers" []

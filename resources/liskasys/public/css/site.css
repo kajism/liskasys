@@ -40,3 +40,15 @@ body {
 .nowrap {
     white-space: nowrap;
 }
+
+.present {
+    font-weight: bold;
+}
+
+.cancelled {
+    color: #505050;
+}
+
+.absence {
+    color: red;
+}

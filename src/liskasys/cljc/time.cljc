@@ -4,6 +4,7 @@
          [clj-time.coerce :as tc]
          [clj-time.core :as t]
          [clj-time.format :as tf]
+         [clj-time.predicates :as tp]
          [clojure.edn :as edn]
          [clojure.string :as str])
         (:import java.util.Locale)]
@@ -12,6 +13,7 @@
          [cljs-time.coerce :as tc]
          [cljs-time.core :as t]
          [cljs-time.format :as tf]
+         [cljs-time.predicates :as tp]
          [cljs.tools.reader.edn :as edn]
          [clojure.string :as str])]))
 
@@ -125,3 +127,14 @@
   (-> (t/today)
       (t/plus (t/days 1))
       (tc/to-date)))
+
+(defn next-working-day [date]
+  (if-not date
+    (today)
+    (->> date
+         (tc/to-date-time)
+         (iterate #(t/plus % (t/days 1)))
+         (drop 1)
+         (remove tp/weekend?)
+         (first)
+         (tc/to-date))))
