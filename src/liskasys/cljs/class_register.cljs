@@ -46,7 +46,8 @@
                    [[re-com/md-icon-button
                      :md-icon-name "zmdi-plus-square"
                      :tooltip "Přidat"
-                     :on-click #(do (re-frame/dispatch [:entity-new :class-register {:class-register/date (time/today)}])
+                     :on-click #(do (re-frame/dispatch [:entity-new :class-register {:class-register/date (time/today)
+                                                                                     :class-register/group (first (vals @groups))}])
                                     (set! js/window.location.hash "#/class-register/e"))]
                     [re-com/md-icon-button
                      :md-icon-name "zmdi-refresh"
