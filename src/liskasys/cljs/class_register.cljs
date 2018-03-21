@@ -13,7 +13,7 @@
             [reagent.ratom :as ratom]))
 
 (re-frame/reg-sub-raw
- ::daily-plans
+ ::reg-date-dps
  (fn [db [_]]
    (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
          persons (re-frame/subscribe [:entities :person])
@@ -21,11 +21,13 @@
      (ratom/reaction
       (let [date (:class-register/date @class-register)
             group-id (get-in @class-register [:class-register/group :db/id])]
-        (->> (vals @daily-plans)
-             (filter #(and
-                       (= date (:daily-plan/date %))
-                       (= group-id (some->> % :daily-plan/person :db/id (get @persons) :person/group :db/id))))
-             (sort-by #(some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname)))))))))
+        (if-not (and date group-id (pos-int? (count @daily-plans)))
+          nil
+          (->> (vals @daily-plans)
+               (filter #(and
+                         (= date (:daily-plan/date %))
+                         (= group-id (some->> % :daily-plan/person :db/id (get @persons) :person/group :db/id))))
+               (sort-by #(some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))))))))))
 
 (defn page-class-registers []
   (let [class-registers (re-frame/subscribe [:entities :class-register])
@@ -73,19 +75,10 @@
         persons (re-frame/subscribe [:entities :person])
         groups (re-frame/subscribe [:entities :group])
         user (re-frame/subscribe [:auth-user])
-        daily-plans (re-frame/subscribe [::daily-plans])
-        noop-fn #()
-        person-li-fn #(-> [:li {:class (util/dp-class %)}
-                           (some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))
-                           (when-some [excuse (:daily-plan/excuse %)]
-                             (str ", " excuse))
-                           [re-com/hyperlink-href
-                            :href (str "#/daily-plan/" (:db/id %) "e")
-                            :label [re-com/md-icon-button
-                                    :md-icon-name "zmdi-edit"
-                                    :tooltip "Editovat"]]])]
+        reg-date-dps (re-frame/subscribe [::reg-date-dps])
+        noop-fn #()]
     (fn []
-      (if-not (and @groups @persons @daily-plans)
+      (if-not (and @groups @persons)
         [re-com/throbber]
         (let [item @class-register
               errors (:-errors item)]
@@ -125,10 +118,22 @@
                                                                                         (select-keys [:class-register/group :class-register/date])
                                                                                         (update :class-register/date time/next-working-day))])]])
               [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/class-registers")]]]
-            [:h4 "Docházka: přítomno " (->> @daily-plans (remove (some-fn :daily-plan/att-cancelled? :daily-plan/absence?)) (count)) ", "
-             [:span.cancelled "omluveno " (->> @daily-plans (filter :daily-plan/att-cancelled?) (count))] ", "
-             [:span.absence "absence " (->> @daily-plans (filter :daily-plan/absence?) (count))]]
-            (into [:ul] (map person-li-fn @daily-plans))
+            (if-not @reg-date-dps
+              [re-com/throbber]
+              [re-com/v-box :children
+               [[:h4 "Docházka: přítomno " (->> @reg-date-dps (remove (some-fn :daily-plan/att-cancelled? :daily-plan/absence?)) (count)) ", "
+                 [:span.cancelled "omluveno " (->> @reg-date-dps (filter :daily-plan/att-cancelled?) (count))] ", "
+                 [:span.absence "absence " (->> @reg-date-dps (filter :daily-plan/absence?) (count))]]
+                (into [:ul] (map #(-> [:li {:class (util/dp-class %)}
+                                       (some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))
+                                       (when-some [excuse (:daily-plan/excuse %)]
+                                         (str ", " excuse))
+                                       [re-com/hyperlink-href
+                                        :href (str "#/daily-plan/" (:db/id %) "e")
+                                        :label [re-com/md-icon-button
+                                                :md-icon-name "zmdi-edit"
+                                                :tooltip "Editovat"]]])
+                                 @reg-date-dps))]])
             [history/view (:db/id item)]]])))))
 
 (secretary/defroute "/class-registers" []

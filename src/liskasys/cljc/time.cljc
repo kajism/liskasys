@@ -121,8 +121,8 @@
        (str/lower-case)))
 
 (defn today []
-  (-> (t/today)
-      (tc/to-date)))
+  #?(:cljs (tc/to-date (t/at-midnight (t/now)))
+     :clj (tc/to-date (t/today))))
 
 (defn tomorrow []
   (-> (t/today)
