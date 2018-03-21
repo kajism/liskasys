@@ -7,18 +7,18 @@
             [re-frame.core :as re-frame]
             [reagent.ratom :as ratom]))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::entity-history
  (fn [db [_]]
    (ratom/reaction (:entity-history @db))))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::entity-history-datoms
  (fn [db [_]]
    (let [history (re-frame/subscribe [::entity-history])]
      (ratom/reaction (:datoms @history)))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::load-entity-history
  common/debug-mw
  (fn [db [_ ent-id]]
@@ -26,7 +26,7 @@
                 [::set-history ent-id])
    db))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::set-history
  common/debug-mw
  (fn [db [_ ent-id datoms]]

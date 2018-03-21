@@ -10,40 +10,40 @@
 (defn add-page [kw comp-fn]
   (swap! pages assoc kw comp-fn))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :page-state
  (fn [db [_ page-id]]
    (ratom/reaction (get-in @db [:page-states page-id]))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :page-state-set
  common/debug-mw
  (fn [db [_ page-id state]]
    (assoc-in db [:page-states page-id] state)))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :page-state-change
  common/debug-mw
  (fn [db [_ page-id key val]]
    ((if (fn? val) update-in assoc-in) db [:page-states page-id key] val)))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :current-page
  (fn [db _]
    (ratom/reaction (:current-page @db))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :set-current-page
  common/debug-mw
  (fn [db [_ current-page]]
    (assoc db :current-page current-page)))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :msg
  (fn [db [_ kw]]
    (ratom/reaction (get-in @db [:msg kw]))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :set-msg
  common/debug-mw
  (fn [db [_ kw msg rollback-db]]

@@ -32,12 +32,12 @@
 
 (enable-console-print!)
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :auth-user
  (fn [db [_]]
    (ratom/reaction (:auth-user @db))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :load-auth-user
  common/debug-mw
  (fn [db [_]]
@@ -45,13 +45,13 @@
                 [:set-auth-user])
    db))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :set-auth-user
  common/debug-mw
  (fn [db [_ auth-user]]
    (assoc db :auth-user auth-user)))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :init-app
  common/debug-mw
  (fn [db [_]]

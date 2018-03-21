@@ -12,14 +12,14 @@
             [secretary.core :as secretary]
             [liskasys.cljs.comp.history :as history]))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::delete-bill
  common/debug-mw
  (fn [db [_ bill]]
    (re-frame/dispatch [:entity-delete :person-bill (:db/id bill) [::after-delete-bill bill]])
    db))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::after-delete-bill
  common/debug-mw
  (fn [db [_ bill]]

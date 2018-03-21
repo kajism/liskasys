@@ -16,7 +16,7 @@
             [clojure.string :as str]
             [cljs-time.core :as t]))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::kids
  (fn [db [_]]
    (let [persons (re-frame/subscribe [:entities :person])]
@@ -31,7 +31,7 @@
                              parent-ids))
                    {}))))))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::rows
  (fn [db [_]]
    (let [persons (re-frame/subscribe [:entities :person])
@@ -46,7 +46,7 @@
 (def empty-person {:person/active? true
                    :person/child? true})
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::person-dps-by-date
  (fn [db [_]]
    (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
@@ -58,7 +58,7 @@
              (map (juxt :daily-plan/date identity))
              (into {})))))))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::person-att-months
  (fn [db [_]]
    (let [person-dps-by-date (re-frame/subscribe [::person-dps-by-date])]

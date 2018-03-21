@@ -11,23 +11,23 @@
             [reagent.ratom :as ratom]
             [secretary.core :as secretary]))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::tx
  (fn [db [_]]
    (ratom/reaction (:tx @db))))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::txes
  (fn [db [_]]
    (ratom/reaction (:txes @db))))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::tx-datoms
  (fn [db [_]]
    (let [tx (re-frame/subscribe [::tx])]
      (ratom/reaction (:datoms @tx)))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::load-tx
  common/debug-mw
  (fn [db [_ tx-id]]
@@ -35,14 +35,14 @@
                 [::set-tx tx-id])
    (assoc db :tx nil)))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::set-tx
  common/debug-mw
  (fn [db [_ tx-id datoms]]
    (assoc db :tx {:db/id tx-id
                   :datoms datoms})))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::load-txes
  common/debug-mw
  (fn [db [_]]
@@ -51,7 +51,7 @@
                 [::set-txes])
    (assoc db :tx nil)))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::set-txes
  common/debug-mw
  (fn [db [_ txes]]

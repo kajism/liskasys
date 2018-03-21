@@ -11,7 +11,7 @@
             [reagent.ratom :as ratom]
             [taoensso.timbre :as timbre]))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :table-state
  (fn [db [_ table-id]]
    (ratom/reaction (get-in @db [:table-states table-id]))))
@@ -23,7 +23,7 @@
       (or (str/ends-with? s " 00:00") (str/ends-with? s " 12:00"))
       (subs 0 (- (count s) 6)))))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :table-rows
  (fn [db [_ table-id colls] [orig-rows]]
    (let [state (re-frame/subscribe [:table-state table-id])
@@ -95,13 +95,13 @@
        :row-from @row-from
        :row-to @row-to}))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :table-state-set
  common/debug-mw
  (fn [db [_ table-id state]]
    (assoc-in db [:table-states table-id] state)))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :table-state-change
  ;;common/debug-mw
  (fn [db [_ table-id key val]]

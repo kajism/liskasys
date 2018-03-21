@@ -12,7 +12,7 @@
             [secretary.core :as secretary]
             [reagent.ratom :as ratom]))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  ::daily-plans
  (fn [db [_]]
    (let [daily-plans (re-frame/subscribe [:entities :daily-plan])

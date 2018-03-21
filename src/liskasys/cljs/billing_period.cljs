@@ -12,7 +12,7 @@
             [reagent.core :as reagent]
             [secretary.core :as secretary]))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::send-cmd
  common/debug-mw
  (fn [db [_ period-id cmd bill-id]]
@@ -21,7 +21,7 @@
                 [::cmd-results period-id bill-id])
    db))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  ::cmd-results
  common/debug-mw
  (fn [db [_ period-id bill-id results]]

@@ -23,7 +23,7 @@
   (swap! kw->url assoc kw url))
 
 ;;---- Subscriptions--------------------------------------------
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :entities
  (fn [db [_ kw]]
    (let [out (ratom/reaction (get @db kw))]
@@ -31,7 +31,7 @@
        (re-frame/dispatch [:entities-load kw {} true]))
      out)))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :entities-where
  (fn [db [_ kw where-m]]
    (let [ents (ratom/reaction (get @db kw))
@@ -41,12 +41,12 @@
      (ratom/reaction
       (select-keys @ents @ids)))))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :entity-edit-id
  (fn [db [_ kw]]
    (ratom/reaction (get-in @db [:entity-edit kw :db/id]))))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :entity-edit
  (fn [db [_ kw]]
    (let [id (re-frame/subscribe [:entity-edit-id kw])
@@ -55,13 +55,13 @@
                        (get @ents @id)
                        (get-in @db [:new-ents kw]))))))
 
-(re-frame/register-sub
+(re-frame/reg-sub-raw
  :entity-edit?
  (fn [db [_ kw]]
    (ratom/reaction (get-in @db [:entity-edit kw :edit?]))))
 
 ;;---- Handlers -----------------------------------------------
-(re-frame/register-handler
+(re-frame/reg-event-db
  :entities-load
  debug-mw
  (fn [db [_ kw where-m missing-only?]]
@@ -78,7 +78,7 @@
                       [:entities-where kw where-m]
                       [kw]) {})))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :entities-set
  debug-mw
  (fn [db [_ kw path v]]
@@ -89,14 +89,14 @@
            (update kw #(merge % ent-by-id)))
        (assoc db kw ent-by-id)))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :entity-set-edit
  debug-mw
  (fn [db [_ kw id edit?]]
    (assoc-in db [:entity-edit kw] {:db/id id
                                    :edit? (boolean edit?)})))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :entity-new
  debug-mw
  (fn [db [_ kw new-ent]]
@@ -104,7 +104,7 @@
      (assoc-in db [:new-ents kw] new-ent)
      (update db :new-ents dissoc kw))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :entity-change
  debug-mw
  (fn [db [_ kw id attr val]]
@@ -115,7 +115,7 @@
       (string? val)
       (str/trim)))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :entity-save
  debug-mw
  (fn [db [_ kw validation-fn ent-id]]
@@ -130,7 +130,7 @@
        (timbre/debug "validation errors" errors))
      (assoc-in db (if id [kw id :-errors] [:new-ents kw :-errors]) errors))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :entity-saved
  debug-mw
  (fn [db [_ kw new-ent]]
@@ -141,7 +141,7 @@
        (assoc-in [kw (:db/id new-ent)] new-ent)
        (update :new-ents #(dissoc % kw)))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :entity-delete
  debug-mw
  (fn [db [_ kw id after-delete]]
@@ -156,7 +156,7 @@
                                           wm
                                           wm))))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :file-delete
  debug-mw
  (fn [db [_ kw parent-id file-id]]
@@ -164,7 +164,7 @@
      (server-call [(keyword (name kw) "delete") file-id] nil nil db))
    (update-in db [kw parent-id :file/_parent] #(filterv (fn [file] (not= file-id (:db/id file))) %))))
 
-(re-frame/register-handler
+(re-frame/reg-event-db
  :common/retract-ref-many
  debug-mw
  (fn [db [_ kw retract-attr]]
