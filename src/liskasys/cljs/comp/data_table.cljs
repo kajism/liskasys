@@ -114,8 +114,7 @@
 
 (defn make-csv [rows colls]
   (let [colls (->> (vals colls)
-                   (remove (fn [[label f modifier]]
-                             (#{:none :csv-export} modifier))))]
+                   (remove #(contains? #{:none :csv-export} (:header-modifier %))))]
     (str (str/join ";" (map :header colls)) "\n"
          (apply str
                 (for [row rows]
