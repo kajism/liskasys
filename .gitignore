@@ -17,3 +17,5 @@ figwheel_server.log
 *.log
 *.retry
 /db-dump*
+.idea/
+liskasys.iml
