@@ -118,8 +118,20 @@
     (str (str/join ";" (map :header colls)) "\n"
          (apply str
                 (for [row rows]
-                  (str (str/join ";" (map #(% row)
-                                          (map :val-fn colls))) "\n"))))))
+                  (str (->> colls
+                            (map :val-fn)
+                            (map #(% row))
+                            (map #(cond
+                                    (= js/Date (type %))
+                                    (show-date %)
+                                    (transit/bigdec? %)
+                                    (util/parse-int (.-rep %))
+                                    (= (type %) js/Boolean)
+                                    (util/boolean->text %)
+                                    :else
+                                    %))
+                            (str/join ";"))
+                       "\n"))))))
 
 (defn td-comp* [value buttons?]
   [:td {:class (str #_"text-nowrap"
