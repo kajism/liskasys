@@ -1,6 +1,6 @@
 (ns liskasys.cljs.transaction
   (:require [liskasys.cljc.time :as time]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
@@ -89,7 +89,7 @@
                   :td-comp (fn [& {:keys [value]}]
                              [:td (time/to-format value time/ddMMyyyyHHmmss)])}
                  {:header "Kdo"
-                  :val-fn #(some->> % :tx/person :db/id (get @persons) cljc-util/person-fullname)
+                  :val-fn #(some->> % :tx/person :db/id (get @persons) cljc.util/person-fullname)
                   :td-comp (fn [& {:keys [value row]}]
                              [:td
                               [:a {:href (str "#/person/" (-> row :tx/person :db/id))} value]])}
@@ -106,9 +106,9 @@
            :person/lunch-type
            (:lunch-type/label (get @lunch-types v))
            :person-bill/period
-           (cljc-util/period->text (get @billing-periods v))
+           (cljc.util/period->text (get @billing-periods v))
            (:person/parent :daily-plan/person :tx/person :person-bill/person)
-           (cljc-util/person-fullname (get @persons v))
+           (cljc.util/person-fullname (get @persons v))
            (if (inst? v)
              (time/to-format v time/ddMMyyyyHHmmss)
              (str v))))])))
@@ -143,6 +143,6 @@
 (pages/add-page :transactions #'transactions)
 
 (secretary/defroute #"/transaction/(\d*)(e?)" [id]
-  (re-frame/dispatch [::load-tx (cljc-util/parse-int id)])
+  (re-frame/dispatch [::load-tx (cljc.util/parse-int id)])
   (re-frame/dispatch [:set-current-page :transaction]))
 (pages/add-page :transaction #'transaction)

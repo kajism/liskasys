@@ -1,6 +1,6 @@
 (ns liskasys.cljs.group
   (:require [clojure.string :as str]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -67,7 +67,7 @@
           (let [error-msg (some-> item :-errors :group/max-capacity)]
             [re-com/input-text
              :model (str (:group/max-capacity item))
-             :on-change #(re-frame/dispatch [:entity-change :group (:db/id item) :group/max-capacity (cljc-util/parse-int %)])
+             :on-change #(re-frame/dispatch [:entity-change :group (:db/id item) :group/max-capacity (cljc.util/parse-int %)])
              :validation-regex #"^\d{0,2}$"
              :width "70px"
              :status (when error-msg :warning)
@@ -92,7 +92,7 @@
 (pages/add-page :groups #'page-groups)
 
 (secretary/defroute #"/group/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :group (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :group (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :group]))
 (pages/add-page :group #'page-group)
 (common/add-kw-url :group "group")

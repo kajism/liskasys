@@ -1,6 +1,6 @@
 (ns liskasys.cljs.common
   (:require [liskasys.cljc.schema :as schema]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
@@ -124,7 +124,7 @@
          errors (when validation-fn (validation-fn ent))
          file (:-file ent)]
      (if (empty? errors)
-       (server-call (timbre/spy [(keyword (name kw) "save") (cljc-util/dissoc-temp-keys ent)])
+       (server-call (timbre/spy [(keyword (name kw) "save") (cljc.util/dissoc-temp-keys ent)])
                     file
                     [:entity-saved kw])
        (timbre/debug "validation errors" errors))

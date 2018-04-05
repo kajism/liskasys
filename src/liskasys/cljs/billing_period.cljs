@@ -1,6 +1,6 @@
 (ns liskasys.cljs.billing-period
   (:require [cljs-time.core :as t]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
@@ -66,8 +66,8 @@
                         (when (contains? (:-roles @user) "superadmin")
                           [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :billing-period (:db/id row)]) :emphasise? true])]]))
                   :none]
-                 ["Od" (comp cljc-util/yyyymm->text :billing-period/from-yyyymm)]
-                 ["Do" (comp cljc-util/yyyymm->text :billing-period/to-yyyymm)]]
+                 ["Od" (comp cljc.util/yyyymm->text :billing-period/from-yyyymm)]
+                 ["Do" (comp cljc.util/yyyymm->text :billing-period/to-yyyymm)]]
          :desc? true]]])))
 
 (defn page-billing-period []
@@ -84,13 +84,13 @@
            :children
            [[re-com/input-text
              :model (str (:billing-period/from-yyyymm item))
-             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/from-yyyymm (cljc-util/parse-int %)])
+             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/from-yyyymm (cljc.util/parse-int %)])
              :validation-regex #"^\d{0,6}$"
              :width "120px"]
             "-"
             [re-com/input-text
              :model (str (:billing-period/to-yyyymm item))
-             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/to-yyyymm (cljc-util/parse-int %)])
+             :on-change #(re-frame/dispatch [:entity-change :billing-period (:db/id item) :billing-period/to-yyyymm (cljc.util/parse-int %)])
              :validation-regex #"^\d{0,6}$"
              :width "120px"]
             "RRRRMM"]]
@@ -121,7 +121,7 @@
 (pages/add-page :billing-periods #'page-billing-periods)
 
 (secretary/defroute #"/billing-period/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :billing-period (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :billing-period (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :billing-period]))
 (pages/add-page :billing-period #'page-billing-period)
 (common/add-kw-url :billing-period "billing-period")

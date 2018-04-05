@@ -2,7 +2,7 @@
   (:require [cljs-time.coerce :as tc]
             [cljs-time.core :as t]
             [liskasys.cljc.time :as time]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -62,7 +62,7 @@
                   :none]
                  ["Datum" :daily-plan/date]
                  {:header "Jméno"
-                  :val-fn #(some->> % :daily-plan/person :db/id (get @persons) cljc-util/person-fullname)
+                  :val-fn #(some->> % :daily-plan/person :db/id (get @persons) cljc.util/person-fullname)
                   :td-comp (fn [& {:keys [value row row-state]}]
                              [:td
                               (if (and (:selected? row-state) value)
@@ -70,15 +70,15 @@
                                  value]
                                 value)])}
                  ["Třída" #(some->> % :daily-plan/person :db/id (get @persons):person/group :db/id (get @groups) :group/label)]
-                 #_["Docházka" #(cljc-util/child-att->str (:daily-plan/child-att %))]
+                 #_["Docházka" #(cljc.util/child-att->str (:daily-plan/child-att %))]
                  ["Omluvena?" (fn [row]
                                 (if (->> row :daily-plan/person :db/id (get @persons) :person/child?)
-                                  (-> row  :daily-plan/att-cancelled? cljc-util/boolean->text)
+                                  (-> row  :daily-plan/att-cancelled? cljc.util/boolean->text)
                                   "-"))]
                  ["Důvod oml." :daily-plan/excuse]
                  ["Obědy: Dieta" #(some->> % :daily-plan/person :db/id (get @persons) :person/lunch-type :db/id (get @lunch-types) :lunch-type/label)]
                  ["Pož.ks" #(or (:daily-plan/lunch-req %) 0)]
-                 ["Odhlášen?" (comp cljc-util/boolean->text :daily-plan/lunch-cancelled?)]
+                 ["Odhlášen?" (comp cljc.util/boolean->text :daily-plan/lunch-cancelled?)]
                  ["Obj.ks" #(or (:daily-plan/lunch-ord %) 0)]
                  {:header "Nahrada zapsána"
                   :val-fn :daily-plan/subst-req-on
@@ -122,9 +122,9 @@
            :choices (->> @persons
                          vals
                          (filter :person/active?)
-                         (util/sort-by-locale cljc-util/person-fullname))
+                         (util/sort-by-locale cljc.util/person-fullname))
            :id-fn :db/id
-           :label-fn cljc-util/person-fullname
+           :label-fn cljc.util/person-fullname
            :filter-box? true
            :width "250px"]
           (when (->> item :daily-plan/person :db/id (get @persons) :person/child?)
@@ -136,7 +136,7 @@
                :children
                [[re-com/single-dropdown
                  :model (:daily-plan/child-att item)
-                 :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/child-att (cljc-util/parse-int %)])
+                 :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/child-att (cljc.util/parse-int %)])
                  :choices [{:id nil :label "žádná"}
                            {:id 1 :label "celodenní"}
                            {:id 2 :label "půldenní"}]
@@ -173,7 +173,7 @@
            :children
            [[re-com/input-text
              :model (str (:daily-plan/lunch-req item))
-             :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-req (cljc-util/parse-int %)])
+             :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-req (cljc.util/parse-int %)])
              :validation-regex #"^[0-9]{0,1}$"
              :width "100px"]
             [re-com/checkbox
@@ -183,7 +183,7 @@
           [re-com/label :label "Objednáno obědů"]
           [re-com/input-text
            :model (str (:daily-plan/lunch-ord item))
-           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (cljc-util/parse-int %)])
+           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/lunch-ord (cljc.util/parse-int %)])
            :disabled? (not (contains? (:-roles @user) "superadmin"))
            :width "100px"]
           [re-com/h-box :gap "5px" :align :center
@@ -202,7 +202,7 @@
 (pages/add-page :daily-plans #'page-daily-plans)
 
 (secretary/defroute #"/daily-plan/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :daily-plan (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :daily-plan (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :daily-plan]))
 (pages/add-page :daily-plan #'page-daily-plan)
 (common/add-kw-url :daily-plan "daily-plan")

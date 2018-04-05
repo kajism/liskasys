@@ -1,6 +1,6 @@
 (ns liskasys.cljs.comp.history
   (:require [liskasys.cljc.time :as time]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.data-table :as data-table]
@@ -42,7 +42,7 @@
          :person/lunch-type
          (:lunch-type/label (get @lunch-types (:v row)))
          (:person/parent :daily-plan/person)
-         (cljc-util/person-fullname (get @persons (:v row)))
+         (cljc.util/person-fullname (get @persons (:v row)))
          (if (inst? (:v row))
            (time/to-format (:v row) time/ddMMyyyyHHmmss)
            (str (:v row))))])))
@@ -69,7 +69,7 @@
                                  [:a {:href (str "#/transaction/" (-> row :tx :db/id))}
                                   (time/to-format value time/ddMMyyyyHHmmss)]])}
                     {:header "Kdo"
-                     :val-fn #(->> % :tx :tx/person :db/id (get @persons) cljc-util/person-fullname)
+                     :val-fn #(->> % :tx :tx/person :db/id (get @persons) cljc.util/person-fullname)
                      :td-comp (fn [& {:keys [value row]}]
                                 [:td
                                  [:a {:href (str "#/person/" (-> row :tx :tx/person :db/id))} value]])}

@@ -1,5 +1,5 @@
 (ns liskasys.cljs.bank-holiday
-  (:require [liskasys.cljc.util :as cljc-util]
+  (:require [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -62,19 +62,19 @@
           [re-com/label :label "Měsíc"]
           [re-com/input-text
            :model (str (:bank-holiday/month item))
-           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/month (cljc-util/parse-int %)])
+           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/month (cljc.util/parse-int %)])
            :validation-regex #"^\d{0,2}$"
            :width "60px"]
           [re-com/label :label "Den"]
           [re-com/input-text
            :model (str (:bank-holiday/day item))
-           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/day (cljc-util/parse-int %)])
+           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/day (cljc.util/parse-int %)])
            :validation-regex #"^\d{0,2}$"
            :width "60px"]
           [re-com/label :label "+/- dnů od Velikonoc"]
           [re-com/input-text
            :model (str (:bank-holiday/easter-delta item))
-           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/easter-delta (cljc-util/parse-int %)])
+           :on-change #(re-frame/dispatch [:entity-change :bank-holiday (:db/id item) :bank-holiday/easter-delta (cljc.util/parse-int %)])
            :validation-regex #"^[-\d]{0,2}$"
            :width "60px"]
           [re-com/h-box :align :center :gap "5px"
@@ -91,7 +91,7 @@
 (pages/add-page :bank-holidays #'page-bank-holidays)
 
 (secretary/defroute #"/bank-holiday/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :bank-holiday (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :bank-holiday (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :bank-holiday]))
 (pages/add-page :bank-holiday #'page-bank-holiday)
 (common/add-kw-url :bank-holiday "bank-holiday")

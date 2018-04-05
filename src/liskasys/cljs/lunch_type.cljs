@@ -1,6 +1,6 @@
 (ns liskasys.cljs.lunch-type
   (:require [clojure.string :as str]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -78,7 +78,7 @@
 (pages/add-page :lunch-types #'page-lunch-types)
 
 (secretary/defroute #"/lunch-type/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :lunch-type (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :lunch-type (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :lunch-type]))
 (pages/add-page :lunch-type #'page-lunch-type)
 (common/add-kw-url :lunch-type "lunch-type")

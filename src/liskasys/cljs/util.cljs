@@ -1,7 +1,7 @@
 (ns liskasys.cljs.util
   (:require [clojure.string :as str]
             [cognitect.transit :as transit]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [re-com.core :as re-com]
             [schema.core :as s]))
 
@@ -13,7 +13,7 @@
 (defn parse-float [s]
   (when s
     (let [n (js/parseFloat (-> s
-                               cljc-util/remove-spaces
+                               cljc.util/remove-spaces
                                (str/replace #"," ".")))]
       (if (js/isNaN n)
         nil

@@ -2,7 +2,7 @@
   (:require [cljs-time.coerce :as tc]
             [cljs-time.core :as t]
             [liskasys.cljc.time :as time]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -81,13 +81,13 @@
 (pages/add-page :lunch-menus #'page-lunch-menus)
 
 (secretary/defroute #"/lunch-menu/(\d*)(e?)" [id edit?]
-  (when-not (cljc-util/parse-int id)
+  (when-not (cljc.util/parse-int id)
     (re-frame/dispatch [:entity-new :lunch-menu {:lunch-menu/from (->> (t/today)
                                                                        (iterate #(t/plus % (t/days 1)))
                                                                        (drop-while #(not= (t/day-of-week %) 1))
                                                                        first
                                                                        tc/to-date)}]))
-  (re-frame/dispatch [:entity-set-edit :lunch-menu (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :lunch-menu (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :lunch-menu]))
 (pages/add-page :lunch-menu #'page-lunch-menu)
 (common/add-kw-url :lunch-menu "lunch-menu")

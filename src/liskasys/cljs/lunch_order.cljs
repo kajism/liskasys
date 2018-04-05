@@ -1,6 +1,6 @@
 (ns liskasys.cljs.lunch-order
   (:require [liskasys.cljc.time :as time]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -78,7 +78,7 @@
 (pages/add-page :lunch-orders #'page-lunch-orders)
 
 (secretary/defroute #"/lunch-order/(\d*)(e?)" [id edit?]
-  (re-frame/dispatch [:entity-set-edit :lunch-order (cljc-util/parse-int id) (not-empty edit?)])
+  (re-frame/dispatch [:entity-set-edit :lunch-order (cljc.util/parse-int id) (not-empty edit?)])
   (re-frame/dispatch [:set-current-page :lunch-order]))
 (pages/add-page :lunch-order #'page-lunch-order)
 (common/add-kw-url :lunch-order "lunch-order")

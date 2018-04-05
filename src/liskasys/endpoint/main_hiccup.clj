@@ -6,7 +6,7 @@
             [clj-time.format :as tf]
             [clj-time.periodic :as tp]
             [clojure.pprint :refer [pprint]]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [taoensso.timbre :as timbre])
   (:import java.text.Collator
            [java.util Date Locale]))
@@ -40,7 +40,7 @@
             [:li [:a {:href "/nahrady"} "Náhrady"]])]
          [:ul.nav.navbar-nav.navbar-right
           [:li
-           [:a {:href "/profile"} (cljc-util/person-fullname user)]]
+           [:a {:href "/profile"} (cljc.util/person-fullname user)]]
           (when (roles "admin")
             [:li [:a {:target "admin" :href "/admin.app"} "Admin"]])
           [:li [:a {:href "/passwd"} "Změna hesla"]]
@@ -77,7 +77,7 @@ return true;
                                    :onchange "this.form.submit()"}
        (for [person (:user-children user-children-data)]
          [:option {:value (:db/id person)
-                   :selected (= (:selected-id user-children-data) (:db/id person))} (cljc-util/person-fullname person)])]]]
+                   :selected (= (:selected-id user-children-data) (:db/id person))} (cljc.util/person-fullname person)])]]]
     [:form (merge {:method "post"
                    :role "form"}
                   (when (some-> user-children-data :selected-child :person/group :group/mandatory-excuse?)
@@ -135,7 +135,7 @@ return true;
                                    :onchange "this.form.submit()"}
        (for [person (:user-children user-children-data)]
          [:option {:value (:db/id person)
-                   :selected (= (:selected-id user-children-data) (:db/id person))} (cljc-util/person-fullname person)])]]]
+                   :selected (= (:selected-id user-children-data) (:db/id person))} (cljc.util/person-fullname person)])]]]
     [:form {:method "post"
             :role "form"}
      [:input {:type "hidden" :name "child-id" :value (:selected-id user-children-data)}]
@@ -231,15 +231,15 @@ return true;
      (for [{:person-bill/keys [period person total att-price lunch-count] :keys [:db/id -lunch-price -total-lunch-price -from-previous -paid?]} person-bills]
        (list
         [:tr
-         [:td (cljc-util/period->text period)]
-         [:td (cljc-util/person-fullname person)]
+         [:td (cljc.util/period->text period)]
+         [:td (cljc.util/person-fullname person)]
          [:td.right (:person/var-symbol person)]
-         [:td.right [:b (cljc-util/cents->text total)]]
-         [:td.right (cljc-util/cents->text att-price)]
-         [:td.right (str lunch-count " x " (cljc-util/from-cents -lunch-price) " = " (cljc-util/from-cents -total-lunch-price))]
-         [:td.right (cljc-util/cents->text -from-previous)]
-         [:td (cljc-util/att-pattern->text (:person/att-pattern person))]
-         [:td (cljc-util/lunch-pattern->text (:person/lunch-pattern person))]]
+         [:td.right [:b (cljc.util/cents->text total)]]
+         [:td.right (cljc.util/cents->text att-price)]
+         [:td.right (str lunch-count " x " (cljc.util/from-cents -lunch-price) " = " (cljc.util/from-cents -total-lunch-price))]
+         [:td.right (cljc.util/cents->text -from-previous)]
+         [:td (cljc.util/att-pattern->text (:person/att-pattern person))]
+         [:td (cljc.util/lunch-pattern->text (:person/lunch-pattern person))]]
         (when (and show-qr? (not -paid?))
           [:tr
            [:td {:col-span 9} [:img {:src (str "/qr-code?id=" id)}]]])))]]])

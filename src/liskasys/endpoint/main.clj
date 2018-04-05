@@ -19,7 +19,7 @@
             [liskasys.qr-code :as qr-code]
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]
-            [liskasys.cljc.util :as cljc-util])
+            [liskasys.cljc.util :as cljc.util])
   (:import java.io.ByteArrayInputStream))
 
 (defn- make-date-sets [str-date-seq]
@@ -115,8 +115,8 @@
                                                 (/ (:person-bill/total person-bill) 100)
                                                 (str (-> person-bill :person-bill/person :person/var-symbol))
                                                 org-name
-                                                (str (-> person-bill :person-bill/person cljc-util/person-fullname) " "
-                                                     (-> person-bill :person-bill/period cljc-util/period->text)))
+                                                (str (-> person-bill :person-bill/person cljc.util/person-fullname) " "
+                                                     (-> person-bill :person-bill/period cljc.util/period->text)))
              qr-code-bytes (main-service/file-to-byte-array qr-code-file)]
          (.delete qr-code-file)
          (-> (response/response (ByteArrayInputStream. qr-code-bytes))
