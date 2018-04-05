@@ -310,28 +310,28 @@
        (* half-days-count (:price-list/half-day price-list)))))
 
 (defn- generate-daily-plans
-  [{:keys [:person/lunch-pattern :person/att-pattern] person-id :db/id :as person} dates]
+  [{:person/keys [lunch-pattern att-pattern start-date] person-id :db/id :as person} dates]
   (let [lunch-map (pattern-map lunch-pattern)
-        att-map (pattern-map att-pattern)]
-    (keep (fn [ld]
-            (let [day-of-week (t/day-of-week ld)
-                  lunch-req (get lunch-map day-of-week 0)
-                  child-att (get att-map day-of-week 0)]
-              (when (or (pos? lunch-req) (pos? child-att))
-                (cond-> {:daily-plan/person person-id
-                         :daily-plan/date (tc/to-date ld)}
-                  (pos? lunch-req)
-                  (assoc :daily-plan/lunch-req lunch-req)
-                  (pos? child-att)
-                  (assoc :daily-plan/child-att child-att)))))
-          dates)))
+        att-map (pattern-map att-pattern)
+        start-date (tc/to-local-date (or start-date #inst "2000"))]
+    (->> dates
+         (drop-while #(t/before? (tc/to-local-date %) start-date))
+         (keep (fn [ld]
+                 (let [day-of-week (t/day-of-week ld)
+                       lunch-req (get lunch-map day-of-week 0)
+                       child-att (get att-map day-of-week 0)]
+                   (when (or (pos? lunch-req) (pos? child-att))
+                     (cond-> {:daily-plan/person person-id
+                              :daily-plan/date (tc/to-date ld)}
+                       (pos? lunch-req)
+                       (assoc :daily-plan/lunch-req lunch-req)
+                       (pos? child-att)
+                       (assoc :daily-plan/child-att child-att)))))))))
 
 (defn- generate-person-bills-tx [db period-id]
   (let [billing-period (db/find-by-id db period-id)
         [period-start-ld period-end-ld] (cljc.util/period-start-end-lds billing-period)
-        second-month-start (-> (cljc.util/period-start-end-lds billing-period)
-                               (first)
-                               (t/plus (t/months 1)))
+        dates (service/period-local-dates (service/make-holiday?-fn db) period-start-ld period-end-ld)
         person-id--2nd-previous-dps (some->> (find-school-year-previous-periods db (tc/to-date period-start-ld))
                                              (second)
                                              :db/id
@@ -343,15 +343,11 @@
                                    (map #(vector (get-in % [:person-bill/person :db/id]) %))
                                    (into {})))
         price-list (db/find-price-list db)
+        second-month-start (t/plus period-start-ld (t/months 1))
         out (->>
              (for [person (->> (db/find-where db {:person/active? true})
                                (remove cljc.util/zero-patterns?))
-                   :let [daily-plans (generate-daily-plans person (service/period-local-dates (service/make-holiday?-fn db)
-                                                                                              (or (some-> person
-                                                                                                          :person/start-date
-                                                                                                          (tc/to-local-date))
-                                                                                                  period-start-ld)
-                                                                                        period-end-ld))
+                   :let [daily-plans (generate-daily-plans person dates)
                          previous-dps (get person-id--2nd-previous-dps (:db/id person))
                          months-count (cond-> (- (:billing-period/to-yyyymm billing-period)
                                                  (:billing-period/from-yyyymm billing-period)
@@ -439,18 +435,20 @@
 
 (defn set-bill-as-paid [conn user-id bill-id]
   (let [db (d/db conn)
-        [[period-id {:keys [:person-bill/person :person-bill/total :person-bill/att-price]}]]
+        [[period-id {:person-bill/keys [person total att-price]}]]
         (d/q '[:find ?period-id (pull ?e [:db/id :person-bill/total :person-bill/att-price
-                                          {:person-bill/person [:db/id :person/lunch-pattern :person/att-pattern :person/lunch-fund]}])
+                                          {:person-bill/person [:db/id :person/lunch-pattern :person/att-pattern :person/lunch-fund :person/start-date]}])
                :in $ ?e
                :where
                [?e :person-bill/period ?period-id]
                [?e :person-bill/status :person-bill.status/published]]
              db bill-id)
         order-date (tc/to-local-date (service/find-max-lunch-order-date db))
-        dates (cond->> (apply service/period-local-dates (service/make-holiday?-fn db) (cljc.util/period-start-end-lds (db/find-by-id db period-id)))
-                order-date
-                (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
+        dates (->> period-id
+                   (db/find-by-id db)
+                   (cljc.util/period-start-end-lds)
+                   (apply service/period-local-dates (service/make-holiday?-fn db))
+                   (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
         tx-result (->> (generate-daily-plans person dates)
                        (map #(-> % (assoc :db/id (d/tempid :db.part/user)
                                           :daily-plan/bill bill-id)))
