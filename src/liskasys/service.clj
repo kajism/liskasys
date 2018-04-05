@@ -222,11 +222,16 @@
                       (not (:daily-plan/att-cancelled? %)))
         lunch?-fn #(and (some-> % :daily-plan/lunch-req pos?)
                         (not (:daily-plan/lunch-cancelled? %)))
+        max-group-capacity (or (:group/max-capacity group)
+                               (count daily-plans))
         [going not-going] (->> daily-plans
                                (filter att?-fn)
                                (sort-by :daily-plan/subst-req-on)
-                               (partition-all (or (:group/max-capacity group)
-                                                  (count daily-plans))))
+                               (partition-all (max max-group-capacity
+                                                   (->> daily-plans
+                                                        (filter att?-fn)
+                                                        (remove :daily-plan/subst-req-on)
+                                                        (count)))))
         not-going-subst-msgs (map (fn [dp] {:from sender
                                             :to (map :person/email (-> dp :daily-plan/person :person/parent))
                                             :subject (str org-name ": Zítřejší náhrada bohužel není možná")
