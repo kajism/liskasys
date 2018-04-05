@@ -93,7 +93,7 @@
     (let [m (rem ym 100)]
       (str (quot ym 100) "/" (if (<= m 9) "0") m))))
 
-(defn period-start-end
+(defn period-start-end-lds
   "Returns local dates with end exclusive!!"
   [{:keys [:billing-period/from-yyyymm :billing-period/to-yyyymm] :as period}]
   [(t/local-date (quot from-yyyymm 100) (rem from-yyyymm 100) 1)

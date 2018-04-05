@@ -62,7 +62,7 @@
       (or (bank-holiday? bank-holidays ld)
           (school-holiday? school-holidays ld)))))
 
-(defn period-dates [holiday?-fn from-ld to-ld]
+(defn period-local-dates [holiday?-fn from-ld to-ld]
   "Returns all local-dates except holidays from - to (exclusive)."
   (->> from-ld
        (iterate (fn [ld]
@@ -486,7 +486,7 @@
 
 (defn- days-to-go [db excl-from incl-to]
   (let [{:config/keys [order-workdays-only?]} (d/pull db '[*] :liskasys/config)]
-    (period-dates (if order-workdays-only?
+    (period-local-dates (if order-workdays-only?
                     (some-fn tp/weekend?
                              (partial bank-holiday? (db/find-where db {:bank-holiday/label nil})))
                     (constantly false))

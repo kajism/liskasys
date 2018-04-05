@@ -208,7 +208,7 @@
                               (service/find-current-period db)
                               {:billing-period/from-yyyymm 200001
                                :billing-period/to-yyyymm 200001})
-                          (cljc.util/period-start-end)
+                          (cljc.util/period-start-end-lds)
                           (first)
                           (tc/to-date))
         max-paid-date (service/find-max-person-paid-period-date db person-id)
@@ -328,11 +328,11 @@
 
 (defn- generate-person-bills-tx [db period-id]
   (let [billing-period (db/find-by-id db period-id)
-        dates (apply service/period-dates (service/make-holiday?-fn db) (cljc.util/period-start-end billing-period))
-        second-month-start (-> (cljc.util/period-start-end billing-period)
+        [period-start-ld period-end-ld] (cljc.util/period-start-end-lds billing-period)
+        second-month-start (-> (cljc.util/period-start-end-lds billing-period)
                                (first)
                                (t/plus (t/months 1)))
-        person-id--2nd-previous-dps (some->> (find-school-year-previous-periods db (first dates))
+        person-id--2nd-previous-dps (some->> (find-school-year-previous-periods db (tc/to-date period-start-ld))
                                              (second)
                                              :db/id
                                              (find-period-daily-plans db)
@@ -346,7 +346,12 @@
         out (->>
              (for [person (->> (db/find-where db {:person/active? true})
                                (remove cljc.util/zero-patterns?))
-                   :let [daily-plans (generate-daily-plans person dates)
+                   :let [daily-plans (generate-daily-plans person (service/period-local-dates (service/make-holiday?-fn db)
+                                                                                              (or (some-> person
+                                                                                                          :person/start-date
+                                                                                                          (tc/to-local-date))
+                                                                                                  period-start-ld)
+                                                                                        period-end-ld))
                          previous-dps (get person-id--2nd-previous-dps (:db/id person))
                          months-count (cond-> (- (:billing-period/to-yyyymm billing-period)
                                                  (:billing-period/from-yyyymm billing-period)
@@ -443,7 +448,7 @@
                [?e :person-bill/status :person-bill.status/published]]
              db bill-id)
         order-date (tc/to-local-date (service/find-max-lunch-order-date db))
-        dates (cond->> (apply service/period-dates (service/make-holiday?-fn db) (cljc.util/period-start-end (db/find-by-id db period-id)))
+        dates (cond->> (apply service/period-local-dates (service/make-holiday?-fn db) (cljc.util/period-start-end-lds (db/find-by-id db period-id)))
                 order-date
                 (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
         tx-result (->> (generate-daily-plans person dates)

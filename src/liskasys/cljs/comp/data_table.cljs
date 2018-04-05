@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             [cognitect.transit :as transit]
             [liskasys.cljc.time :as time]
-            [liskasys.cljc.util :as cljc-util]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
@@ -66,7 +66,7 @@
                                   (let [v (f row)
                                         v (cond
                                             (boolean? v)
-                                            (cljc-util/boolean->text v)
+                                            (cljc.util/boolean->text v)
                                             (= js/Date (type v))
                                             (show-date v)
                                             :else
@@ -125,9 +125,9 @@
                                     (= js/Date (type %))
                                     (show-date %)
                                     (transit/bigdec? %)
-                                    (util/parse-int (.-rep %))
+                                    (cljc.util/parse-int (.-rep %))
                                     (= (type %) js/Boolean)
-                                    (util/boolean->text %)
+                                    (cljc.util/boolean->text %)
                                     :else
                                     %))
                             (str/join ";"))
@@ -140,9 +140,9 @@
    (cond
      (or (string? value) (vector? value)) value
      (= js/Date (type value)) (show-date value)
-     (number? value) (cljc-util/money->text value)
-     (transit/bigdec? value) (cljc-util/money->text (cljc-util/parse-int (.-rep value)))
-     (= (type value) js/Boolean) (cljc-util/boolean->text value)
+     (number? value) (cljc.util/money->text value)
+     (transit/bigdec? value) (cljc.util/money->text (cljc.util/parse-int (.-rep value)))
+     (= (type value) js/Boolean) (cljc.util/boolean->text value)
      :else (str value))])
 
 (defn tr-comp [colls row change-state-fn selected?]
@@ -207,7 +207,7 @@
                                  (change-state-fn :desc? false)))
                              (change-state-fn :page-no 0))
         on-change-rows-per-page (fn [evt]
-                                  (change-state-fn :rows-per-page (cljc-util/parse-int (-> evt .-target .-value)))
+                                  (change-state-fn :rows-per-page (cljc.util/parse-int (-> evt .-target .-value)))
                                   (change-state-fn :page-no 0))
         on-change-search-all (fn [evt]
                                (change-state-fn :search-all (-> evt .-target .-value))
@@ -254,7 +254,7 @@
                                      (on-change-search-colls))}])
                 (when (= :sum header-modifier)
                   [:div.suma [:span {:dangerously-set-inner-HTML {:__html "&Sigma; "}}]
-                   (cljc-util/money->text
+                   (cljc.util/money->text
                     (->> (:filtered-rows @table-rows)
                          (keep val-fn)
                          (map #(if (transit/bigdec? %)
