@@ -227,11 +227,11 @@
         [going not-going] (->> daily-plans
                                (filter att?-fn)
                                (sort-by :daily-plan/subst-req-on)
-                               (partition-all (max max-group-capacity
-                                                   (->> daily-plans
-                                                        (filter att?-fn)
-                                                        (remove :daily-plan/subst-req-on)
-                                                        (count)))))
+                               (split-at (max max-group-capacity
+                                              (->> daily-plans
+                                                   (filter att?-fn)
+                                                   (remove :daily-plan/subst-req-on)
+                                                   (count)))))
         not-going-subst-msgs (map (fn [dp] {:from sender
                                             :to (map :person/email (-> dp :daily-plan/person :person/parent))
                                             :subject (str org-name ": Zítřejší náhrada bohužel není možná")
