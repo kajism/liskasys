@@ -70,7 +70,7 @@
                                    :md-icon-name "zmdi-edit"
                                    :tooltip "Editovat"
                                    :emphasise? true]])
-                        [buttons/delete-button :on-confirm #(re-frame/dispatch [::delete-bill row]) :emphasise? true]]]))
+                        [buttons/delete-button :on-confirm #(re-frame/dispatch [::delete-bill row])]]]))
                   :none]
                  {:header "Jméno"
                   :val-fn #(row->person-fullname % @persons)
