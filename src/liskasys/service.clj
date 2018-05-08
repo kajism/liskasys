@@ -159,7 +159,7 @@
                        [:person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email :person/child?
                         {:person/parent [:person/email]}]
                        (get-in person-bill [:person-bill/person :db/id]))
-        lunch-price (person-lunch-price person (db/find-price-list db))
+        lunch-price (person-lunch-price person (db/find-price-list as-of-db))
         total-lunch-price (* lunch-price lunch-count)
         paid-status (d/entid db :person-bill.status/paid)]
     (-> person-bill
