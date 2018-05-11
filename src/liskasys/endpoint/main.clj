@@ -235,16 +235,20 @@
 
    (context "/admin.app" {{user :user} :session server-name :server-name}
      (GET "/" []
-       (if-not ((:-roles user) "admin")
-         (response/redirect "/")
-         (hiccup/cljs-landing-page (str main-hiccup/system-title " Admin: " (:-org-name user)))))
+         (if-not (some (:-roles user) ["admin" "inspektor"])
+           (response/redirect "/")
+           (hiccup/cljs-landing-page (str main-hiccup/system-title " Admin: " (:-org-name user)))))
 
      (POST "/api" [req-msg]
        (let [[msg-id ?data] req-msg
              ent-type (keyword (namespace msg-id))
              action (name msg-id)
              conn (conns server-name)]
-         (when-not ((:-roles user) "admin")
+         (when-not (some (:-roles user) ["admin" "inspektor"])
+           (throw (Exception. "Not authorized")))
+         (when-not (or (= msg-id :user/auth)
+                       (= action "select")
+                       (contains? (:-roles user) "admin"))
            (throw (Exception. "Not authorized")))
          (response/response
           (case action

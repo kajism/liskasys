@@ -41,7 +41,7 @@
          [:ul.nav.navbar-nav.navbar-right
           [:li
            [:a {:href "/profile"} (cljc.util/person-fullname user)]]
-          (when (roles "admin")
+          (when (some roles ["admin" "inspektor"])
             [:li [:a {:target "admin" :href "/admin.app"} "Admin"]])
           [:li [:a {:href "/passwd"} "Změna hesla"]]
           [:li [:a {:href "/logout"} "Odhlásit se"]]]]]]

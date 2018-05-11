@@ -93,19 +93,18 @@
       [:li [:a {:href "#/lunch-menus"} "Jídelníček"]]
       [:li [:a {:href "#/lunch-orders"} "Oběd-návky"]]]
      [:ul.nav.navbar-nav.navbar-right
-      #_[:li
-       [:a {:target "_parent" :href "/obedy"} "Obědy"]]
-      [:li.dropdown
-       [:a.dropdown-toggle {:data-toggle "dropdown" :href "#"}
-        "Nastavení" [:span.caret]]
-       [:ul.dropdown-menu
-        [:li [:a {:href "#/price-lists"} "Ceník a platba"]]
-        [:li [:a {:href "#/lunch-types"} "Diety"]]
-        [:li [:a {:href "#/school-holidays"} "Prázdniny"]]
-        [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
-        [:li [:a {:href "#/groups"} "Třídy"]]
-        [:li [:a {:href "#/transactions"} "Transakce"]]
-        [:li [:a {:href "#/configs"} "Základní nastavení"]]]]
+      (when (contains? (:-roles user) "admin")
+        [:li.dropdown
+         [:a.dropdown-toggle {:data-toggle "dropdown" :href "#"}
+          "Nastavení" [:span.caret]]
+         [:ul.dropdown-menu
+          [:li [:a {:href "#/price-lists"} "Ceník a platba"]]
+          [:li [:a {:href "#/lunch-types"} "Diety"]]
+          [:li [:a {:href "#/school-holidays"} "Prázdniny"]]
+          [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
+          [:li [:a {:href "#/groups"} "Třídy"]]
+          [:li [:a {:href "#/transactions"} "Transakce"]]
+          [:li [:a {:href "#/configs"} "Základní nastavení"]]]])
       [:li
        [:a
         {:href "/logout"} "Odhlásit se"]]]]]])
@@ -120,12 +119,14 @@
   (let [user (re-frame/subscribe [:auth-user])]
     (re-frame/dispatch [:init-app])
     (fn []
-      [:div
-       [menu @user]
-       [:div.container-fluid
-        [pages/page]
-        [:br]
-        [:br]]])))
+      (if-not @user
+        [re-com/throbber]
+        [:div
+         [menu @user]
+         [:div.container-fluid
+          [pages/page]
+          [:br]
+          [:br]]]))))
 
 (defn main []
   (hook-browser-navigation!)

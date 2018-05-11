@@ -433,7 +433,7 @@
                 [re-com/h-box :align :center :gap "5px"
                  :children
                  [[input-text item :person :person/roles]
-                  "možné role oddělené čárkou: admin, koordinátor, obědy, průvodce (email s objednávkou obědů se posíla na emaily všech s rolí obědy; denní přehled se posílá všem s rolí průvodce; systém odesílá emaily z emailové adresy koordinátora)"]]
+                  "možné role oddělené čárkou: admin, koordinátor, obědy, průvodce, inspektor (email s objednávkou obědů se posíla na emaily všech s rolí obědy; denní přehled se posílá všem s rolí průvodce; systém odesílá emaily z emailové adresy koordinátora)"]]
                 (when (seq (get @kids (:db/id item)))
                   [re-com/v-box
                    :children
@@ -445,8 +445,7 @@
                         [:li
                          [re-com/hyperlink-href
                           :href (str "#/person/" (:db/id kid) "e")
-                          :label (cljc.util/person-fullname kid)]
-                         ]))]]])]])
+                          :label (cljc.util/person-fullname kid)]]))]]])]])
             [re-com/h-box :align :center :gap "5px"
              :children
              [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person])]
