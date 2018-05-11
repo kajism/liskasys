@@ -353,7 +353,13 @@
                     [re-com/checkbox
                      :label "souhlas se zveřejněním fotek dítěte pro účely propagace?"
                      :model (:person/photo-publishing? item)
-                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/photo-publishing? %])]]])
+                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/photo-publishing? %])]
+                    [re-com/label :label "Poznámky"]
+                    [re-com/input-textarea
+                     :model (str (:person/notes item))
+                     :rows 5
+                     :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/notes (fn [x] %)])
+                     :width "500px"]]])
                 [re-com/hyperlink :on-click #(re-frame/dispatch [:liskasys.cljs.common/set-path-value [::show-att-history?] not]) :label
                  [re-com/h-box :gap "5px" :align :center :children
                   [[re-com/md-icon-button
