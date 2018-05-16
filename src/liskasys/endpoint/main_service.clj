@@ -24,7 +24,7 @@
              not-empty))))
 
 (defn login [db username pwd]
-  (let [person (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol]}]) .
+  (let [person (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol :person/active?]}]) .
                       :in $ ?lower-email1
                       :where
                       [?e :person/email ?email]

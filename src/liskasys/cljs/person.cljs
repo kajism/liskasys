@@ -128,9 +128,7 @@
 (defn daily-summary [rows]
   (let [kids-by-day (reduce (fn [out day-idx]
                               (assoc out day-idx (->> rows
-                                                      (remove (fn [{att-pattern :person/att-pattern}]
-                                                                (or (not att-pattern)
-                                                                    (= "0" (nth att-pattern day-idx)))))
+                                                      (remove #(= "0" (get (:person/att-pattern %) day-idx "0")))
                                                       (util/sort-by-locale cljc.util/person-fullname))))
                             (sorted-map)
                             (range 5))]

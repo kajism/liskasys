@@ -166,7 +166,7 @@
                                     (cond-> (->> (str/split (str (:person/roles person)) #",")
                                                  (map str/trim)
                                                  set)
-                                      (pos? (count (:person/_parent person)))
+                                      (some :person/active? (:person/_parent person))
                                       (conj "parent"))
                                     :-server-name server-name
                                     :-org-name (:config/org-name (d/pull db '[:config/org-name] :liskasys/config)))))))

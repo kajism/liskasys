@@ -443,18 +443,21 @@
        reverse))
 
 (defn find-max-person-paid-period-date [db person-id]
-  (when-let [to-yyyymm (d/q '[:find (max ?yyyymm) .
-                              :in $ ?person
-                              :where
-                              [?e :person-bill/person ?person]
-                              [?e :person-bill/status :person-bill.status/paid]
-                              [?e :person-bill/period ?p]
-                              [?p :billing-period/to-yyyymm ?yyyymm]]
-                            db person-id)]
-    (-> (t/local-date (quot to-yyyymm 100) (rem to-yyyymm 100) 1)
-        (t/plus (t/months 1))
-        (t/minus (t/days 1))
-        tc/to-date)))
+  (let [to-yyyymm (some->> person-id
+                           (d/q '[:find (max ?yyyymm) .
+                                  :in $ ?person
+                                  :where
+                                  [?e :person-bill/person ?person]
+                                  [?e :person-bill/status :person-bill.status/paid]
+                                  [?e :person-bill/period ?p]
+                                  [?p :billing-period/to-yyyymm ?yyyymm]]
+                                db))]
+    (if-not to-yyyymm
+      #inst "2000"
+      (-> (t/local-date (quot to-yyyymm 100) (rem to-yyyymm 100) 1)
+          (t/plus (t/months 1))
+          (t/minus (t/days 1))
+          (tc/to-date)))))
 
 (defn find-person-daily-plans [db person-id date-from date-to]
   (when (and person-id date-from date-to)

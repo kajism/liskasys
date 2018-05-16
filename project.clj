@@ -80,8 +80,8 @@
                    :env {:dev "true"
                          :port "3000"
                          :datomic-uri "datomic:free://localhost:4334/"
-                         :app-domains "localhost obedy-marianka"
-                         :app-dbs     "liskasys  marianka"}}
+                         :app-domains "localhost marianka stromik"
+                         :app-dbs     "liskasys  marianka stromik"}}
    :project/test  {}}
   :release-tasks
   [["vcs" "assert-committed"]
