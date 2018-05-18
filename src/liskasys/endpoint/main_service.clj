@@ -235,7 +235,9 @@
                                                  (not (:daily-plan/subst-req-on %)))
                                            plans)
                                    out
-                                   (assoc out date (remove #(:daily-plan/att-cancelled? %) plans))))
+                                   (->> plans
+                                        (remove #(:daily-plan/att-cancelled? %))
+                                        (assoc out date))))
                                (sorted-map)))
      :can-subst? (and (not-empty substable-dps)
                       (->> all-plans
@@ -435,8 +437,8 @@
 
 (defn set-bill-as-paid [conn user-id bill-id]
   (let [db (d/db conn)
-        [[period-id {:person-bill/keys [person total att-price]}]]
-        (d/q '[:find ?period-id (pull ?e [:db/id :person-bill/total :person-bill/att-price
+        [[period-id bill]]
+        (d/q '[:find ?period-id (pull ?e [*
                                           {:person-bill/person [:db/id :person/lunch-pattern :person/att-pattern :person/lunch-fund :person/start-date]}])
                :in $ ?e
                :where
@@ -449,6 +451,8 @@
                    (cljc.util/period-start-end-lds)
                    (apply service/period-local-dates (service/make-holiday?-fn db))
                    (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
+        bill (service/merge-person-bill-facts db bill) ;; ensure data as of bill generation
+        {:person-bill/keys [person total att-price]} bill
         tx-result (->> (generate-daily-plans person dates)
                        (map #(-> % (assoc :db/id (d/tempid :db.part/user)
                                           :daily-plan/bill bill-id)))
