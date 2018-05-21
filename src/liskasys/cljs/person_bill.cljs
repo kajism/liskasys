@@ -120,6 +120,16 @@
           [re-com/label :label "Variabilní symbol"]
           [:b (-> item :person-bill/person :person/var-symbol)]
           [re-com/label :label "Stav"]
+          [re-com/single-dropdown
+           :model (some-> item :person-bill/status :db/ident)
+           :on-change #(re-frame/dispatch [:entity-change :person-bill (:db/id item) :person-bill/status %])
+           :choices [{:id :person-bill.status/new
+                      :label "nový"}
+                     {:id :person-bill.status/published
+                      :label [:span "zveřejněný, " [:b "nezaplacený"]]}
+                     {:id :person-bill.status/paid
+                      :label "zaplacený"}]
+           :width "250px"]
           [:b (row->status item)]
           [re-com/label :label "Celkem Kč"]
           [re-com/h-box :gap "5px"
