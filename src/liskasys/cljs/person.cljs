@@ -446,7 +446,13 @@
                           :label (cljc.util/person-fullname kid)]]))]]])]])
             [re-com/h-box :align :center :gap "5px"
              :children
-             [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :person])]
+             [[re-com/button :label "Uložit" :class "btn-success"
+               :on-click #(do
+                            (when (nil? (:person/active? item))
+                              ;; should not happen, but happens...
+                              ;; entity is not recognized as person when :person/active? attribute is not set
+                              (re-frame/dispatch [:entity-change :person (:db/id item) :person/active? true]))
+                            (re-frame/dispatch [:entity-save :person]))]
               "nebo"
               (when (:db/id item)
                 [re-com/hyperlink-href :href (str "#/person/e")
