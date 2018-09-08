@@ -195,6 +195,7 @@
     (d/q '[:find [(pull ?e [*]) ...]
            :in $ ?role
            :where
+           [?e :person/active? true]
            [?e :person/roles ?roles]
            [(clojure.string/index-of ?roles ?role)]]
          db
