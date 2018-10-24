@@ -208,22 +208,22 @@
                     {:id nil :label "Všichni"}]
              :model (:active? @page-state)
              :on-change #(re-frame/dispatch [:page-state-change :persons :active? %])]
-            (when (:active? @page-state)
-              (if (:child? @page-state)
-                  [re-com/horizontal-bar-tabs
-                   :tabs [{:id false :label "Seznam"}
-                          {:id true :label "Denní souhrn"}]
-                   :model (:daily-summary? @page-state)
-                   :on-change #(re-frame/dispatch [:page-state-change :persons :daily-summary? %])]
-                  [re-com/horizontal-bar-tabs
-                   :tabs [{:id false :label "Seznam"}
-                          {:id true :label "Emaily"}]
-                   :model (:emails? @page-state)
-                   :on-change #(re-frame/dispatch [:page-state-change :persons :emails? %])]))]]
+            (when (and (:active? @page-state) (:child? @page-state))
+              [re-com/horizontal-bar-tabs
+               :tabs [{:id false :label "Seznam"}
+                      {:id true :label "Denní souhrn"}]
+               :model (:daily-summary? @page-state)
+               :on-change #(re-frame/dispatch [:page-state-change :persons :daily-summary? %])])
+            (when (false? (:child? @page-state))
+              [re-com/horizontal-bar-tabs
+               :tabs [{:id false :label "Seznam"}
+                      {:id true :label "Emaily"}]
+               :model (:emails? @page-state)
+               :on-change #(re-frame/dispatch [:page-state-change :persons :emails? %])])]]
           (cond
             (and (:child? @page-state) (:active? @page-state) (:daily-summary? @page-state))
             [daily-summary-per-group @rows]
-            (and (not (:child? @page-state)) (:active? @page-state) (:emails? @page-state))
+            (and (false? (:child? @page-state)) (:emails? @page-state))
             [emails-to-copy @rows]
             :else
             [table rows])]]))))
