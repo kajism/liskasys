@@ -179,8 +179,11 @@
         out (service/find-person-daily-plans db person-id date-from date-to)]
     (cond->> out
       (and (= date-from (:daily-plan/date (first out)))
-           (or (not (pos-int? (:daily-plan/lunch-ord (first out))))
-               (not (can-cancel-today?-fn date-from))))
+           (or (not (can-cancel-today?-fn date-from))
+               ;; aby se nemohli znovu prihlasit ti, co vyzaduji obed, ale nebyl objednan:
+               (and (pos-int? (:daily-plan/lunch-req (first out)))
+                    (not (pos-int? (:daily-plan/lunch-ord (first out)))))
+               ))
       (drop 1)
       true
       (remove (let [date-from-ms (some-> date-from (.getTime))]
