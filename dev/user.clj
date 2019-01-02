@@ -4,7 +4,7 @@
             [clojure.tools.namespace.repl :refer [refresh]]
             [clojure.java.io :as io]
             [com.stuartsierra.component :as component]
-            [eftest.runner :as eftest]
+            #_[eftest.runner :as eftest]
             [meta-merge.core :refer [meta-merge]]
             [reloaded.repl :refer [system init start stop go reset]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
@@ -36,9 +36,9 @@
   (into (system/new-system config)
         {:figwheel (figwheel/server (:figwheel config))}))
 
-(ns-unmap *ns* 'test)
+#_(ns-unmap *ns* 'test)
 
-(defn test []
+#_(defn test []
   (eftest/run-tests (eftest/find-tests "test") {:multithread? false}))
 
 (defn cljs-repl []
@@ -57,3 +57,4 @@
 
 (defn db [server-name]
   (d/db (conn server-name)))
+

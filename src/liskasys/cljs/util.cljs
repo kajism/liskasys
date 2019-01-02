@@ -2,8 +2,7 @@
   (:require [clojure.string :as str]
             [cognitect.transit :as transit]
             [liskasys.cljc.util :as cljc.util]
-            [re-com.core :as re-com]
-            [schema.core :as s]))
+            [re-com.core :as re-com]))
 
 (defn sort-by-locale
   "Tridi spravne cestinu (pouziva funkci js/String.localeCompare). keyfn musi vracet string!"

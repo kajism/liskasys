@@ -11,51 +11,51 @@
             [reagent.ratom :as ratom]
             [secretary.core :as secretary]))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::tx
  (fn [db [_]]
-   (ratom/reaction (:tx @db))))
+   (:tx db)))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::txes
  (fn [db [_]]
-   (ratom/reaction (:txes @db))))
+   (:txes db)))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::tx-datoms
- (fn [db [_]]
-   (let [tx (re-frame/subscribe [::tx])]
-     (ratom/reaction (:datoms @tx)))))
+ :<- [::tx]
+ (fn [tx [_]]
+   (:datoms tx)))
 
 (re-frame/reg-event-db
  ::load-tx
- common/debug-mw
- (fn [db [_ tx-id]]
+ [common/debug-mw (re-frame/path :tx)]
+ (fn [old-tx [_ tx-id]]
    (server-call [:tx/datoms tx-id]
                 [::set-tx tx-id])
-   (assoc db :tx nil)))
+   nil))
 
 (re-frame/reg-event-db
  ::set-tx
- common/debug-mw
- (fn [db [_ tx-id datoms]]
-   (assoc db :tx {:db/id tx-id
-                  :datoms datoms})))
+ [common/debug-mw (re-frame/path :tx)]
+ (fn [old-tx [_ tx-id datoms]]
+   {:db/id tx-id
+    :datoms datoms}))
 
 (re-frame/reg-event-db
  ::load-txes
- common/debug-mw
- (fn [db [_]]
+ [common/debug-mw (re-frame/path :txes)]
+ (fn [txes [_]]
    (server-call [:tx/range {:from-idx 0
                             :n 4000}]
                 [::set-txes])
-   (assoc db :tx nil)))
+   nil))
 
 (re-frame/reg-event-db
  ::set-txes
- common/debug-mw
- (fn [db [_ txes]]
-   (assoc db :txes txes)))
+ [common/debug-mw (re-frame/path :txes)]
+ (fn [old-txes [_ txes]]
+   txes))
 
 (defn transactions []
   (let [txes (re-frame/subscribe [::txes])

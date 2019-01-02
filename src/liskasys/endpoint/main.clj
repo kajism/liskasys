@@ -41,9 +41,9 @@
   (routes
    (context "" {{{roles :-roles :as user} :user} :session flash-msg :flash server-name :server-name}
      (GET "/" {:keys [params]}
-       (if-not (roles "parent")
+       (if-not (contains? roles "parent")
          (response/redirect "/jidelni-listek")
-         (let [db (d/db (conns server-name))
+         (let [db (d/db (get conns server-name))
                ucd (user-children-data db (:db/id user) (:child-id params))
                child-daily-plans (main-service/find-next-person-daily-plans db (:selected-id ucd))]
            (main-hiccup/liskasys-frame
@@ -165,7 +165,7 @@
                              (assoc :-roles
                                     (cond-> (->> (str/split (str (:person/roles person)) #",")
                                                  (map str/trim)
-                                                 set)
+                                                 (set))
                                       (some :person/active? (:person/_parent person))
                                       (conj "parent"))
                                     :-server-name server-name

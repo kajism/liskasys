@@ -23,16 +23,18 @@
              (filter #(= pwd (str (:person/var-symbol %))))
              not-empty))))
 
+(defn find-person-by-email [db email]
+  (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol :person/active?]}]) .
+         :in $ ?lower-email1
+         :where
+         [?e :person/email ?email]
+         [(clojure.string/lower-case ?email) ?lower-email2]
+         [(= ?lower-email1 ?lower-email2)]
+         [?e :person/active? true]]
+       db (-> email str/trim str/lower-case)))
+
 (defn login [db username pwd]
-  (let [person (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol :person/active?]}]) .
-                      :in $ ?lower-email1
-                      :where
-                      [?e :person/email ?email]
-                      [(clojure.string/lower-case ?email) ?lower-email2]
-                      [(= ?lower-email1 ?lower-email2)]
-                      [?e :person/active? true]]
-                    db (-> username str/trim str/lower-case))]
-    person
+  (let [person (find-person-by-email db username)]
     (if (check-person-password person pwd)
       (do
         (timbre/info "User" username "just logged in.")

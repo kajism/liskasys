@@ -1,5 +1,6 @@
 (ns liskasys.cljs.pages
   (:require [clojure.string :as str]
+            [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.common :as common]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
@@ -10,38 +11,38 @@
 (defn add-page [kw comp-fn]
   (swap! pages assoc kw comp-fn))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  :page-state
  (fn [db [_ page-id]]
-   (ratom/reaction (get-in @db [:page-states page-id]))))
+   (get-in db [:page-states page-id])))
 
 (re-frame/reg-event-db
  :page-state-set
- common/debug-mw
- (fn [db [_ page-id state]]
-   (assoc-in db [:page-states page-id] state)))
+ [common/debug-mw (re-frame/path :page-states)]
+ (fn [page-states [_ page-id state]]
+   (assoc page-states page-id state)))
 
 (re-frame/reg-event-db
  :page-state-change
- common/debug-mw
- (fn [db [_ page-id key val]]
-   ((if (fn? val) update-in assoc-in) db [:page-states page-id key] val)))
+ [common/debug-mw (re-frame/path :page-states)]
+ (fn [page-states [_ page-id key val]]
+   ((if (fn? val) update-in assoc-in) page-states [page-id key] val)))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  :current-page
  (fn [db _]
-   (ratom/reaction (:current-page @db))))
+   (:current-page db)))
 
 (re-frame/reg-event-db
  :set-current-page
- common/debug-mw
- (fn [db [_ current-page]]
-   (assoc db :current-page current-page)))
+ [common/debug-mw (re-frame/path :current-page)]
+ (fn [old-current-page [_ current-page]]
+   current-page))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  :msg
  (fn [db [_ kw]]
-   (ratom/reaction (get-in @db [:msg kw]))))
+   (get-in db [:msg kw])))
 
 (re-frame/reg-event-db
  :set-msg

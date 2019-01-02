@@ -558,3 +558,14 @@
         (timbre/info org-name ": sending cancellation closing msg" msg)
         (timbre/info (postal/send-message msg)))
       (timbre/info org-name ": no attendance today"))))
+
+;(defn process-cancellation-pure []
+;
+;  {:send-email {
+;
+;                }})
+;
+;(defn process-cancellation-closing2 [conn]
+;  (->
+;    (send-email)))
+

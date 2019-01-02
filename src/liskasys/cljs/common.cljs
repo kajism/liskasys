@@ -1,12 +1,10 @@
 (ns liskasys.cljs.common
-  (:require [liskasys.cljc.schema :as schema]
-            [liskasys.cljc.util :as cljc.util]
+  (:require [liskasys.cljc.util :as cljc.util]
             [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [reagent.ratom :as ratom]
-            [schema.core :as s]
             [taoensso.timbre :as timbre]
             [clojure.string :as str]))
 
