@@ -1,7 +1,6 @@
 (ns liskasys.cljs.person-bill
   (:require [cljs-time.core :as t]
             [liskasys.cljc.util :as cljc.util]
-            [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -12,23 +11,16 @@
             [secretary.core :as secretary]
             [liskasys.cljs.comp.history :as history]))
 
-(re-frame/reg-event-db
- ::delete-bill
- common/debug-mw
- (fn [db [_ bill]]
-   (re-frame/dispatch [:entity-delete :person-bill (:db/id bill) [::after-delete-bill bill]])
-   db))
-
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  ::after-delete-bill
  common/debug-mw
- (fn [db [_ bill]]
-   (re-frame/dispatch [:entities-load :person {:db/id (get-in bill [:person-bill/person :db/id])}])
-   (update db :daily-plan #(reduce (fn [out [k v]]
-                                     (if (= (:db/id bill) (get-in v [:daily-plan/bill :db/id]))
-                                       (dissoc out k)
-                                       out))
-                                   % %))))
+ (fn [{:keys [db]} [_ bill]]
+   {:dispatch [:entities-load :person {:db/id (get-in bill [:person-bill/person :db/id])}]
+    :db (update db :daily-plan #(reduce (fn [out [k v]]
+                                          (if (= (:db/id bill) (get-in v [:daily-plan/bill :db/id]))
+                                            (dissoc out k)
+                                            out))
+                                        % %))}))
 
 (defn- row->person-fullname [row persons]
   (->> row :person-bill/person :db/id (get persons) cljc.util/person-fullname))
@@ -70,7 +62,7 @@
                                    :md-icon-name "zmdi-edit"
                                    :tooltip "Editovat"
                                    :emphasise? true]])
-                        [buttons/delete-button :on-confirm #(re-frame/dispatch [::delete-bill row])]]]))
+                        [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :person-bill (:db/id row) [::after-delete-bill row]])]]]))
                   :none]
                  {:header "Jméno"
                   :val-fn #(row->person-fullname % @persons)

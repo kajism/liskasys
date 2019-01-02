@@ -1,6 +1,5 @@
 (ns liskasys.cljs.common
   (:require [liskasys.cljc.util :as cljc.util]
-            [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
@@ -66,23 +65,22 @@
    (get-in db [:entity-edit kw :edit?])))
 
 ;;---- Handlers -----------------------------------------------
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  :entities-load
  debug-mw
- (fn [db [_ kw where-m missing-only?]]
+ (fn [{:keys [db]} [_ kw where-m missing-only?]]
    (if (and missing-only?
             (get-in db (if (not-empty where-m)
                          [:entities-where kw where-m]
                          [kw])))
-     db
-     (do
-       (server-call [(keyword (name kw) "select") (or where-m {})]
-                    [:entities-set kw (if (not-empty where-m)
-                                        [:entities-where kw where-m]
-                                        [kw])])
-       (assoc-in db (if (not-empty where-m)
-                      [:entities-where kw where-m]
-                      [kw]) {})))))
+     {}
+     {:server-call {:req-msg [(keyword (name kw) "select") (or where-m {})]
+                    :resp-evt [:entities-set kw (if (not-empty where-m)
+                                                  [:entities-where kw where-m]
+                                                  [kw])]}
+      :db (assoc-in db (if (not-empty where-m)
+                         [:entities-where kw where-m]
+                         [kw]) {})})))
 
 (re-frame/reg-event-db
  :entities-set
@@ -121,68 +119,73 @@
       (string? val)
       (str/trim)))))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  :entity-save
  debug-mw
- (fn [db [_ kw validation-fn ent-id]]
+ (fn [{:keys [db]} [_ kw validation-fn ent-id]]
    (let [id (or ent-id (get-in db [:entity-edit kw :db/id]))
          ent (if id (get-in db [kw id]) (get-in db [:new-ents kw]))
          errors (when validation-fn (validation-fn ent))
          file (:-file ent)]
-     (if (empty? errors)
-       (server-call (timbre/spy [(keyword (name kw) "save") (cljc.util/dissoc-temp-keys ent)])
-                    file
-                    [:entity-saved kw])
-       (timbre/debug "validation errors" errors))
-     (assoc-in db (if id [kw id :-errors] [:new-ents kw :-errors]) errors))))
+     (cond-> {:db (assoc-in db (if id [kw id :-errors] [:new-ents kw :-errors]) errors)}
+       (empty? errors)
+       (assoc :server-call {:req-msg [(keyword (name kw) "save") (cljc.util/dissoc-temp-keys ent)]
+                            :file file
+                            :resp-evt [:entity-saved kw]})))))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  :entity-saved
  debug-mw
- (fn [db [_ kw new-ent]]
-   (re-frame/dispatch [:set-msg :info "Záznam byl uložen"])
+ (fn [{:keys [db]} [_ kw new-ent]]
    (when (get @kw->url kw)
      (set! js/window.location.hash (str "#/" (get @kw->url kw) "/" (:db/id new-ent) "e")))
-   (-> db
-       (assoc-in [kw (:db/id new-ent)] new-ent)
-       (update :new-ents #(dissoc % kw)))))
+   {:db (-> db
+            (assoc-in [kw (:db/id new-ent)] new-ent)
+            (update :new-ents #(dissoc % kw)))
+    :dispatch [:set-msg :info "Záznam byl uložen"]}))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  :entity-delete
  debug-mw
- (fn [db [_ kw id after-delete]]
-   (when id
-     (server-call [(keyword (name kw) "delete") id] nil after-delete db))
-   (-> db
-       (update kw #(dissoc % id))
-       (update-in [:entities-where kw] (fn [wm]
-                                         (reduce
-                                          (fn [out [k v]]
-                                            (assoc out k (disj v id)))
-                                          wm
-                                          wm))))))
+ (fn [{:keys [db]} [_ kw id after-delete]]
+   (cond->
+       {:db (-> db
+                (update kw #(dissoc % id))
+                (update-in [:entities-where kw] (fn [wm]
+                                                  (reduce
+                                                   (fn [out [k v]]
+                                                     (assoc out k (disj v id)))
+                                                   wm
+                                                   wm))))}
+     (some? id)
+     (assoc :server-call {:req-msg [(keyword (name kw) "delete") id]
+                          :resp-evt after-delete
+                          :rollback-db db}))))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  :file-delete
  debug-mw
- (fn [db [_ kw parent-id file-id]]
-   (when file-id
-     (server-call [(keyword (name kw) "delete") file-id] nil nil db))
-   (update-in db [kw parent-id :file/_parent] #(filterv (fn [file] (not= file-id (:db/id file))) %))))
+ (fn [{:keys [db]} [_ kw parent-id file-id]]
+   (cond->
+       {:db (update-in db [kw parent-id :file/_parent] #(filterv (fn [file] (not= file-id (:db/id file))) %))}
+     (some? file-id)
+     (assoc :server-call {:req-msg [(keyword (name kw) "delete") file-id]
+                          :rollback-db db}))))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  :common/retract-ref-many
  debug-mw
- (fn [db [_ kw retract-attr]]
-   (server-call [:entity/retract-attr retract-attr] nil nil db)
-   (update-in db [kw (:db/id retract-attr)]
-              (fn [ent]
-                (reduce (fn [ent [attr-kw attr-val]]
-                          (cond-> ent
-                            (vector? (get ent attr-kw))
-                            (update attr-kw #(filterv (fn [x] (not (= (:db/id x) attr-val))) %))))
-                        ent
-                        (dissoc retract-attr :db/id))))))
+ (fn [{:keys [db]} [_ kw retract-attr]]
+   {:server-call {:req-msg [:entity/retract-attr retract-attr]
+                  :rollback-db db}
+    :db (update-in db [kw (:db/id retract-attr)]
+                   (fn [ent]
+                     (reduce (fn [ent [attr-kw attr-val]]
+                               (cond-> ent
+                                 (vector? (get ent attr-kw))
+                                 (update attr-kw #(filterv (fn [x] (not (= (:db/id x) attr-val))) %))))
+                             ent
+                             (dissoc retract-attr :db/id))))}))
 
 (re-frame/reg-sub
  ::path-value

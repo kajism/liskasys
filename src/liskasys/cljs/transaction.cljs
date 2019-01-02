@@ -1,7 +1,6 @@
 (ns liskasys.cljs.transaction
   (:require [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc.util]
-            [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -27,13 +26,13 @@
  (fn [tx [_]]
    (:datoms tx)))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  ::load-tx
- [common/debug-mw (re-frame/path :tx)]
- (fn [old-tx [_ tx-id]]
-   (server-call [:tx/datoms tx-id]
-                [::set-tx tx-id])
-   nil))
+ common/debug-mw
+ (fn [{:keys [db]} [_ tx-id]]
+   {:server-call {:req-msg [:tx/datoms tx-id]
+                  :resp-evt [::set-tx tx-id]}
+    :db (assoc db :tx nil)}))
 
 (re-frame/reg-event-db
  ::set-tx
@@ -42,14 +41,14 @@
    {:db/id tx-id
     :datoms datoms}))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  ::load-txes
- [common/debug-mw (re-frame/path :txes)]
- (fn [txes [_]]
-   (server-call [:tx/range {:from-idx 0
-                            :n 4000}]
-                [::set-txes])
-   nil))
+ common/debug-mw
+ (fn [{:keys [db]} [_]]
+   {:server-call {:req-msg [:tx/range {:from-idx 0
+                                       :n 4000}]
+                  :resp-evt [::set-txes]}
+    :db (assoc db :txes nil)}))
 
 (re-frame/reg-event-db
  ::set-txes

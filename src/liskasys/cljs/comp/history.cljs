@@ -1,7 +1,6 @@
 (ns liskasys.cljs.comp.history
   (:require [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc.util]
-            [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.data-table :as data-table]
             [re-frame.core :as re-frame]
@@ -18,13 +17,12 @@
    (let [history (re-frame/subscribe [::entity-history])]
      (ratom/reaction (:datoms @history)))))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  ::load-entity-history
  common/debug-mw
- (fn [db [_ ent-id]]
-   (server-call [:entity/history ent-id]
-                [::set-history ent-id])
-   db))
+ (fn [_ [_ ent-id]]
+   {:server-call {:req-msg [:entity/history ent-id]
+                  :resp-evt [::set-history ent-id]}}))
 
 (re-frame/reg-event-db
  ::set-history

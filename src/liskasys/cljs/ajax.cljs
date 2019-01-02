@@ -35,3 +35,10 @@
           {:params {:req-msg request-msg}
            :format (ajax/transit-request-format)})))
    nil))
+
+(defn server-call-effect [request]
+  (let [request-maps (if (sequential? request) request [request])]
+    (doseq [{:keys [req-msg file resp-evt rollback-db]} request-maps]
+      (server-call req-msg file resp-evt rollback-db))))
+
+(re-frame/reg-fx :server-call server-call-effect)

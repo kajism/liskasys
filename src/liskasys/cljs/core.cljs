@@ -3,7 +3,7 @@
             [devtools.core :as devtools]
             [goog.events :as events]
             [goog.history.EventType :as EventType]
-            [liskasys.cljs.ajax :refer [server-call]]
+            [liskasys.cljs.ajax]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.group :as group]
             [liskasys.cljs.pages :as pages]
@@ -32,33 +32,32 @@
 
 (enable-console-print!)
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  :auth-user
  (fn [db [_]]
-   (ratom/reaction (:auth-user @db))))
+   (:auth-user db)))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  :load-auth-user
  common/debug-mw
- (fn [db [_]]
-   (server-call [:user/auth {}]
-                [:set-auth-user])
-   db))
+ (fn [_ _]
+   {:server-call {:req-msg [:user/auth {}]
+                  :resp-evt [:set-auth-user]}}))
 
 (re-frame/reg-event-db
  :set-auth-user
- common/debug-mw
- (fn [db [_ auth-user]]
-   (assoc db :auth-user auth-user)))
+ [common/debug-mw (re-frame/path :auth-user)]
+ (fn [_ [_ auth-user]]
+   auth-user))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  :init-app
  common/debug-mw
- (fn [db [_]]
-   (re-frame/dispatch [:load-auth-user])
-   (merge db
-          {} ;;init db
-          )))
+ (fn [{:keys [db]} [_]]
+   {:dispatch [:load-auth-user]
+    :db (merge db
+               {} ;;init db
+               )}))
 
 ;; ---- Routes ---------------------------------------------------------------
 (secretary/set-config! :prefix "#")
@@ -117,7 +116,6 @@
 
 (defn main-app-area []
   (let [user (re-frame/subscribe [:auth-user])]
-    (re-frame/dispatch [:init-app])
     (fn []
       (if-not @user
         [re-com/throbber]
@@ -130,7 +128,8 @@
 
 (defn main []
   (hook-browser-navigation!)
-  (if-let [node (.getElementById js/document "app")]
+  (when-let [node (.getElementById js/document "app")]
+    (re-frame/dispatch [:init-app])
     (reagent/render [main-app-area] node)))
 
 (main)

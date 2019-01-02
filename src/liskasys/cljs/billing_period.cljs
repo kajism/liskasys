@@ -1,7 +1,6 @@
 (ns liskasys.cljs.billing-period
   (:require [cljs-time.core :as t]
             [liskasys.cljc.util :as cljc.util]
-            [liskasys.cljs.ajax :refer [server-call]]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.comp.buttons :as buttons]
             [liskasys.cljs.comp.data-table :refer [data-table]]
@@ -12,14 +11,13 @@
             [reagent.core :as reagent]
             [secretary.core :as secretary]))
 
-(re-frame/reg-event-db
+(re-frame/reg-event-fx
  ::send-cmd
  common/debug-mw
- (fn [db [_ period-id cmd bill-id]]
-   (server-call [(keyword "person-bill" cmd) {:person-bill/period period-id
-                                              :db/id bill-id}]
-                [::cmd-results period-id bill-id])
-   db))
+ (fn [_ [_ period-id cmd bill-id]]
+   {:server-call {:req-msg [(keyword "person-bill" cmd) {:person-bill/period period-id
+                                                         :db/id bill-id}]
+                  :resp-evt [::cmd-results period-id bill-id]}}))
 
 (re-frame/reg-event-db
  ::cmd-results
