@@ -61,7 +61,6 @@
   (let [txes (re-frame/subscribe [::txes])
         table-state (re-frame/subscribe [:table-state :transactions])
         persons (re-frame/subscribe [:entities :person])]
-    (re-frame/dispatch [::load-txes])
     (fn []
       [re-com/v-box
        :children
@@ -139,6 +138,7 @@
             :order-by 3]])))))
 
 (secretary/defroute "/transactions" []
+  (re-frame/dispatch [::load-txes])
   (re-frame/dispatch [:set-current-page :transactions]))
 (pages/add-page :transactions #'transactions)
 
