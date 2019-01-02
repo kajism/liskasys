@@ -39,33 +39,41 @@
      (ratom/reaction
       (select-keys @ents @ids)))))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  :entity-edit-id
  (fn [db [_ kw]]
-   (ratom/reaction (get-in @db [:entity-edit kw :db/id]))))
+   (get-in db [:entity-edit kw :db/id])))
 
-(re-frame/reg-sub-raw
- :entity-edit
+(re-frame/reg-sub
+ :new-ents
  (fn [db [_ kw]]
-   (let [id (re-frame/subscribe [:entity-edit-id kw])
-         ents (re-frame/subscribe [:entities kw])]
-     (ratom/reaction (if @id
-                       (get @ents @id)
-                       (get-in @db [:new-ents kw]))))))
+   (get-in db [:new-ents kw])))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
+ :entity-edit
+ (fn [[_ kw] ]
+   [(re-frame/subscribe [:entity-edit-id kw])
+    (re-frame/subscribe [:entities kw])
+    (re-frame/subscribe [:new-ents kw])])
+ (fn [[id ents new-ent] [_ kw]]
+   (if id
+     (get ents id)
+     new-ent)))
+
+(re-frame/reg-sub
  :entity-edit?
  (fn [db [_ kw]]
-   (ratom/reaction (get-in @db [:entity-edit kw :edit?]))))
+   (get-in db [:entity-edit kw :edit?])))
 
 ;;---- Handlers -----------------------------------------------
 (re-frame/reg-event-db
  :entities-load
  debug-mw
  (fn [db [_ kw where-m missing-only?]]
-   (if (and missing-only? (get-in db (if (not-empty where-m)
-                                       [:entities-where kw where-m]
-                                       [kw])))
+   (if (and missing-only?
+            (get-in db (if (not-empty where-m)
+                         [:entities-where kw where-m]
+                         [kw])))
      db
      (do
        (server-call [(keyword (name kw) "select") (or where-m {})]
