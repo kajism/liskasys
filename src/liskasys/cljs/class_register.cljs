@@ -12,22 +12,21 @@
             [secretary.core :as secretary]
             [reagent.ratom :as ratom]))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::reg-date-dps
- (fn [db [_]]
-   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
-         persons (re-frame/subscribe [:entities :person])
-         class-register (re-frame/subscribe [:entity-edit :class-register])]
-     (ratom/reaction
-      (let [date (:class-register/date @class-register)
-            group-id (get-in @class-register [:class-register/group :db/id])]
-        (if-not (and date group-id (pos-int? (count @daily-plans)))
-          nil
-          (->> (vals @daily-plans)
-               (filter #(and
-                         (= date (:daily-plan/date %))
-                         (= group-id (some->> % :daily-plan/person :db/id (get @persons) :person/group :db/id))))
-               (sort-by #(some->> % :daily-plan/person :db/id (get @persons) (cljc.util/person-fullname))))))))))
+ :<- [:entities :daily-plan]
+ :<- [:entities :person]
+ :<- [:entity-edit :class-register]
+ (fn [[daily-plans persons class-register] _]
+   (let [date (:class-register/date class-register)
+         group-id (get-in class-register [:class-register/group :db/id])]
+     (if-not (and date group-id (pos-int? (count daily-plans)))
+       nil
+       (->> (vals daily-plans)
+            (filter #(and
+                      (= date (:daily-plan/date %))
+                      (= group-id (some->> % :daily-plan/person :db/id (get persons) :person/group :db/id))))
+            (sort-by #(some->> % :daily-plan/person :db/id (get persons) (cljc.util/person-fullname))))))))
 
 (defn page-class-registers []
   (let [class-registers (re-frame/subscribe [:entities :class-register])

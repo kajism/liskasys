@@ -16,58 +16,53 @@
             [clojure.string :as str]
             [cljs-time.core :as t]))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::kids
- (fn [db [_]]
-   (let [persons (re-frame/subscribe [:entities :person])]
-     (ratom/reaction
-      (->> (vals @persons)
-           (filter :person/parent)
-           (group-by :person/parent)
-           (reduce (fn [out [parent-ids kids]]
-                     (reduce (fn [out {parent-id :db/id}]
-                               (update out parent-id #(util/sort-by-locale cljc.util/person-fullname (into (or % []) kids))))
-                             out
-                             parent-ids))
-                   {}))))))
+ :<- [:entities :person]
+ (fn [persons _]
+   (->> (vals persons)
+        (filter :person/parent)
+        (group-by :person/parent)
+        (reduce (fn [out [parent-ids kids]]
+                  (reduce (fn [out {parent-id :db/id}]
+                            (update out parent-id #(util/sort-by-locale cljc.util/person-fullname (into (or % []) kids))))
+                          out
+                          parent-ids))
+                {}))))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::rows
- (fn [db [_]]
-   (let [persons (re-frame/subscribe [:entities :person])
-         page-state (re-frame/subscribe [:page-state :persons])]
-     (ratom/reaction
-      (cond->> (vals @persons)
-        (some? (:active? @page-state))
-        (filter #(= (:active? @page-state) (boolean (:person/active? %))))
-        (some? (:child? @page-state))
-        (filter #(= (:child? @page-state) (boolean (:person/child? %)))))))))
+ :<- [:entities :person]
+ :<- [:page-state :persons]
+ (fn [[persons page-state] _]
+   (cond->> (vals persons)
+     (some? (:active? page-state))
+     (filter #(= (:active? page-state) (boolean (:person/active? %))))
+     (some? (:child? page-state))
+     (filter #(= (:child? page-state) (boolean (:person/child? %)))))))
 
 (def empty-person {:person/active? true
                    :person/child? true})
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::person-dps-by-date
- (fn [db [_]]
-   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
-         person (re-frame/subscribe [:entity-edit :person])]
-     (ratom/reaction
-      (let [person-id (:db/id @person)]
-        (->> (vals @daily-plans)
-             (filter #(= person-id (get-in % [:daily-plan/person :db/id])))
-             (map (juxt :daily-plan/date identity))
-             (into {})))))))
+ :<- [:entities :daily-plan]
+ :<- [:entity-edit :person]
+ (fn [[daily-plans person] _]
+   (->> (vals daily-plans)
+        (filter #(= (:db/id person) (get-in % [:daily-plan/person :db/id])))
+        (map (juxt :daily-plan/date identity))
+        (into {}))))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::person-att-months
- (fn [db [_]]
-   (let [person-dps-by-date (re-frame/subscribe [::person-dps-by-date])]
-     (ratom/reaction
-      (->> (keys @person-dps-by-date)
-           (map #(-> % (time/to-format time/yyyyMM) (cljc.util/parse-int)))
-           (set)
-           (sort)
-           (reverse))))))
+ :<- [::person-dps-by-date]
+ (fn [person-dps-by-date _]
+   (->> (keys person-dps-by-date)
+        (map #(-> % (time/to-format time/yyyyMM) (cljc.util/parse-int)))
+        (set)
+        (sort)
+        (reverse))))
 
 (defn table [rows]
   (let [lunch-types (re-frame/subscribe [:entities :lunch-type])
@@ -75,13 +70,13 @@
         table-state (re-frame/subscribe [:table-state :persons])
         persons (re-frame/subscribe [:entities :person])
         user (re-frame/subscribe [:auth-user])
-        parent-attrs (fn [row kw]
-                       [:div
-                        (doall
-                         (for [p (-> row :person/parent)
-                               :let [parent (-> p :db/id (@persons))]]
-                           ^{:key (:db/id parent)}
-                           [:div.nowrap (kw parent)]))])]
+        parent-attrs-fn (fn [row kw]
+                          [:div
+                           (doall
+                            (for [p (-> row :person/parent)
+                                  :let [parent (-> p :db/id (@persons))]]
+                              ^{:key (:db/id parent)}
+                              [:div.nowrap (kw parent)]))])]
     (fn [rows]
       [data-table
        :table-id :persons
@@ -115,9 +110,9 @@
                ["Šablona obědů" (comp cljc.util/lunch-pattern->text :person/lunch-pattern)]
                ["Variabilní symbol" #(str (:person/var-symbol %))]
                ["Email rodičů" #(or (:person/email %)
-                                    (parent-attrs % :person/email))]
+                                    (parent-attrs-fn % :person/email))]
                ["Telefon rodičů" #(or (:person/phone %)
-                                      (parent-attrs % :person/phone))]
+                                      (parent-attrs-fn % :person/phone))]
                ["Třída" #(:group/label (get @groups (some-> % :person/group :db/id)))]
                ["Dieta" #(:lunch-type/label (get @lunch-types (some-> % :person/lunch-type :db/id)))]
                ["Fond obědů" #(some-> % :person/lunch-fund cljc.util/from-cents)]

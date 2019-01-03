@@ -11,10 +11,10 @@
             [reagent.ratom :as ratom]
             [taoensso.timbre :as timbre]))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  :table-state
  (fn [db [_ table-id]]
-   (ratom/reaction (get-in @db [:table-states table-id]))))
+   (get-in db [:table-states table-id])))
 
 (defn show-date [value]
   (time/to-format value time/ddMMyyyy)
@@ -97,15 +97,16 @@
 
 (re-frame/reg-event-db
  :table-state-set
- common/debug-mw
- (fn [db [_ table-id state]]
-   (assoc-in db [:table-states table-id] state)))
+ [common/debug-mw (re-frame/path :table-states)]
+ (fn [table-states [_ table-id state]]
+   (assoc table-states table-id state)))
 
 (re-frame/reg-event-db
  :table-state-change
+ (re-frame/path :table-states)
  ;;common/debug-mw
- (fn [db [_ table-id key val]]
-   ((if (fn? val) update-in assoc-in) db [:table-states table-id key] val)))
+ (fn [table-states [_ table-id key val]]
+   ((if (fn? val) update-in assoc-in) table-states [table-id key] val)))
 
 (defn checked-ids [db table-id]
   (keep (fn [[id {ch? :checked?}]]

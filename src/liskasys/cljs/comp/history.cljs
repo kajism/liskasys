@@ -6,16 +6,16 @@
             [re-frame.core :as re-frame]
             [reagent.ratom :as ratom]))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::entity-history
  (fn [db [_]]
-   (ratom/reaction (:entity-history @db))))
+   (:entity-history db)))
 
-(re-frame/reg-sub-raw
+(re-frame/reg-sub
  ::entity-history-datoms
- (fn [db [_]]
-   (let [history (re-frame/subscribe [::entity-history])]
-     (ratom/reaction (:datoms @history)))))
+ :<- [::entity-history]
+ (fn [history [_]]
+   (:datoms history)))
 
 (re-frame/reg-event-fx
  ::load-entity-history
@@ -26,12 +26,12 @@
 
 (re-frame/reg-event-db
  ::set-history
- common/debug-mw
- (fn [db [_ ent-id datoms]]
-   (assoc db :entity-history {:db/id ent-id
-                              :datoms datoms})))
+ [common/debug-mw (re-frame/path :entity-history)]
+ (fn [_ [_ ent-id datoms]]
+   {:db/id ent-id
+    :datoms datoms}))
 
-(defn get-value [& {:keys [row]}]
+(defn disp-value [& {:keys [row]}]
   (let [lunch-types (re-frame/subscribe [:entities :lunch-type])
         persons (re-frame/subscribe [:entities :person])]
     (fn [& {:keys [row]}]
@@ -74,7 +74,7 @@
                     ["Atribut" :a]
                     {:header "Hodnota"
                      :val-fn :v
-                     :td-comp get-value}
+                     :td-comp disp-value}
                     ["Smazano?" (complement :added?)]]
             :rows datoms
             :order-by 0
