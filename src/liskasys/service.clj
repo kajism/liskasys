@@ -195,53 +195,6 @@
                             groups)]
     (emailing/send-daily-summary db date group-results)))
 
-(defn- all-lunch-type-labels-by-id [lunch-types]
-  (->> lunch-types
-       (into [{:db/id nil :lunch-type/label "běžná"}])
-       (map (juxt :db/id :lunch-type/label))
-       (into {})))
-
-(defn- lunch-counts-by-diet-label [lunch-types plans-with-lunches]
-  (->> plans-with-lunches
-       (group-by (comp :db/id :person/lunch-type :daily-plan/person))
-       (map (fn [[k v]]
-              [(get lunch-types k) (reduce + 0 (keep :daily-plan/lunch-req v))]))
-       (util/sort-by-locale first)))
-
-(defn- send-lunch-order-email [date org-name from tos plans-with-lunches lunch-type-labels-by-id]
-  (let [subject (str org-name ": Objednávka obědů na " (time/format-day-date date))
-        plans-by-child? (group-by #(boolean (get-in % [:daily-plan/person :person/child?])) plans-with-lunches)
-        msg {:from from
-             :to tos
-             :subject subject
-             :body [{:type "text/plain; charset=utf-8"
-                     :content (str subject "\n"
-                                   "-------------------------------------------------\n\n"
-                                   (when-let [plans (get plans-by-child? true)]
-                                     (str
-                                      "* DĚTI\n"
-                                      (str/join "\n"
-                                                (for [[t c] (lunch-counts-by-diet-label lunch-type-labels-by-id plans)]
-                                                  (str "  " t ": " c)))))
-                                   (when-let [plans (get plans-by-child? false)]
-                                     (str
-                                      "\n\n* DOSPĚLÍ\n"
-                                      (str/join "\n"
-                                                (for [[t c] (lunch-counts-by-diet-label lunch-type-labels-by-id plans)]
-                                                  (str "  " t ": " c)))))
-                                   "\n-------------------------------------------------\n"
-                                   "CELKEM: " (reduce + 0 (keep :daily-plan/lunch-req plans-with-lunches)) "\n\n")}]}]
-    #_(print (get-in msg [:body 0 :content]))
-    (if-not (seq plans-with-lunches)
-      (timbre/info "No lunches for " date ". Sending skipped.")
-      (do
-        (timbre/info "Sending " (:subject msg) "to" (:to msg))
-        (timbre/debug msg)
-        (let [result (postal/send-message msg)]
-          (if (zero? (:code result))
-            (timbre/info "Lunch order has been sent" result)
-            (timbre/error "Failed to send email" result)))))))
-
 (defn- lunch-order-tx-total [date price-list plans-with-lunches]
   (let [out
         (reduce (fn [out {:keys [:db/id :daily-plan/person :daily-plan/lunch-req] :as plan-with-lunch}]
@@ -265,17 +218,12 @@
 (defn- process-lunch-order [conn date]
   (let [db (d/db conn)
         plans-with-lunches (db-queries/find-person-daily-plans-with-lunches db date)
-        {:keys [tx-data total]} (lunch-order-tx-total date (db-queries/find-price-list db) plans-with-lunches)
-        {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)]
-    (do
-      (db/transact conn nil tx-data)
-      (send-lunch-order-email date
-                              org-name
-                              (db-queries/find-auto-sender-email db)
-                              (mapv :person/email (db-queries/find-persons-with-role db "obědy"))
-                              plans-with-lunches
-                              (-> (db/find-by-type db :lunch-type {})
-                                  (all-lunch-type-labels-by-id))))))
+        {:keys [tx-data total]} (lunch-order-tx-total date (db-queries/find-price-list db) plans-with-lunches)]
+    (db/transact conn nil tx-data)
+    (if (seq plans-with-lunches)
+      (emailing/send-lunch-order-email db date plans-with-lunches)
+      (timbre/info (:config/org-name (d/pull db '[*] :liskasys/config))
+                   ": no lunches for " date ". Sending skipped."))))
 
 (defn process-lunch-order-and-substitutions [conn]
   (when-let [date (db-queries/find-next-lunch-order-date (d/db conn))]
