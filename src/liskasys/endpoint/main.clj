@@ -101,7 +101,7 @@
      (GET "/platby" {:keys [params]}
           (let [db (d/db (conns server-name))
                 person-bills (main-service/find-person-bills db (:db/id user))
-                show-qr? (re-find #"[0-9/]+" (get (db/find-price-list db) :price-list/bank-account ""))]
+                show-qr? (re-find #"[0-9/]+" (main-service/find-bank-account db))]
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/person-bills person-bills show-qr?))))
@@ -109,9 +109,8 @@
      (GET "/qr-code" [id :<< as-int]
        (let [db (d/db (conns server-name))
              person-bill (first (db/find-by-type db :person-bill {:db/id id}))
-             price-list (db/find-price-list db)
              {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
-             qr-code-file (qr-code/save-qr-code (:price-list/bank-account price-list)
+             qr-code-file (qr-code/save-qr-code (main-service/find-bank-account db)
                                                 (/ (:person-bill/total person-bill) 100)
                                                 (str (-> person-bill :person-bill/person :person/var-symbol))
                                                 org-name

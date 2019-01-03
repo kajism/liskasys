@@ -23,7 +23,7 @@
 
 (declare merge-person-bill-facts)
 
-(defn- *bank-holiday? [{:keys [:bank-holiday/day :bank-holiday/month :bank-holiday/easter-delta]} local-date]
+(defn- *bank-holiday? [{:bank-holiday/keys [day month easter-delta]} local-date]
   (or (and (= (t/day local-date) day)
            (= (t/month local-date) month))
       (and (some? easter-delta)
@@ -34,7 +34,7 @@
 (defn- bank-holiday? [bank-holidays local-date]
   (seq (filter #(*bank-holiday? % local-date) bank-holidays)))
 
-(defn- *school-holiday? [{:keys [:school-holiday/from :school-holiday/to :school-holiday/every-year?]} local-date]
+(defn- *school-holiday? [{:school-holiday/keys [from to every-year?]} local-date]
   (let [from (tc/from-date from)
         dt (tc/to-date-time local-date)
         from (if-not every-year?
@@ -62,8 +62,9 @@
       (or (bank-holiday? bank-holidays ld)
           (school-holiday? school-holidays ld)))))
 
-(defn period-local-dates [holiday?-fn from-ld to-ld]
+(defn period-local-dates
   "Returns all local-dates except holidays from - to (exclusive)."
+  [holiday?-fn from-ld to-ld]
   (->> from-ld
        (iterate (fn [ld]
                   (t/plus ld (t/days 1))))
@@ -143,10 +144,18 @@
        count
        (+ -2)))
 
-(defn person-lunch-price [{child? :person/child?} {lunch-child :price-list/lunch lunch-adult :price-list/lunch-adult}]
+(defn find-price-list [db]
+  (first (db/find-where db {:price-list/days-1 nil})))
+
+(comment
+  (def price-list {:price-list/lunch 50 :price-list/lunch-adult 100})
+  (= 50 (person-lunch-price {:person/child? true} price-list))
+  (= 100 (person-lunch-price {:person/child? false} price-list)))
+
+(defn person-lunch-price [{:person/keys [child?]} {:price-list/keys [lunch lunch-adult]}]
   (if child?
-    lunch-child
-    (or lunch-adult lunch-child)))
+    lunch
+    (or lunch-adult lunch)))
 
 (defn merge-person-bill-facts [db {:person-bill/keys [lunch-count total att-price status] :as person-bill}]
   (let [tx (apply max (d/q '[:find [?tx ...]
@@ -159,7 +168,7 @@
                        [:person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email :person/child?
                         {:person/parent [:person/email]}]
                        (get-in person-bill [:person-bill/person :db/id]))
-        lunch-price (person-lunch-price person (db/find-price-list as-of-db))
+        lunch-price (person-lunch-price person (find-price-list as-of-db))
         total-lunch-price (* lunch-price lunch-count)
         paid-status (d/entid db :person-bill.status/paid)]
     (-> person-bill
@@ -332,20 +341,23 @@
     (timbre/info "Sending summary msg" summary-msg)
     (timbre/info (postal/send-message summary-msg))))
 
-(defn- find-lunch-types-by-id [db]
-  (->> (db/find-where db {:lunch-type/label nil})
+(defn- find-lunch-types [db]
+  (db/find-where db {:lunch-type/label nil}))
+
+(defn- all-lunch-type-labels-by-id [lunch-types]
+  (->> lunch-types
        (into [{:db/id nil :lunch-type/label "běžná"}])
        (map (juxt :db/id :lunch-type/label))
        (into {})))
 
-(defn- find-lunch-counts-by-diet-label [lunch-types plans-with-lunches]
+(defn- lunch-counts-by-diet-label [lunch-types plans-with-lunches]
   (->> plans-with-lunches
        (group-by (comp :db/id :person/lunch-type :daily-plan/person))
        (map (fn [[k v]]
               [(get lunch-types k) (reduce + 0 (keep :daily-plan/lunch-req v))]))
        (sort-by-locale first)))
 
-(defn- send-lunch-order-email [date org-name from tos plans-with-lunches lunch-types-by-id]
+(defn- send-lunch-order-email [date org-name from tos plans-with-lunches lunch-type-labels-by-id]
   (let [subject (str org-name ": Objednávka obědů na " (time/format-day-date date))
         plans-by-child? (group-by #(boolean (get-in % [:daily-plan/person :person/child?])) plans-with-lunches)
         msg {:from from
@@ -358,13 +370,13 @@
                                      (str
                                       "* DĚTI\n"
                                       (str/join "\n"
-                                                (for [[t c] (find-lunch-counts-by-diet-label lunch-types-by-id plans)]
+                                                (for [[t c] (lunch-counts-by-diet-label lunch-type-labels-by-id plans)]
                                                   (str "  " t ": " c)))))
                                    (when-let [plans (get plans-by-child? false)]
                                      (str
                                       "\n\n* DOSPĚLÍ\n"
                                       (str/join "\n"
-                                                (for [[t c] (find-lunch-counts-by-diet-label lunch-types-by-id plans)]
+                                                (for [[t c] (lunch-counts-by-diet-label lunch-type-labels-by-id plans)]
                                                   (str "  " t ": " c)))))
                                    "\n-------------------------------------------------\n"
                                    "CELKEM: " (reduce + 0 (keep :daily-plan/lunch-req plans-with-lunches)) "\n\n")}]}]
@@ -412,7 +424,7 @@
 (defn- process-lunch-order [conn date]
   (let [db (d/db conn)
         plans-with-lunches (find-person-daily-plans-with-lunches db date)
-        {:keys [tx-data total]} (lunch-order-tx-total date (db/find-price-list db) plans-with-lunches)
+        {:keys [tx-data total]} (lunch-order-tx-total date (find-price-list db) plans-with-lunches)
         {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)]
     (do
       (db/transact conn nil tx-data)
@@ -421,7 +433,8 @@
                               (auto-sender-email db)
                               (mapv :person/email (find-persons-with-role db "obědy"))
                               plans-with-lunches
-                              (find-lunch-types-by-id db)))))
+                              (-> (find-lunch-types db)
+                                  (all-lunch-type-labels-by-id))))))
 
 (defn find-person-bills [db user-id]
   (->> (d/q '[:find [(pull ?e [* {:person-bill/person [*] :person-bill/period [*]}]) ...]
@@ -513,19 +526,6 @@
               1)
        next-school-day-date))))
 
-#_(defn- next-lunch-order-date-old
-  ([db]
-   (next-lunch-order-date-old db (time/today)))
-  ([db at-date]
-   (let [last-order-date (find-max-lunch-order-date db)
-         next-school-day-date (find-next-school-day-date db at-date)]
-     (when (or (not last-order-date)
-               (not next-school-day-date)
-               (and (> (.getTime next-school-day-date) (.getTime last-order-date))
-                    (< (- (.getTime next-school-day-date) (.getTime at-date)) (* 14 24 60 60 1000)) ;; max 14 days ahead
-))
-       next-school-day-date))))
-
 (defn process-lunch-order-and-substitutions [conn]
   (when-let [date (next-lunch-order-date (d/db conn))]
     (timbre/info "Processing lunch order for" date)
@@ -558,14 +558,4 @@
         (timbre/info org-name ": sending cancellation closing msg" msg)
         (timbre/info (postal/send-message msg)))
       (timbre/info org-name ": no attendance today"))))
-
-;(defn process-cancellation-pure []
-;
-;  {:send-email {
-;
-;                }})
-;
-;(defn process-cancellation-closing2 [conn]
-;  (->
-;    (send-email)))
 

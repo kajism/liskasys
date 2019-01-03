@@ -349,7 +349,7 @@
         person-id--bill (atom (->> (db/find-where db {:person-bill/period period-id})
                                    (map #(vector (get-in % [:person-bill/person :db/id]) %))
                                    (into {})))
-        price-list (db/find-price-list db)
+        price-list (service/find-price-list db)
         second-month-start (t/plus period-start-ld (t/months 1))
         out (->>
              (for [person (->> (db/find-where db {:person/active? true})
@@ -419,7 +419,7 @@
                  (transact-period-person-bills conn user-id period-id))]
     (doseq [id new-bill-ids]
       (let [bill (first (db/find-by-type db :person-bill {:db/id id}))
-            price-list (db/find-price-list db)
+            price-list (service/find-price-list db)
             subject (str org-name ": Platba školkovného a obědů na období " (-> bill :person-bill/period cljc.util/period->text))
             msg {:from (service/auto-sender-email db)
                  :to (or (-> bill :person-bill/person :person/email)
@@ -433,7 +433,7 @@
                                        "Variabilní symbol: " (-> bill :person-bill/person :person/var-symbol) "\n"
                                        "Do poznámky: " (-> bill :person-bill/person cljc.util/person-fullname) " "
                                        (-> bill :person-bill/period cljc.util/period->text) "\n"
-                                       "Splatnost do: " (or (:price-list/payment-due-date (db/find-price-list db)) "20. dne tohoto měsíce") "\n\n"
+                                       "Splatnost do: " (or (:price-list/payment-due-date (service/find-price-list db)) "20. dne tohoto měsíce") "\n\n"
                                        "Pro QR platbu přejděte na " full-url " menu Platby"
                                        "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
         (timbre/info "Sending info about published payment" msg)
@@ -467,3 +467,6 @@
                                                               (- total att-price))]])
                        (db/transact conn user-id))]
     (db/find-by-type (:db-after tx-result) :person-bill {:db/id bill-id})))
+
+(defn find-bank-account [db]
+  (get (service/find-price-list db) :price-list/bank-account ""))

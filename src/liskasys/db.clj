@@ -205,5 +205,3 @@
                  (-> (d/pull db '[*] (-> row :t d/t->tx))
                      (assoc :datom-count (count (:data row))))))))))
 
-(defn find-price-list [db]
-  (first (find-where db {:price-list/days-1 nil})))
