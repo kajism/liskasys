@@ -110,29 +110,7 @@
                                                    (filter att?-fn)
                                                    (remove :daily-plan/subst-req-on)
                                                    (count)))))
-        not-going-subst-msgs (map (fn [dp] {:from sender
-                                            :to (map :person/email (-> dp :daily-plan/person :person/parent))
-                                            :subject (str org-name ": Zítřejší náhrada bohužel není možná")
-                                            :body [{:type "text/plain; charset=utf-8"
-                                                    :content (str (-> dp :daily-plan/person cljc.util/person-fullname)
-                                                                  " si bohužel zítra nemůže nahradit docházku z důvodu nedostatku volných míst."
-                                                                  "\n\nToto je automaticky generovaný email ze systému " full-url)}]})
-                                  not-going)
-        going-subst-msgs (->> going
-                              (filter :daily-plan/subst-req-on)
-                              (map (fn [dp] {:from sender
-                                             :to (map :person/email (-> dp :daily-plan/person :person/parent))
-                                             :subject (str org-name ": Zítřejsí náhrada platí!")
-                                             :body [{:type "text/plain; charset=utf-8"
-                                                     :content (str (-> dp :daily-plan/person cljc.util/person-fullname)
-                                                                   " má zítra ve školce nahradní "
-                                                                   (cljc.util/child-att->str (:daily-plan/child-att dp))
-                                                                   " docházku "
-                                                                   (if (lunch?-fn dp)
-                                                                     "včetně oběda."
-                                                                     "bez oběda.")
-                                                                   "\n\nToto je automaticky generovaný email ze systému " full-url)}]})))
-        going->str-fn #(str (-> % :daily-plan/person cljc.util/person-fullname)
+        going-str-fn #(str (-> % :daily-plan/person cljc.util/person-fullname)
                             (when (= (:daily-plan/child-att %) 2)
                               ", půldenní")
                             (if-not (lunch?-fn %)
@@ -143,18 +121,18 @@
                                 "\n===========================================\n\n"
                                 (when-let [xs (not-empty (->> going
                                                               (remove :daily-plan/subst-req-on)
-                                                              (map going->str-fn)
+                                                              (map going-str-fn)
                                                               (util/sort-by-locale identity)))]
                                   (str "Docházka (" (count xs) ") ------------------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> going
                                                               (filter :daily-plan/subst-req-on)
-                                                              (map going->str-fn)
+                                                              (map going-str-fn)
                                                               (util/sort-by-locale identity)))]
                                   (str "\n\nNáhradnící (" (count xs) ") ------------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> daily-plans
                                                               (remove att?-fn)
                                                               (filter lunch?-fn)
-                                                              (map going->str-fn)
+                                                              (map going-str-fn)
                                                               (util/sort-by-locale identity)))]
                                   (str "\n\nOstatní obědy (" (count xs) ") ---------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> daily-plans
@@ -171,14 +149,12 @@
                                 "\n\n")]
     (if-not (seq daily-plans)
       (timbre/info "No daily plans for" date "group" (:group/label group))
-      (do
+      (let [send-substitution-result-mail (emailing/make-substitution-result-sender db lunch?-fn)]
         (db/transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
-        (doseq [msg  not-going-subst-msgs]
-          (timbre/info "Sending to not going" msg)
-          (timbre/info (postal/send-message msg)))
-        (doseq [msg  going-subst-msgs]
-          (timbre/info "Sending to going" msg)
-          (timbre/info (postal/send-message msg)))
+        (doseq [dp not-going]
+          (send-substitution-result-mail dp false))
+        (doseq [dp (filter :daily-plan/subst-req-on going)]
+          (send-substitution-result-mail dp true))
         {:text group-summary-text
          :count (count going)}))))
 

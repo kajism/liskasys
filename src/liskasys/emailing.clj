@@ -113,3 +113,28 @@
                                        footer-text full-url)}]}]
         (timbre/info org-name ": sending info about published payment" msg)
         (timbre/info (postal/send-message msg))))))
+
+(defn make-substitution-result-sender [db lunch?-fn]
+  (let [{:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
+    from (db-queries/find-auto-sender-email db)]
+   (fn [dp going?]
+     (let [msg {:from from
+                :to (map :person/email (-> dp :daily-plan/person :person/parent))
+                :subject (str org-name ": " (if going?
+                                              "Zítřejsí náhrada platí!"
+                                              "Zítřejší náhrada bohužel není možná"))
+                :body [{:type content-type
+                        :content (str (-> dp :daily-plan/person cljc.util/person-fullname)
+                                      (if going?
+                                        (str (-> dp :daily-plan/person cljc.util/person-fullname)
+                                             " má zítra ve školce nahradní "
+                                             (cljc.util/child-att->str (:daily-plan/child-att dp))
+                                             " docházku "
+                                             (if (lunch?-fn dp)
+                                               "včetně oběda."
+                                               "bez oběda."))
+                                        " si bohužel zítra nemůže nahradit docházku z důvodu nedostatku volných míst.")
+                                      footer-text full-url)}]}]
+       (timbre/info org-name ": sending to" (when-not going? "not") "going" msg)
+       (timbre/info (postal/send-message msg))))))
+
