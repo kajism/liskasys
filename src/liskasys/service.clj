@@ -21,30 +21,6 @@
 (defn sort-by-locale [key-fn coll]
   (sort-by key-fn cs-collator coll))
 
-(defn retract-person-bill-tx [db ent-id]
-  (let [bill (db-queries/merge-person-bill-facts
-              db
-              (d/pull db '[* {:person-bill/status [:db/ident]}] ent-id))
-        daily-plans (d/q '[:find [?e ...]
-                           :in $ ?bill ?min-date
-                           :where
-                           [?e :daily-plan/bill ?bill]
-                           (not [?e :daily-plan/lunch-ord])
-                           [?e :daily-plan/date ?date]
-                           [(> ?date ?min-date)]]
-                         db ent-id (db-queries/find-max-lunch-order-date db))
-        person (d/pull db '[*] (get-in bill [:person-bill/person :db/id]))
-        tx-data (cond-> [[:db.fn/retractEntity ent-id]]
-                  (and (= (-> bill :person-bill/status :db/ident) :person-bill.status/paid)
-                       (:person/lunch-fund person))
-                  (conj [:db.fn/cas (:db/id person) :person/lunch-fund (:person/lunch-fund person)
-                         (- (:person/lunch-fund person) (- (:person-bill/total bill) (:person-bill/att-price bill)))]))]
-    (timbre/info "preparing retract of bill" bill "with" (count daily-plans) "plans of person" person)
-    (->> daily-plans
-         (map (fn [dp-id]
-                [:db.fn/retractEntity dp-id]))
-         (into tx-data))))
-
 (defmethod db/transact-entity :daily-plan [conn user-id ent]
   (let [old-id (d/q '[:find ?e .
                       :in $ ?date ?pid
@@ -80,11 +56,35 @@
             {:error/msg "Osoba se zadaným variabilním symbolem, telefonem nebo emailem již v databázi existuje."})
           (throw cause))))))
 
+(defn retract-person-bill-tx [db ent-id]
+  (let [bill (db-queries/merge-person-bill-facts
+              db
+              (d/pull db '[* {:person-bill/status [:db/ident]}] ent-id))
+        daily-plans (d/q '[:find [?e ...]
+                           :in $ ?bill ?min-date
+                           :where
+                           [?e :daily-plan/bill ?bill]
+                           (not [?e :daily-plan/lunch-ord])
+                           [?e :daily-plan/date ?date]
+                           [(> ?date ?min-date)]]
+                         db ent-id (db-queries/find-max-lunch-order-date db))
+        person (d/pull db '[*] (get-in bill [:person-bill/person :db/id]))
+        tx-data (cond-> [[:db.fn/retractEntity ent-id]]
+                  (and (= (-> bill :person-bill/status :db/ident) :person-bill.status/paid)
+                       (:person/lunch-fund person))
+                  (conj [:db.fn/cas (:db/id person) :person/lunch-fund (:person/lunch-fund person)
+                         (- (:person/lunch-fund person) (- (:person-bill/total bill) (:person-bill/att-price bill)))]))]
+    (timbre/info "preparing retract of bill" bill "with" (count daily-plans) "plans of person" person)
+    (->> daily-plans
+         (map (fn [dp-id]
+                [:db.fn/retractEntity dp-id]))
+         (into tx-data))))
+
 (defmethod db/retract-entity :person-bill [conn user-id ent-id]
   (->> (retract-person-bill-tx (d/db conn) ent-id)
        (db/transact conn user-id)
        :tx-data
-       count
+       (count)
        (+ -2)))
 
 (defn- new-lunch-order-ent [date total]
