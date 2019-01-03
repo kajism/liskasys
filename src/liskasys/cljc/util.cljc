@@ -168,3 +168,11 @@
        (take-while (fn [ld]
                      (t/before? ld to-ld)))
        (remove holiday?-fn)))
+
+(defn daily-plan-lunch? [{:daily-plan/keys [lunch-req lunch-cancelled?]}]
+  (and lunch-req (pos? lunch-req)
+       (not lunch-cancelled?)))
+
+(defn daily-plan-attendance? [{:daily-plan/keys [child-att att-cancelled?]}]
+  (and child-att (pos? child-att)
+       (not att-cancelled?)))

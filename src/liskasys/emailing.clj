@@ -58,18 +58,62 @@
         (timbre/info org-name ": lunch order has been sent" result)
         (timbre/error org-name ": failed to send email" result)))))
 
+(defn- going-str-fn [dp]
+  (str (-> dp :daily-plan/person cljc.util/person-fullname)
+       (when (= (:daily-plan/child-att dp) 2)
+         ", půldenní")
+       (if-not (cljc.util/daily-plan-lunch? dp)
+         ", bez oběda"
+         (when-let [type (some-> dp :daily-plan/person :person/lunch-type :lunch-type/label)]
+           (str ", strava " type)))))
+
+(defn- group-summary-text [{:keys [group going not-going group-plans]}]
+  (str (:group/label group) " (" (count going) ")"
+       "\n===========================================\n\n"
+       (when-let [xs (not-empty (->> going
+                                     (remove :daily-plan/subst-req-on)
+                                     (map going-str-fn)
+                                     (util/sort-by-locale identity)))]
+         (str "Docházka (" (count xs) ") ------------------------------\n" (str/join "\n" xs)))
+       (when-let [xs (not-empty (->> going
+                                     (filter :daily-plan/subst-req-on)
+                                     (map going-str-fn)
+                                     (util/sort-by-locale identity)))]
+         (str "\n\nNáhradnící (" (count xs) ") ------------------------\n" (str/join "\n" xs)))
+       (when-let [xs (not-empty (->> group-plans
+                                     (remove cljc.util/daily-plan-attendance?)
+                                     (filter cljc.util/daily-plan-lunch?)
+                                     (map going-str-fn)
+                                     (util/sort-by-locale identity)))]
+         (str "\n\nOstatní obědy (" (count xs) ") ---------------------\n" (str/join "\n" xs)))
+       (when-let [xs (not-empty (->> group-plans
+                                     (filter :daily-plan/att-cancelled?)
+                                     (map #(str (-> % :daily-plan/person cljc.util/person-fullname)
+                                                (when-not (str/blank? (:daily-plan/excuse %))
+                                                  (str ", " (:daily-plan/excuse %)))))
+                                     (util/sort-by-locale identity)))]
+         (str "\n\nOmluvenky (" (count xs) ") ---------------------------\n" (str/join "\n" xs)))
+       (when-let [xs (not-empty (->> not-going
+                                     (map (comp cljc.util/person-fullname :daily-plan/person))
+                                     (util/sort-by-locale identity)))]
+         (str "\n\nNáhradníci, kteří se nevešli (" (count xs) ") ------\n" (str/join "\n" xs)))
+       "\n\n"))
+
 (defn send-daily-summary [db date group-results]
   (let [{:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
-        subj (str org-name ": Denní souhrn na " (time/format-day-date date) " (" (->> group-results (map :count) (reduce +)) " dětí)")
-        summary-msg {:from (db-queries/find-auto-sender-email db)
-                     :to (mapv :person/email (db-queries/find-persons-with-role db "průvodce"))
-                     :subject subj
-                     :body [{:type content-type
-                             :content (str subj "\n\n"
-                                           (->> group-results (map :text) (reduce str))
-                                           footer-text full-url)}]}]
-    (timbre/info org-name ": sending summary msg" summary-msg)
-    (timbre/info (postal/send-message summary-msg))))
+        subj (str org-name ": Denní souhrn na " (time/format-day-date date) " ("
+                  (->> group-results (map #(count (:going %))) (reduce +)) " dětí)")
+        msg {:from (db-queries/find-auto-sender-email db)
+             :to (mapv :person/email (db-queries/find-persons-with-role db "průvodce"))
+             :subject subj
+             :body [{:type content-type
+                     :content (str subj "\n\n"
+                                   (->> group-results
+                                        (map group-summary-text)
+                                        (reduce str))
+                                   footer-text full-url)}]}]
+    (timbre/info org-name ": sending summary msg" msg)
+    (timbre/info (postal/send-message msg))))
 
 (defn send-today-child-counts [db today-atts]
   (let [{:config/keys [org-name full-url closing-msg-role]} (d/pull db '[*] :liskasys/config)]
@@ -114,7 +158,7 @@
         (timbre/info org-name ": sending info about published payment" msg)
         (timbre/info (postal/send-message msg))))))
 
-(defn make-substitution-result-sender [db lunch?-fn]
+(defn make-substitution-result-sender [db]
   (let [{:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
     from (db-queries/find-auto-sender-email db)]
    (fn [dp going?]
@@ -130,7 +174,7 @@
                                              " má zítra ve školce nahradní "
                                              (cljc.util/child-att->str (:daily-plan/child-att dp))
                                              " docházku "
-                                             (if (lunch?-fn dp)
+                                             (if (cljc.util/daily-plan-lunch? dp)
                                                "včetně oběda."
                                                "bez oběda."))
                                         " si bohužel zítra nemůže nahradit docházku z důvodu nedostatku volných míst.")
