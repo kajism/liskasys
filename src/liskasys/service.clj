@@ -91,44 +91,44 @@
   (->> (new-lunch-order-ent date nil)
        (db/transact-entity conn nil)))
 
-(defn- process-group-substitutions [conn date group daily-plans]
-  (let [db (d/db conn)
-        {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
-        sender (db-queries/find-auto-sender-email db)
-        max-group-capacity (or (:group/max-capacity group)
-                               (count daily-plans))
-        [going not-going] (->> daily-plans
-                               (filter cljc.util/daily-plan-attendance?)
-                               (sort-by :daily-plan/subst-req-on)
-                               (split-at (max max-group-capacity
-                                              (->> daily-plans
-                                                   (filter cljc.util/daily-plan-attendance?)
-                                                   (remove :daily-plan/subst-req-on)
-                                                   (count)))))]
-    (if-not (seq daily-plans)
-      (timbre/info "No daily plans for" date "group" (:group/label group))
-      (let [send-substitution-result-mail (emailing/make-substitution-result-sender db)]
-        (db/transact conn nil (mapv (comp #(vector :db.fn/retractEntity %) :db/id) not-going))
-        (doseq [dp not-going]
-          (send-substitution-result-mail dp false))
-        (doseq [dp (filter :daily-plan/subst-req-on going)]
-          (send-substitution-result-mail dp true))
-        {:group group
-         :group-plans daily-plans
-         :going going
-         :not-goint not-going}))))
+(defn- prepare-group-substs [group group-plans]
+  (when (seq group-plans)
+    (let [max-group-capacity (or (:group/max-capacity group)
+                                 (count group-plans))
+          [going not-going] (->> group-plans
+                                 (filter cljc.util/daily-plan-attendance?)
+                                 (sort-by :daily-plan/subst-req-on)
+                                 (split-at (max max-group-capacity
+                                                (->> group-plans
+                                                     (filter cljc.util/daily-plan-attendance?)
+                                                     (remove :daily-plan/subst-req-on)
+                                                     (count)))))]
+      {:group group
+       :not-going not-going
+       :going going
+       :cancelled (filter :daily-plan/att-cancelled? group-plans)
+       :other-lunches (->> group-plans
+                           (remove cljc.util/daily-plan-attendance?)
+                           (filter cljc.util/daily-plan-lunch?))})))
 
 (defn- process-substitutions [conn date]
   (let [db (d/db conn)
-        groups (db/find-by-type db :group {})
-        daily-plans (db/find-where db {:daily-plan/date date}
-                                   '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
-                                                            {:person/lunch-type [:lunch-type/label]
-                                                             :person/parent [:person/email]
-                                                             :person/group [:db/id]}]}])
+        daily-plans (db-queries/find-daily-plans-by-date db date)
         dps-by-group (group-by (comp :db/id :person/group :daily-plan/person) daily-plans)
-        group-results (keep #(process-group-substitutions conn date % (get dps-by-group (:db/id %)))
-                            groups)]
+        group-results (keep (fn [group]
+                              (prepare-group-substs group (get dps-by-group (:db/id group))))
+                            (db/find-by-type db :group {}))
+        send-substitution-result-mail (emailing/make-substitution-result-sender db)]
+
+    (doseq [{:keys [not-going going]} group-results]
+      (db/transact conn nil (mapv #(-> [:db.fn/retractEntity (:db/id %)])
+                                  not-going))
+      (doseq [daily-plan not-going]
+        (send-substitution-result-mail daily-plan false))
+
+      (doseq [daily-plan (filter :daily-plan/subst-req-on going)]
+        (send-substitution-result-mail daily-plan true)))
+
     (emailing/send-daily-summary db date group-results)))
 
 (defn- lunch-order-tx-total [date price-list plans-with-lunches]

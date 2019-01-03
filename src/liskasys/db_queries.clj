@@ -373,3 +373,10 @@
              (not [?e :daily-plan/lunch-cancelled? true])]
            db person-id)
       0))
+
+(defn find-daily-plans-by-date [db date]
+  (db/find-where db {:daily-plan/date date}
+                 '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
+                                          {:person/lunch-type [:lunch-type/label]
+                                           :person/parent [:person/email]
+                                           :person/group [:db/id]}]}]))

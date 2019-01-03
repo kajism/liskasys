@@ -59,7 +59,7 @@
         (timbre/error org-name ": failed to send email" result)))))
 
 (defn- going-str-fn [dp]
-  (str (-> dp :daily-plan/person cljc.util/person-fullname)
+  (str (cljc.util/person-fullname (:daily-plan/person dp))
        (when (= (:daily-plan/child-att dp) 2)
          ", půldenní")
        (if-not (cljc.util/daily-plan-lunch? dp)
@@ -67,35 +67,32 @@
          (when-let [type (some-> dp :daily-plan/person :person/lunch-type :lunch-type/label)]
            (str ", strava " type)))))
 
-(defn- group-summary-text [{:keys [group going not-going group-plans]}]
+(defn- group-summary-text [{:keys [group going not-going cancelled other-lunches]}]
   (str (:group/label group) " (" (count going) ")"
        "\n===========================================\n\n"
        (when-let [xs (not-empty (->> going
                                      (remove :daily-plan/subst-req-on)
                                      (map going-str-fn)
-                                     (util/sort-by-locale identity)))]
+                                     (util/sort-by-locale)))]
          (str "Docházka (" (count xs) ") ------------------------------\n" (str/join "\n" xs)))
        (when-let [xs (not-empty (->> going
                                      (filter :daily-plan/subst-req-on)
                                      (map going-str-fn)
-                                     (util/sort-by-locale identity)))]
+                                     (util/sort-by-locale)))]
          (str "\n\nNáhradnící (" (count xs) ") ------------------------\n" (str/join "\n" xs)))
-       (when-let [xs (not-empty (->> group-plans
-                                     (remove cljc.util/daily-plan-attendance?)
-                                     (filter cljc.util/daily-plan-lunch?)
+       (when-let [xs (not-empty (->> other-lunches
                                      (map going-str-fn)
-                                     (util/sort-by-locale identity)))]
+                                     (util/sort-by-locale)))]
          (str "\n\nOstatní obědy (" (count xs) ") ---------------------\n" (str/join "\n" xs)))
-       (when-let [xs (not-empty (->> group-plans
-                                     (filter :daily-plan/att-cancelled?)
-                                     (map #(str (-> % :daily-plan/person cljc.util/person-fullname)
+       (when-let [xs (not-empty (->> cancelled
+                                     (map #(str (cljc.util/person-fullname (:daily-plan/person %))
                                                 (when-not (str/blank? (:daily-plan/excuse %))
                                                   (str ", " (:daily-plan/excuse %)))))
-                                     (util/sort-by-locale identity)))]
+                                     (util/sort-by-locale)))]
          (str "\n\nOmluvenky (" (count xs) ") ---------------------------\n" (str/join "\n" xs)))
        (when-let [xs (not-empty (->> not-going
-                                     (map (comp cljc.util/person-fullname :daily-plan/person))
-                                     (util/sort-by-locale identity)))]
+                                     (map #(cljc.util/person-fullname (:daily-plan/person %)))
+                                     (util/sort-by-locale)))]
          (str "\n\nNáhradníci, kteří se nevešli (" (count xs) ") ------\n" (str/join "\n" xs)))
        "\n\n"))
 
