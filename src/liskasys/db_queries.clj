@@ -11,6 +11,19 @@
             [taoensso.timbre :as timbre])
   (:import java.util.Date))
 
+(defmethod db/find-by-type :person [db ent-type where-m]
+  (->> (db/find-by-type-default db ent-type where-m)
+       (map #(dissoc % :person/passwd))))
+
+(defmethod db/find-by-type :daily-plan [db ent-type where-m]
+  (db/find-by-type-default db ent-type where-m '[* {:daily-plan/_substituted-by [:db/id]}]))
+
+(declare merge-person-bill-facts)
+(defmethod db/find-by-type :person-bill [db ent-type where-m]
+  (->> (db/find-by-type-default db ent-type where-m '[* {:person-bill/period [*]
+                                                         :person-bill/status [:db/id :db/ident]}])
+       (map (partial merge-person-bill-facts db))))
+
 (defn find-max-lunch-order-date [db]
   (or (d/q '[:find (max ?date) .
              :where [_ :lunch-order/date ?date]]
@@ -18,7 +31,7 @@
       #inst "2000"))
 
 (defn find-price-list [db]
-  (first (db/find-where db {:price-list/days-1 nil})))
+  (first (db/find-by-type db :price-list {})))
 
 (defn find-person-by-email [db email]
   (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol :person/active?]}]) .
@@ -104,9 +117,6 @@
          [(< ?from-date ?date)]]
        db from-date))
 
-(defn find-lunch-types [db]
-  (db/find-where db {:lunch-type/label nil}))
-
 (defn merge-person-bill-facts [db {:person-bill/keys [lunch-count total att-price status] :as person-bill}]
   (let [tx (apply max (d/q '[:find [?tx ...]
                              :in $ ?e
@@ -128,11 +138,6 @@
                 :-from-previous (- total (+ att-price total-lunch-price))
                 :-paid? (= (:db/id status) paid-status)}))))
 
-(defmethod db/find-by-type :person-bill [db ent-type where-m]
-  (->> (db/find-by-type-default db ent-type where-m '[* {:person-bill/period [*]
-                                                         :person-bill/status [:db/id :db/ident]}])
-       (map (partial merge-person-bill-facts db))))
-
 (defn find-person-bills [db user-id]
   (->> (d/q '[:find [(pull ?e [* {:person-bill/person [*] :person-bill/period [*]}]) ...]
               :in $ % ?user
@@ -151,9 +156,6 @@
        (map (partial merge-person-bill-facts db))
        (sort-by (comp :db/id :person-bill/period))
        reverse))
-
-(defmethod db/find-by-type :daily-plan [db ent-type where-m]
-  (db/find-by-type-default db ent-type where-m '[* {:daily-plan/_substituted-by [:db/id]}]))
 
 (defn find-person-daily-plans-with-lunches [db date]
   (d/q '[:find [(pull ?e [:db/id :daily-plan/lunch-req
@@ -201,8 +203,8 @@
   (seq (filter #(*school-holiday? % local-date) school-holidays)))
 
 (defn make-holiday?-fn [db]
-  (let [bank-holidays (db/find-where db {:bank-holiday/label nil})
-        school-holidays (db/find-where db {:school-holiday/label nil})]
+  (let [bank-holidays (db/find-by-type db :bank-holiday {})
+        school-holidays (db/find-by-type db :school-holiday {})]
     (fn [ld]
       (or (bank-holiday? bank-holidays ld)
           (school-holiday? school-holidays ld)))))
@@ -211,7 +213,7 @@
   (let [{:config/keys [order-workdays-only?]} (d/pull db '[*] :liskasys/config)]
     (cljc.util/period-local-dates (if order-workdays-only?
                           (some-fn tp/weekend?
-                                   (partial bank-holiday? (db/find-where db {:bank-holiday/label nil})))
+                                   (partial bank-holiday? (db/find-by-type db :bank-holiday {})))
                           (constantly false))
                         (t/plus (time/to-ld excl-from) (t/days 1))
                         (t/plus (time/to-ld incl-to) (t/days 1)))))

@@ -61,10 +61,6 @@
 (defmethod find-by-type :default [db ent-type where-m]
   (find-by-type-default db ent-type where-m))
 
-(defmethod find-by-type :person [db ent-type where-m]
-  (->> (find-by-type-default db ent-type where-m)
-       (map #(dissoc % :person/passwd))))
-
 (defn transact [conn user-id tx-data]
   (if (seq tx-data)
     (let [tx-data (cond-> (vec tx-data)

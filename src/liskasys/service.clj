@@ -183,7 +183,7 @@
 
 (defn- process-substitutions [conn date]
   (let [db (d/db conn)
-        groups (db/find-where db {:group/label nil})
+        groups (db/find-by-type db :group {})
         daily-plans (db/find-where db {:daily-plan/date date}
                                    '[* {:daily-plan/person [:db/id :person/firstname :person/lastname
                                                             {:person/lunch-type [:lunch-type/label]
@@ -287,7 +287,7 @@
                               (db-queries/find-auto-sender-email db)
                               (mapv :person/email (db-queries/find-persons-with-role db "obědy"))
                               plans-with-lunches
-                              (-> (db-queries/find-lunch-types db)
+                              (-> (db/find-by-type db :lunch-type {})
                                   (all-lunch-type-labels-by-id))))))
 
 (defn process-lunch-order-and-substitutions [conn]
@@ -305,7 +305,7 @@
                         (remove :daily-plan/att-cancelled?))
         {:config/keys [org-name full-url closing-msg-role]} (d/pull db '[*] :liskasys/config)]
     (if (> (count today-atts) 0)
-      (let [groups (db/find-where db {:group/label nil})
+      (let [groups (db/find-by-type db :group {})
             atts-by-group-id (group-by (comp :db/id :person/group :daily-plan/person) today-atts)
             sender (db-queries/find-auto-sender-email db)
             subj (str org-name ": Celkový dnešní počet dětí je " (count today-atts))
