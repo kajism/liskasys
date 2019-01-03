@@ -10,6 +10,7 @@
             [datomic.api :as d]
             [environ.core :refer [env]]
             [liskasys.db :as db]
+            [liskasys.db-queries :as db-queries]
             [liskasys.config :as config]
             [liskasys.cljc.time :as time]
             [liskasys.cljc.validation :as validation]
@@ -17,6 +18,7 @@
             [liskasys.endpoint.main-service :as main-service]
             [liskasys.hiccup :as hiccup]
             [liskasys.qr-code :as qr-code]
+            [liskasys.util :as util]
             [ring.util.response :as response]
             [taoensso.timbre :as timbre]
             [liskasys.cljc.util :as cljc.util])
@@ -31,7 +33,8 @@
   (or (:upload-dir env) "./uploads/" (get config/dbs server-name) "/"))
 
 (defn- user-children-data [db user-id selected-id]
-  (let [user-children (main-service/find-active-children-by-person-id db user-id)
+  (let [user-children (->> (db-queries/find-active-children-by-person-id db user-id)
+                           (util/sort-by-locale cljc.util/person-fullname))
         sid (or selected-id (:db/id (first user-children)))]
     {:user-children user-children
      :selected-child (some #(when (= (:db/id %) sid) %) user-children)
@@ -45,7 +48,7 @@
          (response/redirect "/jidelni-listek")
          (let [db (d/db (get conns server-name))
                ucd (user-children-data db (:db/id user) (:child-id params))
-               child-daily-plans (main-service/find-next-person-daily-plans db (:selected-id ucd))]
+               child-daily-plans (db-queries/find-next-person-daily-plans db (:selected-id ucd))]
            (main-hiccup/liskasys-frame
             user
             (main-hiccup/cancellation-page ucd child-daily-plans)
@@ -72,7 +75,7 @@
      (GET "/nahrady" {:keys [params]}
        (let [db (d/db (conns server-name))
              ucd (user-children-data db (:db/id user) (:child-id params))
-             substs (main-service/find-person-substs db (:selected-id ucd))]
+             substs (db-queries/find-person-substs db (:selected-id ucd))]
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/substitutions ucd substs))))
@@ -100,8 +103,8 @@
 
      (GET "/platby" {:keys [params]}
           (let [db (d/db (conns server-name))
-                person-bills (main-service/find-person-bills db (:db/id user))
-                show-qr? (re-find #"[0-9/]+" (main-service/find-bank-account db))]
+                person-bills (db-queries/find-person-bills db (:db/id user))
+                show-qr? (re-find #"[0-9/]+" (db-queries/find-bank-account db))]
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/person-bills person-bills show-qr?))))
@@ -110,13 +113,13 @@
        (let [db (d/db (conns server-name))
              person-bill (first (db/find-by-type db :person-bill {:db/id id}))
              {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
-             qr-code-file (qr-code/save-qr-code (main-service/find-bank-account db)
+             qr-code-file (qr-code/save-qr-code (db-queries/find-bank-account db)
                                                 (/ (:person-bill/total person-bill) 100)
                                                 (str (-> person-bill :person-bill/person :person/var-symbol))
                                                 org-name
                                                 (str (-> person-bill :person-bill/person cljc.util/person-fullname) " "
                                                      (-> person-bill :person-bill/period cljc.util/period->text)))
-             qr-code-bytes (main-service/file-to-byte-array qr-code-file)]
+             qr-code-bytes (util/file-to-byte-array qr-code-file)]
          (.delete qr-code-file)
          (-> (response/response (ByteArrayInputStream. qr-code-bytes))
              (response/content-type "image/png")

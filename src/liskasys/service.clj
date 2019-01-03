@@ -9,17 +9,11 @@
             [liskasys.cljc.util :as cljc.util]
             [liskasys.db :as db]
             [liskasys.db-queries :as db-queries]
+            [liskasys.util :as util]
             [postal.core :as postal]
             [taoensso.timbre :as timbre])
-  (:import java.text.Collator
-           java.util.concurrent.ExecutionException
-           java.util.Locale
+  (:import java.util.concurrent.ExecutionException
            java.util.Date))
-
-(def cs-collator (Collator/getInstance (Locale. "CS")))
-
-(defn sort-by-locale [key-fn coll]
-  (sort-by key-fn cs-collator coll))
 
 (defmethod db/transact-entity :daily-plan [conn user-id ent]
   (let [old-id (d/q '[:find ?e .
@@ -149,29 +143,29 @@
                                 (when-let [xs (not-empty (->> going
                                                               (remove :daily-plan/subst-req-on)
                                                               (map going->str-fn)
-                                                              (sort-by-locale identity)))]
+                                                              (util/sort-by-locale identity)))]
                                   (str "Docházka (" (count xs) ") ------------------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> going
                                                               (filter :daily-plan/subst-req-on)
                                                               (map going->str-fn)
-                                                              (sort-by-locale identity)))]
+                                                              (util/sort-by-locale identity)))]
                                   (str "\n\nNáhradnící (" (count xs) ") ------------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> daily-plans
                                                               (remove att?-fn)
                                                               (filter lunch?-fn)
                                                               (map going->str-fn)
-                                                              (sort-by-locale identity)))]
+                                                              (util/sort-by-locale identity)))]
                                   (str "\n\nOstatní obědy (" (count xs) ") ---------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> daily-plans
                                                               (filter :daily-plan/att-cancelled?)
                                                               (map #(str (-> % :daily-plan/person cljc.util/person-fullname)
                                                                          (when-not (str/blank? (:daily-plan/excuse %))
                                                                            (str ", " (:daily-plan/excuse %)))))
-                                                              (sort-by-locale identity)))]
+                                                              (util/sort-by-locale identity)))]
                                   (str "\n\nOmluvenky (" (count xs) ") ---------------------------\n" (str/join "\n" xs)))
                                 (when-let [xs (not-empty (->> not-going
                                                               (map (comp cljc.util/person-fullname :daily-plan/person))
-                                                              (sort-by-locale identity)))]
+                                                              (util/sort-by-locale identity)))]
                                   (str "\n\nNáhradníci, kteří se nevešli (" (count xs) ") ------\n" (str/join "\n" xs)))
                                 "\n\n")]
     (if-not (seq daily-plans)
@@ -225,7 +219,7 @@
        (group-by (comp :db/id :person/lunch-type :daily-plan/person))
        (map (fn [[k v]]
               [(get lunch-types k) (reduce + 0 (keep :daily-plan/lunch-req v))]))
-       (sort-by-locale first)))
+       (util/sort-by-locale first)))
 
 (defn- send-lunch-order-email [date org-name from tos plans-with-lunches lunch-type-labels-by-id]
   (let [subject (str org-name ": Objednávka obědů na " (time/format-day-date date))
