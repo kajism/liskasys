@@ -9,6 +9,7 @@
             [liskasys.cljc.time :as time]
             [liskasys.cljc.util :as cljc.util]
             [liskasys.db :as db]
+            [liskasys.db-queries :as db-queries]
             [liskasys.service :as service]
             [postal.core :as postal]
             [taoensso.timbre :as timbre])
@@ -85,7 +86,7 @@
        (service/sort-by-locale cljc.util/person-fullname)))
 
 (defn- make-can-cancel-lunch?-fn [db]
-  (let [max-lunch-order-date (tc/to-local-date (service/find-max-lunch-order-date db))]
+  (let [max-lunch-order-date (tc/to-local-date (db-queries/find-max-lunch-order-date db))]
     (fn [date]
       (t/after? (tc/to-local-date date) max-lunch-order-date))))
 
@@ -161,24 +162,17 @@
                [?ch :person/parent ?user]
                [?e :person-bill/person ?ch]]]
             user-id)
-       (map (partial service/merge-person-bill-facts db))
+       (map (partial db-queries/merge-person-bill-facts db))
        (sort-by (comp :db/id :person-bill/period))
        reverse))
-
-#_(defn find-next-weeks-person-daily-plans [db person-id weeks]
-    (let [to-date (-> (t/today)
-                      (t/plus (t/weeks weeks))
-                      tc/to-date)]
-      (->> (service/find-person-daily-plans db person-id (time/tomorrow) to-date)
-           (sort-by :daily-plan/date))))
 
 (defn find-next-person-daily-plans
   "Select ongoing DPs to be offered for cancellation. Already substituted DPs are excluded."
   [db person-id]
-  (let [date-from (service/find-max-lunch-order-date db)
-        date-to (service/find-max-person-paid-period-date db person-id)
+  (let [date-from (db-queries/find-max-lunch-order-date db)
+        date-to (db-queries/find-max-person-paid-period-date db person-id)
         can-cancel-today?-fn (make-can-cancel-today?-fn db)
-        out (service/find-person-daily-plans db person-id date-from date-to)]
+        out (db-queries/find-person-daily-plans db person-id date-from date-to)]
     (cond->> out
       (and (= date-from (:daily-plan/date (first out)))
            (or (not (can-cancel-today?-fn date-from))
@@ -210,22 +204,22 @@
         group (db/find-by-id db (get-in person [:person/group :db/id]))
         {:config/keys [max-subst-periods future-subst?]} (d/pull db '[*] :liskasys/config)
         date-from (some-> (or (last (take max-subst-periods (find-school-year-previous-periods db (Date.))))
-                              (service/find-current-period db)
+                              (db-queries/find-current-period db)
                               {:billing-period/from-yyyymm 200001
                                :billing-period/to-yyyymm 200001})
                           (cljc.util/period-start-end-lds)
                           (first)
                           (tc/to-date))
-        max-paid-date (service/find-max-person-paid-period-date db person-id)
-        substable-dps (->> (service/find-person-daily-plans db person-id date-from (if future-subst?
+        max-paid-date (db-queries/find-max-person-paid-period-date db person-id)
+        substable-dps (->> (db-queries/find-person-daily-plans db person-id date-from (if future-subst?
                                                                                      max-paid-date
                                                                                      (time/today)))
                            (filter #(and (:daily-plan/att-cancelled? %)
                                          (not (:daily-plan/substituted-by %))
                                          (not (:daily-plan/subst-req-on %))
                                          (not (:daily-plan/refund? %)))))
-        all-plans (service/find-att-daily-plans db
-                                                (some-> (service/find-max-lunch-order-date db)
+        all-plans (db-queries/find-att-daily-plans db
+                                                (some-> (db-queries/find-max-lunch-order-date db)
                                                         (tc/to-local-date)
                                                         (t/plus (t/days 1))
                                                         (tc/to-date))
@@ -338,7 +332,7 @@
 (defn- generate-person-bills-tx [db period-id]
   (let [billing-period (db/find-by-id db period-id)
         [period-start-ld period-end-ld] (cljc.util/period-start-end-lds billing-period)
-        dates (service/period-local-dates (service/make-holiday?-fn db) period-start-ld period-end-ld)
+        dates (cljc.util/period-local-dates (db-queries/make-holiday?-fn db) period-start-ld period-end-ld)
         person-id--2nd-previous-dps (some->> (find-school-year-previous-periods db (tc/to-date period-start-ld))
                                              (second)
                                              :db/id
@@ -349,7 +343,7 @@
         person-id--bill (atom (->> (db/find-where db {:person-bill/period period-id})
                                    (map #(vector (get-in % [:person-bill/person :db/id]) %))
                                    (into {})))
-        price-list (service/find-price-list db)
+        price-list (db-queries/find-price-list db)
         second-month-start (t/plus period-start-ld (t/months 1))
         out (->>
              (for [person (->> (db/find-where db {:person/active? true})
@@ -387,7 +381,7 @@
                           {:person-bill/lunch-count lunch-count-next
                            :person-bill/att-price att-price
                            :person-bill/total (+ att-price
-                                                 (- (* (service/person-lunch-price person price-list)
+                                                 (- (* (cljc.util/person-lunch-price person price-list)
                                                        (+ lunch-count-next (find-lunch-count-planned db (:db/id person))))
                                                     (or (:person/lunch-fund person) 0)))}))))
              (filterv some?))]
@@ -419,9 +413,9 @@
                  (transact-period-person-bills conn user-id period-id))]
     (doseq [id new-bill-ids]
       (let [bill (first (db/find-by-type db :person-bill {:db/id id}))
-            price-list (service/find-price-list db)
+            price-list (db-queries/find-price-list db)
             subject (str org-name ": Platba školkovného a obědů na období " (-> bill :person-bill/period cljc.util/period->text))
-            msg {:from (service/auto-sender-email db)
+            msg {:from (db-queries/find-auto-sender-email db)
                  :to (or (-> bill :person-bill/person :person/email)
                          (mapv :person/email (-> bill :person-bill/person :person/parent)))
                  :subject subject
@@ -433,7 +427,7 @@
                                        "Variabilní symbol: " (-> bill :person-bill/person :person/var-symbol) "\n"
                                        "Do poznámky: " (-> bill :person-bill/person cljc.util/person-fullname) " "
                                        (-> bill :person-bill/period cljc.util/period->text) "\n"
-                                       "Splatnost do: " (or (:price-list/payment-due-date (service/find-price-list db)) "20. dne tohoto měsíce") "\n\n"
+                                       "Splatnost do: " (or (:price-list/payment-due-date (db-queries/find-price-list db)) "20. dne tohoto měsíce") "\n\n"
                                        "Pro QR platbu přejděte na " full-url " menu Platby"
                                        "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
         (timbre/info "Sending info about published payment" msg)
@@ -450,13 +444,13 @@
                [?e :person-bill/period ?period-id]
                [?e :person-bill/status :person-bill.status/published]]
              db bill-id)
-        order-date (tc/to-local-date (service/find-max-lunch-order-date db))
+        order-date (tc/to-local-date (db-queries/find-max-lunch-order-date db))
         dates (->> period-id
                    (db/find-by-id db)
                    (cljc.util/period-start-end-lds)
-                   (apply service/period-local-dates (service/make-holiday?-fn db))
+                   (apply cljc.util/period-local-dates (db-queries/make-holiday?-fn db))
                    (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
-        bill (service/merge-person-bill-facts db bill) ;; ensure data as of bill generation
+        bill (db-queries/merge-person-bill-facts db bill) ;; ensure data as of bill generation
         {:person-bill/keys [person total att-price]} bill
         tx-result (->> (generate-daily-plans person dates)
                        (map #(-> % (assoc :db/id (d/tempid :db.part/user)
@@ -469,4 +463,4 @@
     (db/find-by-type (:db-after tx-result) :person-bill {:db/id bill-id})))
 
 (defn find-bank-account [db]
-  (get (service/find-price-list db) :price-list/bank-account ""))
+  (get (db-queries/find-price-list db) :price-list/bank-account ""))

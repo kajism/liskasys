@@ -149,4 +149,22 @@
           100)
        9)))
 
+(comment
+  (def price-list {:price-list/lunch 50 :price-list/lunch-adult 100})
+  (= 50 (person-lunch-price {:person/child? true} price-list))
+  (= 100 (person-lunch-price {:person/child? false} price-list)))
 
+(defn person-lunch-price [{:person/keys [child?]} {:price-list/keys [lunch lunch-adult]}]
+  (if child?
+    lunch
+    (or lunch-adult lunch)))
+
+(defn period-local-dates
+  "Returns all local-dates except holidays from - to (exclusive)."
+  [holiday?-fn from-ld to-ld]
+  (->> from-ld
+       (iterate (fn [ld]
+                  (t/plus ld (t/days 1))))
+       (take-while (fn [ld]
+                     (t/before? ld to-ld)))
+       (remove holiday?-fn)))
