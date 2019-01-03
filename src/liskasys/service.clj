@@ -9,6 +9,7 @@
             [liskasys.cljc.util :as cljc.util]
             [liskasys.db :as db]
             [liskasys.db-queries :as db-queries]
+            [liskasys.emailing :as emailing]
             [liskasys.util :as util]
             [postal.core :as postal]
             [taoensso.timbre :as timbre])
@@ -191,22 +192,8 @@
                                                              :person/group [:db/id]}]}])
         dps-by-group (group-by (comp :db/id :person/group :daily-plan/person) daily-plans)
         group-results (keep #(process-group-substitutions conn date % (get dps-by-group (:db/id %)))
-                            groups)
-        {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
-        sender (db-queries/find-auto-sender-email db)
-        subj (str org-name ": Denní souhrn na " (time/format-day-date date) " (" (->> group-results (map :count) (reduce +)) " dětí)")
-        summary-msg {:from sender
-                     :to (-> #{}
-                             (into (map :person/email (db-queries/find-persons-with-role db "průvodce")))
-                             (vec))
-                     :subject subj
-                     :body [{:type "text/plain; charset=utf-8"
-                             :content (str subj "\n\n"
-                                           (->> group-results (map :text) (reduce str))
-                                           "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
-
-    (timbre/info "Sending summary msg" summary-msg)
-    (timbre/info (postal/send-message summary-msg))))
+                            groups)]
+    (emailing/send-daily-summary db date group-results)))
 
 (defn- all-lunch-type-labels-by-id [lunch-types]
   (->> lunch-types
@@ -302,23 +289,7 @@
   (let [db (d/db conn)
         today (time/today)
         today-atts (->> (db-queries/find-att-daily-plans db today today)
-                        (remove :daily-plan/att-cancelled?))
-        {:config/keys [org-name full-url closing-msg-role]} (d/pull db '[*] :liskasys/config)]
+                        (remove :daily-plan/att-cancelled?))]
     (if (> (count today-atts) 0)
-      (let [groups (db/find-by-type db :group {})
-            atts-by-group-id (group-by (comp :db/id :person/group :daily-plan/person) today-atts)
-            sender (db-queries/find-auto-sender-email db)
-            subj (str org-name ": Celkový dnešní počet dětí je " (count today-atts))
-            msg {:from sender
-                 :to (mapv :person/email (db-queries/find-persons-with-role db closing-msg-role))
-                 :subject subj
-                 :body [{:type "text/plain; charset=utf-8"
-                         :content (str subj "\n\n"
-                                       (reduce (fn [out group]
-                                                 (str out (:group/label group) ": " (count (get atts-by-group-id (:db/id group))) "\n"))
-                                               ""
-                                               groups)
-                                       "\n\nToto je automaticky generovaný email ze systému " full-url)}]}]
-        (timbre/info org-name ": sending cancellation closing msg" msg)
-        (timbre/info (postal/send-message msg)))
-      (timbre/info org-name ": no attendance today"))))
+      (emailing/send-today-child-counts db today-atts)
+      (timbre/info (:org-name (d/pull db '[*] :liskasys/config)) ": no attendance today"))))
