@@ -25,7 +25,7 @@
        (->> (vals daily-plans)
             (filter #(and
                       (= date (:daily-plan/date %))
-                      (= group-id (some->> % :daily-plan/person :db/id (get persons) :person/group :db/id))))
+                      (= group-id (some->> % :daily-plan/group :db/id))))
             (sort-by #(some->> % :daily-plan/person :db/id (get persons) (cljc.util/person-fullname))))))))
 
 (defn page-class-registers []

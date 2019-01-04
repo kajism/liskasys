@@ -69,7 +69,7 @@
                                 [:a {:href (str "#/person/" (get-in row [:daily-plan/person :db/id]) "e")}
                                  value]
                                 value)])}
-                 ["Třída" #(some->> % :daily-plan/person :db/id (get @persons):person/group :db/id (get @groups) :group/label)]
+                 ["Třída" #(some->> % :daily-plan/group :db/id (get @groups) :group/label)]
                  #_["Docházka" #(cljc.util/child-att->str (:daily-plan/child-att %))]
                  ["Omluvena?" (fn [row]
                                 (if (->> row :daily-plan/person :db/id (get @persons) :person/child?)
@@ -90,6 +90,7 @@
 (defn page-daily-plan []
   (let [daily-plan (re-frame/subscribe [:entity-edit :daily-plan])
         persons (re-frame/subscribe [:entities :person])
+        groups (re-frame/subscribe [:entities :group])
         daily-plans (re-frame/subscribe [:entities :daily-plan])
         user (re-frame/subscribe [:auth-user])]
     (fn []
@@ -115,12 +116,22 @@
            :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/date (time/from-dMyyyy %)])
            :validation-regex #"^\d{0,2}$|^\d{0,2}\.\d{0,2}$|^\d{0,2}\.\d{0,2}\.\d{0,4}$"
            :width "100px"]
+          [re-com/label :label "Třída"]
+          [re-com/single-dropdown
+           :model (get-in item [:daily-plan/group :db/id])
+           :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/group {:db/id %}])
+           :choices (->> @groups
+                         (vals)
+                         (util/sort-by-locale :group/label))
+           :id-fn :db/id
+           :label-fn :group/label
+           :width "250px"]
           [re-com/label :label "Osoba"]
           [re-com/single-dropdown
            :model (get-in item [:daily-plan/person :db/id])
            :on-change #(re-frame/dispatch [:entity-change :daily-plan (:db/id item) :daily-plan/person {:db/id %}])
            :choices (->> @persons
-                         vals
+                         (vals)
                          (filter :person/active?)
                          (util/sort-by-locale cljc.util/person-fullname))
            :id-fn :db/id
@@ -193,7 +204,7 @@
             (when (:db/id item)
               [re-com/hyperlink-href
                :href (str "#/daily-plan/e")
-               :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan (select-keys item [:daily-plan/person])])]])
+               :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan (select-keys item [:daily-plan/person :daily-plan/group])])]])
             [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/daily-plans")]]]
           [history/view (:db/id item)]]]))))
 

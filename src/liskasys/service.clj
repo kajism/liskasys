@@ -114,7 +114,7 @@
 (defn- process-substitutions [conn date]
   (let [db (d/db conn)
         daily-plans (db-queries/find-daily-plans-by-date db date)
-        dps-by-group (group-by (comp :db/id :person/group :daily-plan/person) daily-plans)
+        dps-by-group (group-by #(get-in % [:daily-plan/group :db/id])  daily-plans)
         group-results (keep (fn [group]
                               (prepare-group-substs group (get dps-by-group (:db/id group))))
                             (db/find-by-type db :group {}))

@@ -475,6 +475,11 @@
            :db/valueType :db.type/boolean
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/ident :daily-plan/group
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]]}
  :liskasys/group
  {:txes [[{:db/ident :group/label

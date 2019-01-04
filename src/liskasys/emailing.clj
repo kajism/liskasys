@@ -118,7 +118,7 @@
 (defn send-today-child-counts [db today-atts]
   (let [{:config/keys [org-name full-url closing-msg-role]} (d/pull db '[*] :liskasys/config)]
     (let [groups (db/find-by-type db :group {})
-          atts-by-group-id (group-by (comp :db/id :person/group :daily-plan/person) today-atts)
+          atts-by-group-id (group-by #(get-in % [:daily-plan/group :db/id]) today-atts)
           subj (str org-name ": Celkový dnešní počet dětí je " (count today-atts))
           msg {:from (db-queries/find-auto-sender-email db)
                :to (mapv :person/email (db-queries/find-persons-with-role db closing-msg-role))

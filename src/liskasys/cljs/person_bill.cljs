@@ -114,7 +114,7 @@
           [re-com/label :label "Stav"]
           [re-com/single-dropdown
            :model (some-> item :person-bill/status :db/ident)
-           :on-change #(re-frame/dispatch [:entity-change :person-bill (:db/id item) :person-bill/status %])
+           :on-change #(re-frame/dispatch [:entity-change :person-bill (:db/id item) :person-bill/status {:db/ident % :db/id %}])
            :choices [{:id :person-bill.status/new
                       :label "nový"}
                      {:id :person-bill.status/published

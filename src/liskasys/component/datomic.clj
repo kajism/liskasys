@@ -17,6 +17,27 @@
                conn (d/connect uri)]
            (timbre/info server-name "connected to datomic DB" db-name ", going to run conformity")
            (conformity/ensure-conforms conn norms-map)
+
+           (let [db (d/db conn)]
+             (when (empty? (d/q '[:find ?e :where [?e :daily-plan/group]] db))
+               (timbre/info server-name "adding historical daily-plan/group relation")
+               (->> (d/q '[:find ?e ?tx
+                           :in $
+                           :where [?e :daily-plan/date _ ?tx true] ]
+                         db)
+                    (map (fn [[dpid txid]]
+                           (let [tx-db (d/as-of db txid)]
+                             (d/q '[:find ?e ?g
+                                    :in $ ?e
+                                    :where
+                                    [?e :daily-plan/person ?p]
+                                    [?p :person/group ?g]]
+                                  tx-db dpid))))
+                    (keep (fn [s]
+                            (when-let [[dp gr] (first s)]
+                              [:db/add dp :daily-plan/group gr])))
+                    (d/transact conn))))
+
            (assoc-in out [:conns server-name] conn)))
        component
        config/dbs)))

@@ -151,7 +151,7 @@
        (* half-days-count (:price-list/half-day price-list)))))
 
 (defn- generate-daily-plans
-  [{:person/keys [lunch-pattern att-pattern start-date] person-id :db/id :as person} dates]
+  [{:person/keys [lunch-pattern att-pattern start-date group] person-id :db/id :as person} dates]
   (let [lunch-map (pattern-map lunch-pattern)
         att-map (pattern-map att-pattern)
         start-date (tc/to-local-date (or start-date #inst "2000"))]
@@ -163,7 +163,8 @@
                        child-att (get att-map day-of-week 0)]
                    (when (or (pos? lunch-req) (pos? child-att))
                      (cond-> {:daily-plan/person person-id
-                              :daily-plan/date (tc/to-date ld)}
+                              :daily-plan/date (tc/to-date ld)
+                              :daily-plan/group (:db/id group)}
                        (pos? lunch-req)
                        (assoc :daily-plan/lunch-req lunch-req)
                        (pos? child-att)
@@ -258,8 +259,10 @@
 (defn set-bill-as-paid [conn user-id bill-id]
   (let [db (d/db conn)
         [[period-id bill]]
-        (d/q '[:find ?period-id (pull ?e [*
-                                          {:person-bill/person [:db/id :person/lunch-pattern :person/att-pattern :person/lunch-fund :person/start-date]}])
+        (d/q '[:find ?period-id
+               (pull ?e [* {:person-bill/person
+                            [:db/id :person/lunch-pattern :person/att-pattern
+                             :person/lunch-fund :person/start-date :person/group]}])
                :in $ ?e
                :where
                [?e :person-bill/period ?period-id]
