@@ -91,45 +91,48 @@
   (->> (new-lunch-order-ent date nil)
        (db/transact-entity conn nil)))
 
-(defn- prepare-group-substs [group group-plans]
-  (when (seq group-plans)
+(defn- daily-summary [group group-dps]
+  (when (seq group-dps)
     (let [max-group-capacity (or (:group/max-capacity group)
-                                 (count group-plans))
-          [going not-going] (->> group-plans
+                                 (count group-dps))
+          [going not-going] (->> group-dps
                                  (filter cljc.util/daily-plan-attendance?)
                                  (sort-by :daily-plan/subst-req-on)
                                  (split-at (max max-group-capacity
-                                                (->> group-plans
+                                                (->> group-dps
                                                      (filter cljc.util/daily-plan-attendance?)
                                                      (remove :daily-plan/subst-req-on)
                                                      (count)))))]
       {:group group
        :not-going not-going
        :going going
-       :cancelled (filter :daily-plan/att-cancelled? group-plans)
-       :other-lunches (->> group-plans
+       :cancelled (filter :daily-plan/att-cancelled? group-dps)
+       :other-lunches (->> group-dps
                            (remove cljc.util/daily-plan-attendance?)
                            (filter cljc.util/daily-plan-lunch?))})))
 
+(defn- prepare-daily-summaries [db date]
+  (let [dps-by-group-id (->> (db-queries/find-daily-plans-by-date db date)
+                             (group-by #(get-in % [:daily-plan/group :db/id])))]
+    (keep (fn [group]
+            (daily-summary group (get dps-by-group-id (:db/id group))))
+          (db/find-by-type db :group {}))))
+
 (defn- process-substitutions [conn date]
   (let [db (d/db conn)
-        daily-plans (db-queries/find-daily-plans-by-date db date)
-        dps-by-group (group-by #(get-in % [:daily-plan/group :db/id])  daily-plans)
-        group-results (keep (fn [group]
-                              (prepare-group-substs group (get dps-by-group (:db/id group))))
-                            (db/find-by-type db :group {}))
-        send-substitution-result-mail (emailing/make-substitution-result-sender db)]
+        daily-summaries (prepare-daily-summaries db date)
+        send-substitution-result-to-parents (emailing/make-substitution-result-sender db)]
 
-    (doseq [{:keys [not-going going]} group-results]
+    (doseq [{:keys [not-going going]} daily-summaries]
       (db/transact conn nil (mapv #(-> [:db.fn/retractEntity (:db/id %)])
                                   not-going))
       (doseq [daily-plan not-going]
-        (send-substitution-result-mail daily-plan false))
+        (send-substitution-result-to-parents daily-plan false))
 
       (doseq [daily-plan (filter :daily-plan/subst-req-on going)]
-        (send-substitution-result-mail daily-plan true)))
+        (send-substitution-result-to-parents daily-plan true)))
 
-    (emailing/send-daily-summary db date group-results)))
+    (emailing/send-daily-summary db date daily-summaries)))
 
 (defn- lunch-order-tx-total [date price-list plans-with-lunches]
   (let [out
