@@ -36,6 +36,7 @@
                  [ring-middleware-format "0.7.0"]
                  [crypto-password "0.2.0"]
                  [twarc "0.1.9"]
+                 [prismatic/plumbing "0.5.5"] ;; old used by twarc causing problems
                  [com.draines/postal "2.0.1"]
                  [io.rkn/conformity "0.4.0"]
                  [cz.geek/geek-spayd "0.2.0"]]
