@@ -174,8 +174,7 @@
 
 (defn process-cancellation-closing [conn]
   (let [db (d/db conn)
-        today (time/today)
-        today-atts (->> (db-queries/find-att-daily-plans db today today)
+        today-atts (->> (db-queries/find-att-daily-plans db (time/today))
                         (remove :daily-plan/att-cancelled?))]
     (if (> (count today-atts) 0)
       (emailing/send-today-child-counts db today-atts)

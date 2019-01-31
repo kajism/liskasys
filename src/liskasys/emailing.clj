@@ -17,7 +17,8 @@
   (let [result (postal/send-message msg)]
     (if (zero? (:code result))
       (timbre/info org-name ": email sent" result)
-      (timbre/error org-name ": failed to send email" result))))
+      (timbre/error org-name ": failed to send email" result)))
+  msg)
 
 (defn- lunch-counts-by-diet-label [diet-labels-by-id plans-with-lunches]
   (->> plans-with-lunches
@@ -26,7 +27,7 @@
               [(get diet-labels-by-id diet-id) (reduce + 0 (keep :daily-plan/lunch-req dps))]))
        (util/sort-by-locale first)))
 
-(defn- all-diet-labels-by-id [lunch-types]
+(defn all-diet-labels-by-id [lunch-types]
   (->> lunch-types
        (into [{:db/id nil :lunch-type/label "běžná"}])
        (map (juxt :db/id :lunch-type/label))
@@ -133,7 +134,7 @@
                                daily-summaries)]
     (send-message org-name msg)))
 
-(defn- today-child-counts-msg [from tos {:config/keys [org-name full-url]} groups today-att-dps]
+(defn today-child-counts-msg [from tos {:config/keys [org-name full-url]} groups today-att-dps]
   (let [subj (str org-name ": Celkový dnešní počet dětí je " (count today-att-dps))
         atts-by-group-id (group-by #(get-in % [:daily-plan/group :db/id]) today-att-dps)]
     {:from from

@@ -97,17 +97,21 @@
           db person-id date-from date-to)
      (sort-by :daily-plan/date))))
 
-(defn find-att-daily-plans [db date-from date-to]
-  (when (and date-from date-to)
-    (d/q '[:find [(pull ?e [* {:daily-plan/person [:db/id :person/group]}]) ...]
-           :in $ ?date-from ?date-to
-           :where
-           (or [?e :daily-plan/child-att 1]
-               [?e :daily-plan/child-att 2])
-           [?e :daily-plan/date ?date]
-           [(<= ?date-from ?date)]
-           [(<= ?date ?date-to)]]
-         db date-from date-to)))
+(defn find-att-daily-plans
+  "Finds all daily plans of a given date on in a range of dates from (inclusive) to (inclusive)"
+  ([db date]
+   (find-att-daily-plans db date date))
+  ([db date-from date-to]
+   (when (and date-from date-to)
+     (d/q '[:find [(pull ?e [* {:daily-plan/person [:db/id :person/group]}]) ...]
+            :in $ ?date-from ?date-to
+            :where
+            (or [?e :daily-plan/child-att 1]
+                [?e :daily-plan/child-att 2])
+            [?e :daily-plan/date ?date]
+            [(<= ?date-from ?date)]
+            [(<= ?date ?date-to)]]
+          db date-from date-to))))
 
 (defn find-next-school-day-date [db from-date]
   (d/q '[:find (min ?date) .
@@ -325,11 +329,11 @@
                                          (not (:daily-plan/subst-req-on %))
                                          (not (:daily-plan/refund? %)))))
         all-plans (find-att-daily-plans db
-                                                (some-> (find-max-lunch-order-date db)
-                                                        (tc/to-local-date)
-                                                        (t/plus (t/days 1))
-                                                        (tc/to-date))
-                                                max-paid-date)]
+                                        (some-> (find-max-lunch-order-date db)
+                                                (tc/to-local-date)
+                                                (t/plus (t/days 1))
+                                                (tc/to-date))
+                                        max-paid-date)]
     (timbre/debug "finding-person-substs from" date-from "to" max-paid-date "all plans count" (count all-plans))
     {:group group
      :substable-dps substable-dps
