@@ -19,3 +19,4 @@ figwheel_server.log
 /db-dump*
 .idea/
 liskasys.iml
+emailing_integration_test.clj
