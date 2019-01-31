@@ -20,12 +20,13 @@
       (timbre/error org-name ": failed to send email" result)))
   msg)
 
-(defn- lunch-counts-by-diet-label [diet-labels-by-id plans-with-lunches]
+(defn lunch-counts-by-diet-label [diet-labels-by-id plans-with-lunches]
   (->> plans-with-lunches
        (group-by (comp :db/id :person/lunch-type :daily-plan/person))
        (map (fn [[diet-id dps]]
               [(get diet-labels-by-id diet-id) (reduce + 0 (keep :daily-plan/lunch-req dps))]))
-       (util/sort-by-locale first)))
+       (util/sort-by-locale first)
+       (into {})))
 
 (defn all-diet-labels-by-id [lunch-types]
   (->> lunch-types
@@ -33,7 +34,7 @@
        (map (juxt :db/id :lunch-type/label))
        (into {})))
 
-(defn- lunch-order-msg [from tos org-name diet-labels-by-id date plans-with-lunches]
+(defn lunch-order-msg [from tos org-name diet-labels-by-id date plans-with-lunches]
   (let [subj (str org-name ": Objednávka obědů na " (time/format-day-date date))
         plans-by-child? (group-by #(boolean (get-in % [:daily-plan/person :person/child?])) plans-with-lunches)]
     {:from from
@@ -71,7 +72,7 @@
                              plans-with-lunches)]
     (send-message org-name msg)))
 
-(defn- name-att-diet-str [{:daily-plan/keys [person child-att] :as dp}]
+(defn name-att-diet-str [{:daily-plan/keys [person child-att] :as dp}]
   (str (cljc.util/person-fullname person)
        (when (= child-att 2)
          ", půldenní")
@@ -80,12 +81,12 @@
          (when-let [diet-label (some-> person :person/lunch-type :lunch-type/label)]
            (str ", strava " diet-label)))))
 
-(defn- name-excuse-str [{:daily-plan/keys [person excuse]}]
+(defn name-excuse-str [{:daily-plan/keys [person excuse]}]
   (str (cljc.util/person-fullname person)
        (when-not (str/blank? excuse)
          (str ", " excuse))))
 
-(defn- group-daily-summary-text [{:keys [group going not-going cancelled other-lunches]}]
+(defn group-daily-summary-text [{:keys [group going not-going cancelled other-lunches]}]
   (str (:group/label group) " (" (count going) ")"
        "\n===========================================\n\n"
        (when-let [xs (not-empty (->> going
@@ -112,7 +113,7 @@
          (str "\n\nNáhradníci, kteří se nevešli (" (count xs) ") ------\n" (str/join "\n" xs)))
        "\n\n"))
 
-(defn- daily-summary-msg [from tos {:config/keys [org-name full-url]} date daily-summaries]
+(defn daily-summary-msg [from tos {:config/keys [org-name full-url]} date daily-summaries]
   (let [subj (str org-name ": Denní souhrn na " (time/format-day-date date) " ("
                   (->> daily-summaries (map #(count (:going %))) (reduce +)) " dětí)")]
     {:from from
@@ -158,7 +159,7 @@
                                     today-att-dps)]
     (send-message org-name msg)))
 
-(defn- bill-published-msg [from {:config/keys [org-name full-url]} bank-account payment-due-to {:person-bill/keys [total person period]}]
+(defn bill-published-msg [from {:config/keys [org-name full-url]} bank-account payment-due-to {:person-bill/keys [total person period]}]
   (let [period-text (cljc.util/period->text period)
         subj (str org-name ": Platba školkovného a obědů na období " period-text)]
     {:from from
@@ -190,7 +191,7 @@
                                     bill)]
         (send-message org-name msg)))))
 
-(defn- substitution-result-msg [from {:config/keys [org-name full-url]} {:daily-plan/keys [person child-att] :as dp} going?]
+(defn substitution-result-msg [from {:config/keys [org-name full-url]} {:daily-plan/keys [person child-att] :as dp} going?]
   {:from from
    :to (mapv :person/email (:person/parent person))
    :subject (str org-name ": " (if going?
