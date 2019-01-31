@@ -133,9 +133,9 @@
                                daily-summaries)]
     (send-message org-name msg)))
 
-(defn- today-child-counts-msg [from tos {:config/keys [org-name full-url]} groups today-atts]
-  (let [subj (str org-name ": Celkový dnešní počet dětí je " (count today-atts))
-        atts-by-group-id (group-by #(get-in % [:daily-plan/group :db/id]) today-atts)]
+(defn- today-child-counts-msg [from tos {:config/keys [org-name full-url]} groups today-att-dps]
+  (let [subj (str org-name ": Celkový dnešní počet dětí je " (count today-att-dps))
+        atts-by-group-id (group-by #(get-in % [:daily-plan/group :db/id]) today-att-dps)]
     {:from from
      :to tos
      :subject subj
@@ -148,13 +148,13 @@
                                    groups)
                            footer-text full-url)}]}))
 
-(defn send-today-child-counts [db today-atts]
+(defn send-today-child-counts [db today-att-dps]
   (let [{:config/keys [org-name closing-msg-role] :as config} (d/pull db '[*] :liskasys/config)
         msg (today-child-counts-msg (db-queries/find-auto-sender-email db)
                                     (mapv :person/email (db-queries/find-persons-with-role db closing-msg-role))
                                     config
                                     (db/find-by-type db :group {})
-                                    today-atts)]
+                                    today-att-dps)]
     (send-message org-name msg)))
 
 (defn- bill-published-msg [from {:config/keys [org-name full-url]} bank-account payment-due-to {:person-bill/keys [total person period]}]

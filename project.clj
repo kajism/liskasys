@@ -36,7 +36,6 @@
                  [ring-middleware-format "0.7.0"]
                  [crypto-password "0.2.0"]
                  [twarc "0.1.9"]
-                 [binaryage/devtools "0.9.10"]
                  [com.draines/postal "2.0.1"]
                  [io.rkn/conformity "0.4.0"]
                  [cz.geek/geek-spayd "0.2.0"]]
@@ -66,7 +65,8 @@
    :uberjar {:aot :all}
    :profiles/dev  {}
    :profiles/test {}
-   :project/dev   {:dependencies [[com.cemerick/piggieback "0.2.1"]
+   :project/dev   {:dependencies [[binaryage/devtools "0.9.10"]
+                                  [com.cemerick/piggieback "0.2.1"]
                                   [duct/figwheel-component "0.3.2"]
                                   #_[eftest "0.1.1"]
                                   [figwheel "0.5.14"]

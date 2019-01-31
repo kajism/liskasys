@@ -1,6 +1,5 @@
 (ns liskasys.cljs.core
   (:require [clojure.string :as str]
-            [devtools.core :as devtools]
             [goog.events :as events]
             [goog.history.EventType :as EventType]
             [liskasys.cljs.ajax]
@@ -27,10 +26,6 @@
             [secretary.core :as secretary]
             [taoensso.timbre :as timbre])
   (:import goog.History))
-
-(devtools/install!)
-
-(enable-console-print!)
 
 (re-frame/reg-sub
  :auth-user

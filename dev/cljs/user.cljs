@@ -1,8 +1,11 @@
 (ns cljs.user
-  (:require [figwheel.client :as figwheel]
-            liskasys.cljs.core))
+  (:require [devtools.core :as devtools]
+            [figwheel.client :as figwheel]
+            [liskasys.cljs.core]))
 
 (js/console.info "Starting in development mode")
+
+(devtools/install!)
 
 (enable-console-print!)
 
