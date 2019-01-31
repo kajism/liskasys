@@ -292,7 +292,12 @@
            :school-holiday/label "Vánoční prázdniny"
            :school-holiday/from #inst "2016-12-27"
            :school-holiday/to #inst "2016-12-31"
-           :school-holiday/every-year? true}]]}
+           :school-holiday/every-year? true}]
+         [{:db/ident :school-holiday/higher-schools-only?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
  :liskasys/price-list
  {:txes [[{:db/ident :price-list/days-1
            :db/valueType :db.type/long

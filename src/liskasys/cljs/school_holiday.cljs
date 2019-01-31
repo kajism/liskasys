@@ -46,7 +46,8 @@
                  ["Název" :school-holiday/label]
                  ["Od" :school-holiday/from]
                  ["Do" :school-holiday/to]
-                 ["Každoročně?" :school-holiday/every-year?]]
+                 ["Každoročně?" :school-holiday/every-year?]
+                 ["Pouze vyšší?" :school-holiday/higher-schools-only?]]
          :order-by 2]]])))
 
 (defn page-school-holiday []
@@ -77,6 +78,10 @@
           [re-com/checkbox
            :model (:school-holiday/every-year? item)
            :on-change #(re-frame/dispatch [:entity-change :school-holiday (:db/id item) :school-holiday/every-year? %])]
+          [re-com/label :label "Pouze vyšší školy? (mateřské fungují, ale bez možnosti náhrad)"]
+          [re-com/checkbox
+           :model (:school-holiday/higher-schools-only? item)
+           :on-change #(re-frame/dispatch [:entity-change :school-holiday (:db/id item) :school-holiday/higher-schools-only? %])]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :school-holiday])]

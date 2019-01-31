@@ -111,7 +111,7 @@
                            (remove cljc.util/daily-plan-attendance?)
                            (filter cljc.util/daily-plan-lunch?))})))
 
-(defn- prepare-daily-summaries [db date]
+(defn prepare-daily-summaries [db date]
   (let [dps-by-group-id (->> (db-queries/find-daily-plans-by-date db date)
                              (group-by #(get-in % [:daily-plan/group :db/id])))]
     (keep (fn [group]

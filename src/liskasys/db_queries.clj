@@ -206,12 +206,17 @@
 (defn- school-holiday? [school-holidays local-date]
   (seq (filter #(*school-holiday? % local-date) school-holidays)))
 
-(defn make-holiday?-fn [db]
-  (let [bank-holidays (db/find-by-type db :bank-holiday {})
-        school-holidays (db/find-by-type db :school-holiday {})]
-    (fn [ld]
-      (or (bank-holiday? bank-holidays ld)
-          (school-holiday? school-holidays ld)))))
+(defn make-holiday?-fn
+  ([db]
+   (make-holiday?-fn db false))
+  ([db higher-school?]
+   (let [bank-holidays (db/find-by-type db :bank-holiday {})
+         school-holidays (cond->> (db/find-by-type db :school-holiday {})
+                           (not higher-school?)
+                           (remove :school-holiday/higher-schools-only?))]
+     (fn [ld]
+       (or (bank-holiday? bank-holidays ld)
+           (school-holiday? school-holidays ld))))))
 
 (defn- days-to-go [db excl-from incl-to]
   (let [{:config/keys [order-workdays-only?]} (d/pull db '[*] :liskasys/config)]
@@ -328,28 +333,30 @@
                                          (not (:daily-plan/substituted-by %))
                                          (not (:daily-plan/subst-req-on %))
                                          (not (:daily-plan/refund? %)))))
-        all-plans (find-att-daily-plans db
-                                        (some-> (find-max-lunch-order-date db)
-                                                (tc/to-local-date)
-                                                (t/plus (t/days 1))
-                                                (tc/to-date))
-                                        max-paid-date)]
-    (timbre/debug "finding-person-substs from" date-from "to" max-paid-date "all plans count" (count all-plans))
+        all-next-dps (find-att-daily-plans db
+                                           (some-> (find-max-lunch-order-date db)
+                                                   (tc/to-local-date)
+                                                   (t/plus (t/days 1))
+                                                   (tc/to-date))
+                                           max-paid-date)
+        higher-schools-holiday-ld? (make-holiday?-fn db true)]
+    (timbre/debug "finding-person-substs from" date-from "to" max-paid-date "all plans count" (count all-next-dps))
     {:group group
      :substable-dps substable-dps
-     :dp-gap-days (->> all-plans
+     :dp-gap-days (->> all-next-dps
                        (group-by :daily-plan/date)
                        (reduce (fn [out [date plans]]
-                                 (if (some #(and (= person-id (get-in % [:daily-plan/person :db/id]))
-                                                 (not (:daily-plan/subst-req-on %)))
-                                           plans)
+                                 (if (or (higher-schools-holiday-ld? (tc/to-local-date date))
+                                      (some #(and (= person-id (get-in % [:daily-plan/person :db/id]))
+                                                  (not (:daily-plan/subst-req-on %)))
+                                            plans))
                                    out
                                    (->> plans
                                         (remove #(:daily-plan/att-cancelled? %))
                                         (assoc out date))))
                                (sorted-map)))
      :can-subst? (and (not-empty substable-dps)
-                      (->> all-plans
+                      (->> all-next-dps
                            (filter #(and (= person-id (get-in % [:daily-plan/person :db/id]))
                                          (:daily-plan/subst-req-on %)))
                            (count)
