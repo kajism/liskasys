@@ -16,7 +16,8 @@
 (def dev-config
   {:app {:middleware [wrap-stacktrace]}
    :figwheel
-   {:css-dirs ["resources/liskasys/public/css"]
+   {:server-port 2449
+    :css-dirs ["resources/liskasys/public/css"]
     :builds   [{:source-paths ["src" "dev"]
                 :build-options
                 {:optimizations :none

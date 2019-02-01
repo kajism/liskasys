@@ -9,4 +9,4 @@
 
 (enable-console-print!)
 
-(figwheel/start {:websocket-url (str "ws://" (.-hostname js/location) ":3449/figwheel-ws")})
+(figwheel/start {:websocket-url (str "ws://" (.-hostname js/location) ":2449/figwheel-ws")})

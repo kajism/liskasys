@@ -2,7 +2,7 @@
   :description "Web information, attendance and lunch cancelation/ordering system for a forest kidergarten"
   :url "https://github.com/kajism/liskasys"
   :min-lein-version "2.0.0"
-  :jvm-opts ["-Duser.timezone=UTC"]
+  :jvm-opts ["-Duser.timezone=UTC" "-XX:-OmitStackTraceInFastThrow"]
   :dependencies [[cljs-ajax "0.5.2"]
                  [org.apache.httpcomponents/httpclient "4.5.1"]
                  [org.clojure/clojure "1.10.0"]
