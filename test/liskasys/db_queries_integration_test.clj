@@ -6,6 +6,12 @@
 
 (def db (d/as-of (d/db (d/connect "datomic:free://localhost:4334/liskasys"))
                  #inst "2019-02-01"))
+(def Oli [:person/var-symbol 140906])
+(def Fanda [:person/var-symbol 170018])
+
+(deftest find-max-lunch-order-date-test
+  (is (= #inst "2019-02-01"
+         (find-max-lunch-order-date db))))
 
 (deftest make-holiday?-fn-test
   (testing "higher school"
@@ -30,6 +36,32 @@
 
       ;; higher schools only
       (is (nil? (holiday-ld? (t/local-date 2019 02 11)))))))
+
+(deftest find-max-person-paid-period-date-test
+  (is (= #inst "2018-06-30"
+         (find-max-person-paid-period-date db Oli)))
+  (is (= #inst "2019-04-30"
+         (find-max-person-paid-period-date db Fanda))))
+
+(deftest find-school-year-previous-periods-test
+  (let [expected-previous-periods [{:db/id 17592186067324,
+                                    :billing-period/from-yyyymm 201811,
+                                    :billing-period/to-yyyymm 201812}
+                                   {:db/id 17592186064383,
+                                    :billing-period/from-yyyymm 201809,
+                                    :billing-period/to-yyyymm 201810}]]
+    (is (= expected-previous-periods
+           (find-school-year-previous-periods db #inst "2019-01-01")))
+    (is (= expected-previous-periods
+           (find-school-year-previous-periods db #inst "2019-01-30")))
+    (is (= expected-previous-periods
+           (find-school-year-previous-periods db #inst "2019-02-01")))
+    (is (= []
+           (find-school-year-previous-periods db #inst "2020-02-01")))
+    (is (= [{:db/id 17592186064383,
+             :billing-period/from-yyyymm 201809,
+             :billing-period/to-yyyymm 201810}]
+           (find-school-year-previous-periods db #inst "2018-12-31")))))
 
 (deftest find-person-substs-test
   (let [substs (find-person-substs db 17592186065839)]

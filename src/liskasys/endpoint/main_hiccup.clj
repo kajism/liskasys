@@ -153,10 +153,12 @@ return true;
           (for [[date plans] dp-gap-days
                 :let [date-str (time/to-format date time/ddMMyyyy)
                       my-subst (->> plans
-                                    (filter #(= (:selected-id user-children-data) (get-in % [:daily-plan/person :db/id])))
+                                    (filter #(= (:selected-id user-children-data)
+                                                (get-in % [:daily-plan/person :db/id])))
                                     (first))
                       group-plans (->> plans
-                                       (filter #(= (:db/id group) (get-in % [:daily-plan/group :db/id]))))]]
+                                       (filter #(= (:db/id group)
+                                                   (get-in % [:daily-plan/group :db/id]))))]]
             [:tr
              [:td [:label (time/format-day-date date)]]
              [:td (- (or (:group/max-capacity group) 0) (count group-plans))]
