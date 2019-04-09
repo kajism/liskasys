@@ -81,8 +81,9 @@
     (quot cents 100)))
 
 (defn to-cents [units]
-  (when-not (str/blank? units)
-    (* (parse-int units) 100)))
+  (if-not (str/blank? units)
+    (* (parse-int units) 100)
+    0))
 
 (defn zero-patterns? [{:keys [:person/lunch-pattern :person/att-pattern] :as person}]
   (and (or (str/blank? lunch-pattern) (= (set (seq lunch-pattern)) #{\0}))
