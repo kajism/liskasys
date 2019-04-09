@@ -61,7 +61,7 @@
       (let [item @price-list]
         [re-com/v-box :gap "5px"
          :children
-         [[:h3 "Ceník a platba"]
+         [[:h3 "Ceník a měsíční platba"]
           [re-com/label :label "5 dní"]
           [re-com/input-text
            :model (from-cents (:price-list/days-5 item))
