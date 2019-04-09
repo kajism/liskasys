@@ -61,50 +61,50 @@
       (let [item @price-list]
         [re-com/v-box :gap "5px"
          :children
-         [[:h3 "Ceník a měsíční platba"]
-          [re-com/label :label "5 dní"]
+         [[:h3 "Ceník a platba"]
+          [re-com/label :label "Měsíčně Kč za celotýdenní"]
           [re-com/input-text
            :model (from-cents (:price-list/days-5 item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-5 (cljc.util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
-          [re-com/label :label "4 dny"]
+          [re-com/label :label "Měsíčně Kč za 4 dny z týdne"]
           [re-com/input-text
            :model (from-cents (:price-list/days-4 item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-4 (cljc.util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
-          [re-com/label :label "3 dny"]
+          [re-com/label :label "Měsíčně Kč za 3 dny z týdne"]
           [re-com/input-text
            :model (from-cents (:price-list/days-3 item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-3 (cljc.util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
-          [re-com/label :label "2 dny"]
+          [re-com/label :label "Měsíčně Kč za 2 dny z týdne"]
           [re-com/input-text
            :model (from-cents (:price-list/days-2 item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-2 (cljc.util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
-          [re-com/label :label "1 den"]
+          [re-com/label :label "Měsíčně Kč za 1 den z týdne"]
           [re-com/input-text
            :model (from-cents (:price-list/days-1 item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/days-1 (cljc.util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
-          [re-com/label :label "Půldenní"]
+          [re-com/label :label "1 půlden"]
           [re-com/input-text
            :model (from-cents (:price-list/half-day item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/half-day (cljc.util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
-          [re-com/label :label "Oběd dětský"]
+          [re-com/label :label "1 oběd dětský"]
           [re-com/input-text
            :model (from-cents (:price-list/lunch item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/lunch (cljc.util/to-cents %)])
            :validation-regex #"^\d{0,4}$"
            :width "120px"]
-          [re-com/label :label "Oběd dospělý"]
+          [re-com/label :label "1 oběd dospělý"]
           [re-com/input-text
            :model (from-cents (:price-list/lunch-adult item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/lunch-adult (cljc.util/to-cents %)])
