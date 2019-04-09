@@ -14,7 +14,8 @@
             [taoensso.timbre :as timbre]))
 
 (defn page-price-lists []
-  (let [price-lists (re-frame/subscribe [:entities :price-list])]
+  (let [price-lists (re-frame/subscribe [:entities :price-list])
+        user (re-frame/subscribe [:auth-user])]
     (fn []
       [re-com/v-box
        :children
@@ -37,7 +38,8 @@
                        :label [re-com/md-icon-button
                                :md-icon-name "zmdi-edit"
                                :tooltip "Editovat"]]
-                      #_[buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])]]])
+                      (when (contains? (:-roles @user) "superadmin")
+                        [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])])]])
                   :none]
                  ["5 dní" (comp cljc.util/from-cents :price-list/days-5)]
                  ["4 dny" (comp cljc.util/from-cents :price-list/days-4)]
