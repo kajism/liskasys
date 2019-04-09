@@ -10,7 +10,7 @@
                  [org.clojure/core.async "0.4.490"]
                  [org.clojure/core.cache "0.6.5"]
                  [org.clojure/core.memoize "0.5.9"]
-                 [org.clojure/tools.nrepl "0.2.13"]
+                 [nrepl "0.6.0"]
                  [clj-time "0.12.0"]
                  [com.andrewmcveigh/cljs-time "0.5.2"]
                  [com.cognitect/transit-clj "0.8.313"]
@@ -67,8 +67,8 @@
    :profiles/dev  {}
    :profiles/test {}
    :project/dev   {:dependencies [[binaryage/devtools "0.9.10"]
-                                  [com.cemerick/piggieback "0.2.1"]
-                                  [duct/figwheel-component "0.3.2"]
+                                  [cider/piggieback "0.4.0"]
+                                  [duct/figwheel-component "0.3.4"]
                                   #_[eftest "0.1.1"]
                                   [figwheel "0.5.14"]
                                   [kerodon "0.7.0"]
@@ -78,7 +78,7 @@
                                   #_[day8.re-frame/re-frame-10x "0.3.6"]]
                    :source-paths ["dev"]
                    :repl-options {:init-ns user
-                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+                                  :nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
                    :env {:dev "true"
                          :port "3000"
                          :datomic-uri "datomic:free://localhost:4334/"
