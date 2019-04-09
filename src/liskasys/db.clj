@@ -12,7 +12,7 @@
    :lunch-order :lunch-order/date
    :lunch-type :lunch-type/label
    :person :person/active?
-   :price-list :price-list/days-5
+   :price-list :price-list/days-1
    :person-bill :person-bill/total
    :school-holiday :school-holiday/label
    :group :group/label
