@@ -164,8 +164,9 @@
                        child-att (get att-map day-of-week 0)]
                    (when (or (pos? lunch-req) (pos? child-att))
                      (cond-> {:daily-plan/person person-id
-                              :daily-plan/date (tc/to-date ld)
-                              :daily-plan/group (:db/id group)}
+                              :daily-plan/date (tc/to-date ld)}
+                       (:db/id group)
+                       (assoc :daily-plan/group (:db/id group))
                        (pos? lunch-req)
                        (assoc :daily-plan/lunch-req lunch-req)
                        (pos? child-att)
