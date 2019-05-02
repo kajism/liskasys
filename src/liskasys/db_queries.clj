@@ -318,9 +318,7 @@
   ([db person-id]
    (find-person-substs db person-id (time/today)))
   ([db person-id at-date]
-   (let [person (db/find-by-id db person-id)
-         group (db/find-by-id db (get-in person [:person/group :db/id]))
-         {:config/keys [max-subst-periods future-subst?]} (d/pull db '[*] :liskasys/config)
+   (let [{:config/keys [max-subst-periods future-subst?]} (d/pull db '[*] :liskasys/config)
          date-from (some-> (or (last (take max-subst-periods (find-school-year-previous-periods db at-date)))
                                (find-current-period db)
                                {:billing-period/from-yyyymm 200001
@@ -344,7 +342,8 @@
                                             max-paid-date)
          higher-schools-holiday-ld? (make-holiday?-fn db true)]
      (timbre/debug "finding-person-substs from" date-from "to" max-paid-date "all plans count" (count all-next-dps))
-     {:group group
+     {:person (db/find-by-id db person-id)
+      :groups (db/find-by-type db :group {})
       :substable-dps substable-dps
       :dp-gap-days (->> all-next-dps
                         (group-by :daily-plan/date)
@@ -355,7 +354,7 @@
                                                 plans))
                                     out
                                     (->> plans
-                                         (remove #(:daily-plan/att-cancelled? %))
+                                         (remove :daily-plan/att-cancelled?)
                                          (assoc out date))))
                                 (sorted-map)))
       :can-subst? (and (not-empty substable-dps)

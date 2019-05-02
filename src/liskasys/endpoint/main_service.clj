@@ -114,7 +114,7 @@
 
 (defn request-substitution [conn user-id child-id req-date]
   (let [db (d/db conn)
-        {:keys [group substable-dps dp-gap-days can-subst?]} (db-queries/find-person-substs db child-id)
+        {:keys [person groups substable-dps dp-gap-days can-subst?]} (db-queries/find-person-substs db child-id)
         db-id (d/tempid :db.part/user)
         substituted (or (->> substable-dps
                              (filter #(= 1 (:daily-plan/child-att %)))
@@ -125,8 +125,9 @@
         lunch-req? (some #(and (some-> % :daily-plan/lunch-req pos?)
                                (= (:daily-plan/child-att %) (:daily-plan/child-att substituted)))
                          substable-dps) ;; if have lunch some day with the same att type
-]
-    (when (and can-subst? (contains? dp-gap-days req-date))
+        plans (get dp-gap-days req-date)
+        {:keys [group group-plans]} (cljc.util/select-group-for-subst plans person groups)]
+    (when (and can-subst? (seq plans))
       (db/transact conn user-id [(cond-> {:db/id db-id
                                           :daily-plan/person child-id
                                           :daily-plan/group (:db/id group)

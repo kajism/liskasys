@@ -120,7 +120,7 @@ return true;
      [:br]
      [:br]]]])
 
-(defn substitutions [user-children-data {:keys [dp-gap-days can-subst? substable-dps group]}]
+(defn substitutions [user-children-data {:keys [dp-gap-days can-subst? substable-dps person groups]}]
   [:div.container
    [:h3 "Náhrady"]
    #_[:label "Omluvenky z předchozího školního roku nelze nahrazovat v novém. Náhrady pro nový školni rok budou zprovozněny zhruba do poloviny září, po úpravách systému zohledňujících zařazení dětí do tříd."]]
@@ -156,9 +156,7 @@ return true;
                                     (filter #(= (:selected-id user-children-data)
                                                 (get-in % [:daily-plan/person :db/id])))
                                     (first))
-                      group-plans (->> plans
-                                       (filter #(= (:db/id group)
-                                                   (get-in % [:daily-plan/group :db/id]))))]]
+                      {:keys [group group-plans]} (cljc.util/select-group-for-subst plans person groups)]]
             [:tr
              [:td [:label (time/format-day-date date)]]
              [:td (- (or (:group/max-capacity group) 0) (count group-plans))]

@@ -177,3 +177,30 @@
 (defn daily-plan-attendance? [{:daily-plan/keys [child-att att-cancelled?]}]
   (and child-att (pos? child-att)
        (not att-cancelled?)))
+
+(defn select-group-for-subst
+  "Decides substitution in another group if no group dps doesn't exist"
+  [plans person groups]
+  (let [plans-by-group-id (group-by #(get-in % [:daily-plan/group :db/id]) plans)
+        person-group-id (get-in person [:person/group :db/id])
+        result-group-id (if (pos-int? (count (remove :daily-plan/subst-req-on (get plans-by-group-id person-group-id))))
+                          person-group-id
+                          (first (disj (set (keys plans-by-group-id)) person-group-id)))]
+    {:group (some #(when (= result-group-id (:db/id %))
+                     %)
+                  groups)
+     :group-plans (get plans-by-group-id result-group-id)}))
+
+(comment
+  (= {:group {:db/id 1 :group/name "Jednicka"}
+      :group-plans [{:daily-plan/group {:db/id 1}}]}
+     (select-group-for-subst [{:daily-plan/group {:db/id 1}} {:daily-plan/group {:db/id 2}}] {:person/group {:db/id 1}} [{:db/id 1 :group/name "Jednicka"} {:db/id 2 :group/name "Dvojka"}]))
+  (= {:group {:db/id 2 :group/name "Dvojka"}
+      :group-plans [{:daily-plan/group {:db/id 2}}]}
+     (select-group-for-subst [{:daily-plan/group {:db/id 1}} {:daily-plan/group {:db/id 2}}] {:person/group {:db/id 2}} [{:db/id 1 :group/name "Jednicka"} {:db/id 2 :group/name "Dvojka"}]))
+  (= {:group {:db/id 1 :group/name "Jednicka"}
+      :group-plans [{:daily-plan/group {:db/id 1}}]}
+     (select-group-for-subst [{:daily-plan/group {:db/id 1}}] {:person/group {:db/id 2}} [{:db/id 1 :group/name "Jednicka"} {:db/id 2 :group/name "Dvojka"}]))
+  (= {:group {:db/id 2 :group/name "Dvojka"}
+      :group-plans [{:daily-plan/group {:db/id 2}}]}
+     (select-group-for-subst [{:daily-plan/group {:db/id 2}}] {:person/group {:db/id 1}} [{:db/id 1 :group/name "Jednicka"} {:db/id 2 :group/name "Dvojka"}])))

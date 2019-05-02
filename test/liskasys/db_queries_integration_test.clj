@@ -65,8 +65,28 @@
 
 (deftest find-person-substs-test
   (let [substs (find-person-substs db 17592186065839)]
-    (is (= {:db/id 17592186055183, :group/label "Doupě", :group/max-capacity 15, :group/mandatory-excuse? true}
-           (:group substs)))
+    (is (= {:person/active? true,
+            :person/lunch-pattern "00011",
+            :person/start-date #inst "2018-09-01T00:00:00.000-00:00",
+            :person/parent [#:db{:id 17592186065841} #:db{:id 17592186065844}],
+            :person/lunch-fund 80100,
+            :person/att-pattern "00011",
+            :person/lastname "Pikula",
+            :person/var-symbol 201819,
+            :person/group #:db{:id 17592186055183},
+            :db/id 17592186065839,
+            :person/firstname "Antonín",
+            :person/child? true}
+           (:person substs)))
+    (is (= [{:db/id 17592186055185,
+             :group/label "Nora",
+             :group/max-capacity 16,
+             :group/mandatory-excuse? true}
+            {:db/id 17592186055183,
+             :group/label "Doupě",
+             :group/max-capacity 15,
+             :group/mandatory-excuse? true}]
+           (:groups substs)))
 
     (is (= [{:daily-plan/date #inst "2018-11-30T00:00:00.000-00:00", :daily-plan/lunch-cancelled? true, :daily-plan/excuse "Rýma a kašel.", :daily-plan/child-att 1, :daily-plan/lunch-req 1, :db/id 17592186068235, :daily-plan/person #:db{:id 17592186065839}, :daily-plan/group #:db{:id 17592186055183}, :daily-plan/bill #:db{:id 17592186067364}, :daily-plan/att-cancelled? true}]
            (:substable-dps substs)))
