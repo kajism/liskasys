@@ -7,6 +7,7 @@
             [liskasys.cljs.comp.history :as history]
             [liskasys.cljs.comp.input-text :refer [input-text]]
             [liskasys.cljs.pages :as pages]
+            [liskasys.cljs.util :as util]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
             [secretary.core :as secretary]
@@ -49,6 +50,7 @@
 
 (defn page-group []
   (let [group (re-frame/subscribe [:entity-edit :group])
+        groups (re-frame/subscribe [:entities :group])
         validation-fn #(cond-> {}
                          (str/blank? (:group/label %))
                          (assoc :group/label "Vyplňte název")
@@ -77,6 +79,26 @@
            :label "povinný důvod omluvenky?"
            :model (:group/mandatory-excuse? item)
            :on-change #(re-frame/dispatch [:entity-change :group (:db/id item) :group/mandatory-excuse? %])]
+          [re-com/label :label "Fungování skupiny ve dnech"]
+          [re-com/h-box :gap "5px"
+           :children
+           [[re-com/input-text
+             :model (str (:group/pattern item))
+             :on-change #(re-frame/dispatch [:entity-change :group (:db/id item) :group/pattern %])
+             :validation-regex #"^[0-2]{0,5}$"]
+            "poútstčtpá: 1 = skupina funguje, 0 = skupina v tomto dni není"]]
+          [re-com/label :label "Zástupná skupina ve dnech nefungování skupiny"]
+          [re-com/single-dropdown
+           :model (get-in item [:group/subst-group :db/id])
+           :on-change #(re-frame/dispatch [:entity-change :group (:db/id item) :group/subst-group {:db/id %}])
+           :choices (->> @groups
+                         (vals)
+                         (remove #(= (:db/id %) (:db/id item)))
+                         (util/sort-by-locale :group/label))
+           :id-fn :db/id
+           :label-fn :group/label
+           :filter-box? true
+           :width "250px"]
           [:br]
           [re-com/h-box :align :center :gap "5px"
            :children

@@ -156,6 +156,7 @@
   [{:person/keys [lunch-pattern att-pattern start-date group] person-id :db/id :as person} dates]
   (let [lunch-map (pattern-map lunch-pattern)
         att-map (pattern-map att-pattern)
+        group-map (pattern-map (:group/pattern group))
         start-date (tc/to-local-date (or start-date #inst "2000"))]
     (->> dates
          (drop-while #(t/before? (tc/to-local-date %) start-date))
@@ -164,14 +165,17 @@
                        lunch-req (get lunch-map day-of-week 0)
                        child-att (get att-map day-of-week 0)]
                    (when (or (pos? lunch-req) (pos? child-att))
-                     (cond-> {:daily-plan/person person-id
-                              :daily-plan/date (tc/to-date ld)}
-                       (:db/id group)
-                       (assoc :daily-plan/group (:db/id group))
-                       (pos? lunch-req)
-                       (assoc :daily-plan/lunch-req lunch-req)
-                       (pos? child-att)
-                       (assoc :daily-plan/child-att child-att)))))))))
+                     (let [group-id (:db/id (if (= 1 (get group-map day-of-week 1))
+                                              group
+                                              (or (:group/subst-group group) group)))]
+                       (cond-> {:daily-plan/person person-id
+                                :daily-plan/date (tc/to-date ld)}
+                         group-id
+                         (assoc :daily-plan/group group-id)
+                         (pos? lunch-req)
+                         (assoc :daily-plan/lunch-req lunch-req)
+                         (pos? child-att)
+                         (assoc :daily-plan/child-att child-att))))))))))
 
 (defn- generate-person-bills-tx [db period-id]
   (let [billing-period (db/find-by-id db period-id)
