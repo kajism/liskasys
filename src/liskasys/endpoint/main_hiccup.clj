@@ -161,9 +161,12 @@ return true;
              [:td [:label (time/format-day-date date)]]
              [:td (- (or (:group/max-capacity group) 0) (count group-plans))]
              [:td (let [substs (->> group-plans
-                                    (filter #(:daily-plan/subst-req-on %))
+                                    (filter :daily-plan/subst-req-on)
                                     (sort-by :daily-plan/subst-req-on))]
                     (str (when my-subst
+;;                           (clojure.pprint/pprint group)
+;;                           (clojure.pprint/pprint group-plans)
+;;                           (clojure.pprint/pprint substs)
                            (str (inc (reduce (fn [_ [idx x]]
                                                (when (= x my-subst)
                                                  (reduced idx)))

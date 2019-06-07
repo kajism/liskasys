@@ -17,7 +17,8 @@
    :school-holiday :school-holiday/label
    :group :group/label
    :config :config/org-name
-   :class-register :class-register/date})
+   :class-register :class-register/date
+   :transaction :db/txInstant})
 
 (def ent-attr--type (reduce (fn [out [ent-type attr]]
                               (assoc out attr ent-type))
@@ -201,3 +202,14 @@
                  (-> (d/pull db '[*] (-> row :t d/t->tx))
                      (assoc :datom-count (count (:data row))))))))))
 
+
+(defmethod retract-entity :transaction [conn user-id ent-id]
+  (let [datoms (tx-datoms conn ent-id)]
+    (timbre/info "Reverting tx" ent-id "with" (count datoms) "datoms")
+    (transact conn user-id (keep (fn [{:keys [e a v added?]}]
+                                   (when-not (or (= a :tx/person)
+                                                 (= a :db/txInstant))
+                                       (if added?
+                                         [:db/retract e a v]
+                                         [:db/add  e a v])))
+                                 datoms))))

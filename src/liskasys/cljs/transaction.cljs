@@ -59,7 +59,8 @@
 (defn transactions []
   (let [txes (re-frame/subscribe [::txes])
         table-state (re-frame/subscribe [:table-state :transactions])
-        persons (re-frame/subscribe [:entities :person])]
+        persons (re-frame/subscribe [:entities :person])
+        user (re-frame/subscribe [:auth-user])]
     (fn []
       [re-com/v-box
        :children
@@ -80,7 +81,9 @@
                          :href (str "#/transaction/" (:db/id row) "e")
                          :label [re-com/md-icon-button
                                  :md-icon-name "zmdi-edit"
-                                 :tooltip "Editovat"]]]]))
+                                 :tooltip "Editovat"]]
+                        (when (contains? (:-roles @user) "superadmin")
+                          [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :transaction (:db/id row)]) :emphasise? true])]]))
                   :none]
                  {:header "Kdy"
                   :val-fn :db/txInstant

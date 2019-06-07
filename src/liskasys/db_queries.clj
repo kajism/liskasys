@@ -141,7 +141,8 @@
         (merge {:-lunch-price lunch-price
                 :-total-lunch-price total-lunch-price
                 :-from-previous (- total (+ att-price total-lunch-price))
-                :-paid? (= (:db/id status) paid-status)}))))
+                :-paid? (or (= (:db/id status) paid-status)
+                            (= (:db/ident status) :person-bill.status/paid))}))))
 
 (defn find-person-bills [db user-id]
   (->> (d/q '[:find [(pull ?e [* {:person-bill/person [*] :person-bill/period [*]}]) ...]

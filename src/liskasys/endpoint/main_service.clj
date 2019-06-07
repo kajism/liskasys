@@ -195,7 +195,8 @@
         second-month-start (t/plus period-start-ld (t/months 1))
         out (->>
              (for [person (->> (db/find-where db {:person/active? true})
-                               (remove cljc.util/zero-patterns?))
+                               (remove #(or (cljc.util/zero-patterns? %)
+                                            (some-> (:person/start-date %) (tc/to-local-date) (t/after? period-end-ld)))))
                    :let [daily-plans (generate-daily-plans person dates)
                          previous-dps (get person-id--2nd-previous-dps (:db/id person))
                          months-count (cond-> (- (:billing-period/to-yyyymm billing-period)
@@ -234,7 +235,7 @@
                                                     (or (:person/lunch-fund person) 0)))}))))
              (filterv some?))]
     (->> (vals @person-id--bill)
-         (mapcat #(service/retract-person-bill-tx db (:db/id %)))
+         (mapcat #(service/retract-person-bill-tx db (:db/id %) true))
          (into out))))
 
 (defn- transact-period-person-bills [conn user-id period-id tx-data]
