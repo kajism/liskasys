@@ -89,7 +89,7 @@
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-plus-square"
                    :tooltip "Přidat"
-                   :on-click #(do (re-frame/dispatch [:entity-new :person (empty-person (first (vals @price-lists)))])
+                   :on-click #(do (re-frame/dispatch [:entity-new :person (empty-person (last (vals @price-lists)))])
                                   (set! js/window.location.hash "#/person/e"))]
                   [re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
