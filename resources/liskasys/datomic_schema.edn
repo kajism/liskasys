@@ -176,6 +176,11 @@
            :db/valueType :db.type/string
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/ident :person/price-list
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]]}
  :liskasys/lunch-order
  {:txes [[{:db/ident :lunch-order/date
@@ -354,6 +359,11 @@
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]
          [{:db/ident :price-list/payment-due-date
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/ident :price-list/label
            :db/valueType :db.type/string
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]

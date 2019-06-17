@@ -3,7 +3,7 @@
             [datomic.api :as d]
             [io.rkn.conformity :as conformity]
             [liskasys.config :as config]
-            [liskasys.service :as service]
+            [liskasys.db-queries :as db-queries]
             [taoensso.timbre :as timbre]))
 
 (defrecord Datomic [uri conns]
@@ -19,24 +19,17 @@
            (conformity/ensure-conforms conn norms-map)
 
            (let [db (d/db conn)]
-             (when (empty? (d/q '[:find ?e :where [?e :daily-plan/group]] db))
-               (timbre/info server-name "adding historical daily-plan/group relation")
-               (->> (d/q '[:find ?e ?tx
-                           :in $
-                           :where [?e :daily-plan/date _ ?tx true] ]
-                         db)
-                    (map (fn [[dpid txid]]
-                           (let [tx-db (d/as-of db txid)]
-                             (d/q '[:find ?e ?g
-                                    :in $ ?e
-                                    :where
-                                    [?e :daily-plan/person ?p]
-                                    [?p :person/group ?g]]
-                                  tx-db dpid))))
-                    (keep (fn [s]
-                            (when-let [[dp gr] (first s)]
-                              [:db/add dp :daily-plan/group gr])))
-                    (d/transact conn))))
+             (when-let [person-ids (not-empty
+                                    (d/q '[:find [?e ...]
+                                           :where
+                                           [?e :person/active?]
+                                           (not [?e :person/price-list])]
+                                         db))]
+               (let [pl (db-queries/find-price-list db)]
+                 (timbre/info server-name "adding default price-list" (:price-list/label pl) "to persons")
+                 (->> person-ids
+                      (map #(-> [:db/add % :person/price-list (:db/id pl)]))
+                      (d/transact conn)))))
 
            (assoc-in out [:conns server-name] conn)))
        component

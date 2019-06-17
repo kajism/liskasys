@@ -41,8 +41,10 @@
      (some? (:child? page-state))
      (filter #(= (:child? page-state) (boolean (:person/child? %)))))))
 
-(def empty-person {:person/active? true
-                   :person/child? true})
+(defn empty-person [price-list]
+  {:person/active? true
+   :person/child? true
+   :person/price-list (select-keys price-list [:db/id])})
 
 (re-frame/reg-sub
  ::person-dps-by-date
@@ -69,6 +71,7 @@
         groups (re-frame/subscribe [:entities :group])
         table-state (re-frame/subscribe [:table-state :persons])
         persons (re-frame/subscribe [:entities :person])
+        price-lists (re-frame/subscribe [:entities :price-list])
         user (re-frame/subscribe [:auth-user])
         parent-attrs-fn (fn [row kw]
                           [:div
@@ -86,7 +89,7 @@
                  [[re-com/md-icon-button
                    :md-icon-name "zmdi-plus-square"
                    :tooltip "Přidat"
-                   :on-click #(do (re-frame/dispatch [:entity-new :person empty-person])
+                   :on-click #(do (re-frame/dispatch [:entity-new :person (empty-person (first (vals @price-lists)))])
                                   (set! js/window.location.hash "#/person/e"))]
                   [re-com/md-icon-button
                    :md-icon-name "zmdi-refresh"
@@ -227,6 +230,7 @@
   (let [person (re-frame/subscribe [:entity-edit :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])
         groups (re-frame/subscribe [:entities :group])
+        price-lists (re-frame/subscribe [:entities :price-list])
         persons (re-frame/subscribe [:entities :person])
         kids (re-frame/subscribe [::kids])
         user (re-frame/subscribe [:auth-user])
@@ -255,6 +259,15 @@
              :model (str (:person/var-symbol item))
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/var-symbol (cljc.util/parse-int %)])
              :validation-regex #"^(\d{0,10})$"]
+            [re-com/label :label "Ceník"]
+            [re-com/single-dropdown
+             :model (some-> item :person/price-list :db/id)
+             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/price-list {:db/id %}])
+             :choices (util/sort-by-locale :price-list/label (vals @price-lists))
+             :id-fn :db/id
+             :label-fn :price-list/label
+             :placeholder "vyberte ceník"
+             :width "250px"]
             [re-com/label :label "Dieta"]
             [re-com/single-dropdown
              :model (some-> item :person/lunch-type :db/id)
@@ -452,7 +465,7 @@
               (when (:db/id item)
                 [re-com/hyperlink-href :href (str "#/person/e")
                  :label [re-com/button :label "Nový"
-                         :on-click #(re-frame/dispatch [:entity-new :person empty-person])]])
+                         :on-click #(re-frame/dispatch [:entity-new :person (empty-person (first (vals @price-lists)))])]])
               [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/persons")]]]
             [history/view (:db/id item)]]])))))
 

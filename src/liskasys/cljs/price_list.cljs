@@ -13,6 +13,15 @@
             [secretary.core :as secretary]
             [taoensso.timbre :as timbre]))
 
+(def empty-price-list {:price-list/days-5 0
+                       :price-list/days-4 0
+                       :price-list/days-3 0
+                       :price-list/days-2 0
+                       :price-list/days-1 0
+                       :price-list/half-day 0
+                       :price-list/lunch 0
+                       :price-list/lunch-adult 0})
+
 (defn page-price-lists []
   (let [price-lists (re-frame/subscribe [:entities :price-list])
         user (re-frame/subscribe [:auth-user])]
@@ -20,15 +29,21 @@
       [re-com/v-box
        :children
        [[:h3 "Ceník a platba"]
-        (when-not (seq @price-lists)
-          [re-com/hyperlink-href :label [re-com/button :label "Vytvořit"] :href (str "#/price-list/e")])
         [data-table
          :table-id :price-lists
          :rows price-lists
-         :colls [[[re-com/md-icon-button
-                   :md-icon-name "zmdi-refresh"
-                   :tooltip "Přenačíst ze serveru"
-                   :on-click #(re-frame/dispatch [:entities-load :price-list])]
+         :colls [[[re-com/h-box :gap "5px" :justify :end
+                   :children
+                   [[re-com/md-icon-button
+                     :md-icon-name "zmdi-plus-square"
+                     :tooltip "Přidat"
+                     :on-click #(do
+                                  (re-frame/dispatch [:entity-new :price-list empty-price-list])
+                                  (set! js/window.location.hash "#/price-list/e"))]
+                    [re-com/md-icon-button
+                     :md-icon-name "zmdi-refresh"
+                     :tooltip "Přenačíst ze serveru"
+                     :on-click #(re-frame/dispatch [:entities-load :price-list])]]]
                   (fn [row]
                     [re-com/h-box
                      :gap "5px"
@@ -41,6 +56,7 @@
                       (when (contains? (:-roles @user) "superadmin")
                         [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :price-list (:db/id row)])])]])
                   :none]
+                 ["Název" :price-list/label]
                  ["5 dní" (comp cljc.util/from-cents :price-list/days-5)]
                  ["4 dny" (comp cljc.util/from-cents :price-list/days-4)]
                  ["3 dny" (comp cljc.util/from-cents :price-list/days-3)]
@@ -62,6 +78,11 @@
         [re-com/v-box :gap "5px"
          :children
          [[:h3 "Ceník a platba"]
+          [re-com/label :label "Název ceníku"]
+          [re-com/input-text
+           :model (str (:price-list/label item))
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/label %])
+           :width "200px"]
           [re-com/label :label "Měsíčně Kč za celotýdenní"]
           [re-com/input-text
            :model (from-cents (:price-list/days-5 item))
