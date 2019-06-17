@@ -30,8 +30,20 @@
            db)
       #inst "2000"))
 
-(defn find-price-list [db]
-  (first (db/find-by-type db :price-list {})))
+(defn find-price-lists-by-id [db]
+  (->> (db/find-by-type db :price-list {})
+       (map (juxt :db/id identity))
+       (into {})))
+
+(defn find-price-list [db person-id]
+  (or
+   (d/q '[:find (pull ?e [*]) .
+          :in $ ?person-id
+          :where
+          [?person-id :person/price-list ?e]]
+        db person-id)
+   (first (vals (find-price-lists-by-id db))) ;; for history before :person/price-list
+   ))
 
 (defn find-person-by-email [db email]
   (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol :person/active?]}]) .
@@ -128,12 +140,15 @@
                              [?e :person-bill/total _ ?tx]]
                            db (:db/id person-bill)))
         as-of-db (d/as-of db tx)
+        person-id (get-in person-bill [:person-bill/person :db/id])
         person (d/pull as-of-db
                        [:person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email :person/child?
                         {:person/group [:db/id :group/pattern :group/subst-group]}
                         {:person/parent [:person/email]}]
-                       (get-in person-bill [:person-bill/person :db/id]))
-        lunch-price (cljc.util/person-lunch-price person (find-price-list as-of-db))
+                       person-id)
+        price-list (find-price-list as-of-db person-id)
+        person (assoc person :person/price-list price-list)
+        lunch-price (cljc.util/person-lunch-price person price-list)
         total-lunch-price (* lunch-price lunch-count)
         paid-status (d/entid db :person-bill.status/paid)]
     (-> person-bill
@@ -166,6 +181,7 @@
 (defn find-person-daily-plans-with-lunches [db date]
   (d/q '[:find [(pull ?e [:db/id :daily-plan/lunch-req
                           {:daily-plan/person [:db/id :person/lunch-type :person/lunch-fund :person/child?
+                                               :person/price-list
                                                {:person/group [*]}]}]) ...]
          :in $ ?date
          :where
@@ -366,8 +382,8 @@
                             (count)
                             (> 2)))})))
 
-(defn find-bank-account [db]
-  (get (find-price-list db) :price-list/bank-account ""))
+(defn find-bank-account [db person-id]
+  (get (find-price-list db person-id) :price-list/bank-account ""))
 
 (defn find-period-daily-plans [db period-id]
   (d/q '[:find [(pull ?e [*]) ...]

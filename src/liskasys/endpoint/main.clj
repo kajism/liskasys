@@ -103,21 +103,22 @@
 
      (GET "/platby" {:keys [params]}
           (let [db (d/db (conns server-name))
-                person-bills (db-queries/find-person-bills db (:db/id user))
-                show-qr? (re-find #"[0-9/]+" (db-queries/find-bank-account db))]
+                person-bills (db-queries/find-person-bills db (:db/id user))]
          (main-hiccup/liskasys-frame
           user
-          (main-hiccup/person-bills person-bills show-qr?))))
+          (main-hiccup/person-bills person-bills
+                                    #(re-find #"^[-0-9/]+$" (db-queries/find-bank-account db (:db/id %)))))))
 
      (GET "/qr-code" [id :<< as-int]
        (let [db (d/db (conns server-name))
              person-bill (first (db/find-by-type db :person-bill {:db/id id}))
+             person (:person-bill/person person-bill)
              {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
-             qr-code-file (qr-code/save-qr-code (db-queries/find-bank-account db)
+             qr-code-file (qr-code/save-qr-code (db-queries/find-bank-account db (:db/id person))
                                                 (/ (:person-bill/total person-bill) 100)
-                                                (str (-> person-bill :person-bill/person :person/var-symbol))
+                                                (str (:person/var-symbol person))
                                                 org-name
-                                                (str (-> person-bill :person-bill/person cljc.util/person-fullname) " "
+                                                (str (cljc.util/person-fullname person) " "
                                                      (-> person-bill :person-bill/period cljc.util/period->text)))
              qr-code-bytes (util/file-to-byte-array qr-code-file)]
          (.delete qr-code-file)

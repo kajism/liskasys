@@ -191,7 +191,7 @@
         person-id--bill (atom (->> (db/find-where db {:person-bill/period period-id})
                                    (map #(vector (get-in % [:person-bill/person :db/id]) %))
                                    (into {})))
-        price-list (db-queries/find-price-list db)
+        price-lists (db-queries/find-price-lists-by-id db)
         second-month-start (t/plus period-start-ld (t/months 1))
         out (->>
              (for [person (->> (db/find-where db {:person/active? true})
@@ -208,6 +208,7 @@
                                         (dec)
                                         (and (seq previous-dps) (every? :daily-plan/refund? previous-dps))
                                         (dec))
+                         price-list (get price-lists (get-in person [:person/price-list :db/id]))
                          att-price (calculate-att-price price-list
                                                         months-count
                                                         (count (->> person :person/att-pattern pattern-map vals (filter (partial = 1))))

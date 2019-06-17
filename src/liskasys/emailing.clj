@@ -180,13 +180,14 @@
 (defn make-bill-published-sender [db]
   (let [{:config/keys [org-name] :as config} (d/pull db '[*] :liskasys/config)
         from (db-queries/find-auto-sender-email db)
-        bank-account (db-queries/find-bank-account db)
-        payment-due-to (or (:price-list/payment-due-date (db-queries/find-price-list db))
-                           "20. dne tohoto měsíce")]
+        price-lists (db-queries/find-price-lists-by-id db)]
     (fn [bill]
-      (let [msg (bill-published-msg from
+      (let [price-list (get price-lists (get-in bill [:person-bill/person :person/price-list :db/id]))
+            payment-due-to (or (:price-list/payment-due-date price-list)
+                               "20. dne tohoto měsíce")
+            msg (bill-published-msg from
                                     config
-                                    bank-account
+                                    (:price-list/bank-account price-list)
                                     payment-due-to
                                     bill)]
         (send-message org-name msg)))))

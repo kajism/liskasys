@@ -212,4 +212,5 @@
                                        (if added?
                                          [:db/retract e a v]
                                          [:db/add  e a v])))
-                                 datoms))))
+                                 datoms))
+    nil))

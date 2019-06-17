@@ -19,17 +19,7 @@
            (conformity/ensure-conforms conn norms-map)
 
            (let [db (d/db conn)]
-             (when-let [person-ids (not-empty
-                                    (d/q '[:find [?e ...]
-                                           :where
-                                           [?e :person/active?]
-                                           (not [?e :person/price-list])]
-                                         db))]
-               (let [pl (db-queries/find-price-list db)]
-                 (timbre/info server-name "adding default price-list" (:price-list/label pl) "to persons")
-                 (->> person-ids
-                      (map #(-> [:db/add % :person/price-list (:db/id pl)]))
-                      (d/transact conn)))))
+             )
 
            (assoc-in out [:conns server-name] conn)))
        component

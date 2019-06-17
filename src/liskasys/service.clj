@@ -138,7 +138,7 @@
 
     (emailing/send-daily-summary db date daily-summaries)))
 
-(defn- lunch-order-tx-total [date price-list plans-with-lunches]
+(defn- lunch-order-tx-total [date price-lists plans-with-lunches]
   (let [out
         (reduce (fn [out {:keys [:db/id :daily-plan/person :daily-plan/lunch-req] :as plan-with-lunch}]
                   (if-not person
@@ -149,7 +149,7 @@
                         (update :tx-data conj
                                 [:db.fn/cas (:db/id person) :person/lunch-fund
                                  (:person/lunch-fund person) (- (or (:person/lunch-fund person) 0)
-                                                                (* lunch-req (cljc.util/person-lunch-price person price-list)))])
+                                                                (* lunch-req (cljc.util/person-lunch-price person (get price-lists (get-in person [:person/price-list :db/id])))))])
                         (update :tx-data conj
                                 [:db/add id :daily-plan/lunch-ord lunch-req])
                         (update :total + lunch-req))))
@@ -161,7 +161,7 @@
 (defn- process-lunch-order [conn date]
   (let [db (d/db conn)
         plans-with-lunches (db-queries/find-person-daily-plans-with-lunches db date)
-        {:keys [tx-data total]} (lunch-order-tx-total date (db-queries/find-price-list db) plans-with-lunches)]
+        {:keys [tx-data total]} (lunch-order-tx-total date (db-queries/find-price-lists-by-id db) plans-with-lunches)]
     (db/transact conn nil tx-data)
     (if (seq plans-with-lunches)
       (emailing/send-lunch-order-email db date plans-with-lunches)
