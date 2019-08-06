@@ -110,9 +110,48 @@ Pro QR platbu přejděte na http://testschool.org/liskasys menu Platby
 Toto je automaticky generovaný email ze systému http://testschool.org/liskasys"}]}
          (bill-published-msg "me@test-school.org"
                              config
-                             "123456/7890"
+                             {:price-list/bank-account "123456/7890"}
                              "do konce roku"
                              {:person-bill/total 100000
+                              :person-bill/person {:person/firstname "Oliver" :person/lastname "Miarka"
+                                                   :person/var-symbol "222"
+                                                   :person/parent [{:person/email "someone@yahoo.com"}
+                                                                   {:person/email "anotherone@gmail.com"}]}
+                              :person-bill/period {:billing-period/from-yyyymm 201901
+                                                   :billing-period/to-yyyymm 201902}}))))
+
+(deftest bill-published-msg-test-lunches-account
+  (is (= {:from "me@test-school.org",
+          :to ["someone@yahoo.com" "anotherone@gmail.com"],
+          :subject "Test school: Platba školkovného a obědů na období 2019/01 - 2019/02",
+          :body
+          [{:type "text/plain; charset=utf-8",
+            :content
+            "Test school: Platba školkovného a obědů na období 2019/01 - 2019/02
+--- Školkovné ------------------------------------------------------------------------------
+
+Číslo účtu: 123456/7890
+Částka: 800.0 Kč
+Variabilní symbol: 222
+Do poznámky: Miarka Oliver 2019/01 - 2019/02
+Splatnost do: do konce roku
+
+--- Obědy ----------------------------------------------------------------------------------
+
+Číslo účtu: 222222/4444
+Částka: 200.0 Kč
+Variabilní symbol: 222
+Do poznámky: Miarka Oliver 2019/01 - 2019/02
+Splatnost do: do konce roku
+
+Toto je automaticky generovaný email ze systému http://testschool.org/liskasys"}]}
+         (bill-published-msg "me@test-school.org"
+                             config
+                             {:price-list/bank-account "123456/7890"
+                              :price-list/bank-account-lunches "222222/4444"}
+                             "do konce roku"
+                             {:person-bill/total 100000
+                              :person-bill/att-price 80000
                               :person-bill/person {:person/firstname "Oliver" :person/lastname "Miarka"
                                                    :person/var-symbol "222"
                                                    :person/parent [{:person/email "someone@yahoo.com"}

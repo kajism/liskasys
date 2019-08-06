@@ -66,7 +66,8 @@
                  ["Oběd dětský" (comp cljc.util/from-cents :price-list/lunch)]
                  ["Oběd dospělý" (comp cljc.util/from-cents :price-list/lunch-adult)]
                  ["Číslo účtu" :price-list/bank-account]
-                 ["Splatnost do" :price-list/payment-due-date]]]]])))
+                 ["Splatnost do" :price-list/payment-due-date]
+                 ["Číslo účtu pro obědy" :price-list/bank-account-lunches]]]]])))
 
 (defn- from-cents [cents]
   (str (cljc.util/from-cents cents)))
@@ -140,6 +141,11 @@
           [re-com/input-text
            :model (str (:price-list/payment-due-date item))
            :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/payment-due-date %])
+           :width "200px"]
+          [re-com/label :label "Číslo účtu pro obědy (vyplňte jen když se liší od účtu pro platbu za docházku)"]
+          [re-com/input-text
+           :model (str (:price-list/bank-account-lunches item))
+           :on-change #(re-frame/dispatch [:entity-change :price-list (:db/id item) :price-list/bank-account-lunches %])
            :width "200px"]
           [re-com/h-box :align :center :gap "5px"
            :children

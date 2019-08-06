@@ -107,7 +107,7 @@
          (main-hiccup/liskasys-frame
           user
           (main-hiccup/person-bills person-bills
-                                    #(re-find #"^[-0-9/]+$" (db-queries/find-bank-account db (:db/id %)))))))
+                                    #(db-queries/find-price-list db (:db/id %))))))
 
      (GET "/qr-code" [id :<< as-int]
        (let [db (d/db (conns server-name))

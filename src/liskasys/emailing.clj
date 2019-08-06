@@ -159,22 +159,32 @@
                                     today-att-dps)]
     (send-message org-name msg)))
 
-(defn bill-published-msg [from {:config/keys [org-name full-url]} bank-account payment-due-to {:person-bill/keys [total person period]}]
+(defn bill-published-msg [from {:config/keys [org-name full-url]} {:price-list/keys [bank-account bank-account-lunches]} payment-due-to {:person-bill/keys [total att-price person period]}]
   (let [period-text (cljc.util/period->text period)
-        subj (str org-name ": Platba školkovného a obědů na období " period-text)]
+        subj (str org-name ": Platba školkovného a obědů na období " period-text)
+        separate-lunches? (not (str/blank? bank-account-lunches))]
     {:from from
      :to (or (:person/email person)
              (mapv :person/email (:person/parent person)))
      :subject subj
      :body [{:type content-type
              :content (str subj "\n"
-                           "---------------------------------------------------------------------------------\n\n"
+                           "---" (when separate-lunches? " Školkovné ")
+                           "------------------------------------------------------------------------------\n\n"
                            "Číslo účtu: " bank-account "\n"
-                           "Částka: " (/ total 100.0) " Kč\n"
+                           "Částka: " (/ (if separate-lunches? att-price total) 100.0) " Kč\n"
                            "Variabilní symbol: " (:person/var-symbol person) "\n"
                            "Do poznámky: " (cljc.util/person-fullname person) " " period-text "\n"
                            "Splatnost do: " payment-due-to "\n\n"
-                           "Pro QR platbu přejděte na " full-url " menu Platby"
+                           (when-not separate-lunches?
+                             (str "Pro QR platbu přejděte na " full-url " menu Platby"))
+                           (when separate-lunches?
+                             (str "--- Obědy ----------------------------------------------------------------------------------\n\n"
+                                  "Číslo účtu: " bank-account-lunches "\n"
+                                  "Částka: " (/ (- total att-price) 100.0) " Kč\n"
+                                  "Variabilní symbol: " (:person/var-symbol person) "\n"
+                                  "Do poznámky: " (cljc.util/person-fullname person) " " period-text "\n"
+                                  "Splatnost do: " payment-due-to))
                            footer-text full-url)}]}))
 
 (defn make-bill-published-sender [db]
@@ -187,7 +197,7 @@
                                "20. dne tohoto měsíce")
             msg (bill-published-msg from
                                     config
-                                    (:price-list/bank-account price-list)
+                                    price-list
                                     payment-due-to
                                     bill)]
         (send-message org-name msg)))))
