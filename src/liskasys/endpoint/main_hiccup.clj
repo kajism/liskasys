@@ -243,7 +243,7 @@ return true;
          [:td.right (cljc.util/cents->text -from-previous)]
          [:td (cljc.util/att-pattern->text (:person/att-pattern person))]
          [:td (cljc.util/lunch-pattern->text (:person/lunch-pattern person))]]
-        (let [{:keys [bank-account bank-account-lunches]} (price-list-fn person)
+        (let [{:price-list/keys [bank-account bank-account-lunches]} (price-list-fn person)
               show-qr? (re-find #"^[-0-9/]+$" bank-account)
               separate-lunches? (not (str/blank? bank-account-lunches))]
           (when (and (not -paid?)
