@@ -145,12 +145,12 @@
                [(inc idx) (- (int ch) (int \0))]))
        (into {})))
 
-(defn- calculate-att-price [price-list months-count days-per-week half-days-count]
+(defn- calculate-att-price [price-list months-count days-per-week half-days-per-week]
   (let [months-count (if (< months-count 0)
                        0
                        months-count)]
     (+ (* months-count (get price-list (keyword "price-list" (str "days-" days-per-week)) 0))
-       (* half-days-count (:price-list/half-day price-list)))))
+       (* months-count half-days-per-week (:price-list/half-day price-list)))))
 
 (defn- generate-daily-plans
   [{:person/keys [lunch-pattern att-pattern start-date group] person-id :db/id :as person} dates]
@@ -212,7 +212,8 @@
                          att-price (calculate-att-price price-list
                                                         months-count
                                                         (count (->> person :person/att-pattern pattern-map vals (filter (partial = 1))))
-                                                        (->> daily-plans
+                                                        (count (->> person :person/att-pattern pattern-map vals (filter (partial = 2))))
+                                                        #_(->> daily-plans
                                                              (filter #(-> % :daily-plan/child-att (= 2)))
                                                              count))
                          lunch-count-next (->> daily-plans
