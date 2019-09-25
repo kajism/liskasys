@@ -527,6 +527,30 @@
            :db/valueType :db.type/ref
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/ident :group/branch
+           :db/valueType :db.type/ref
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]]}
+ :liskasys/branch
+ {:txes [[{:db/ident :branch/label
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :branch/address
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :branch/lunch-order-email-addr
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/unique :db.unique/value
+           :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]]}
  :liskasys/config
  {:txes [[{:db/ident :config/org-name

@@ -15,6 +15,7 @@
    :price-list :price-list/days-1
    :person-bill :person-bill/total
    :school-holiday :school-holiday/label
+   :branch :branch/label
    :group :group/label
    :config :config/org-name
    :class-register :class-register/date

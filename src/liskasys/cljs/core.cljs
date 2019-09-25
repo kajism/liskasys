@@ -3,6 +3,7 @@
             [goog.events :as events]
             [goog.history.EventType :as EventType]
             [liskasys.cljs.ajax]
+            [liskasys.cljs.branch :as branch]
             [liskasys.cljs.common :as common]
             [liskasys.cljs.group :as group]
             [liskasys.cljs.pages :as pages]
@@ -96,6 +97,7 @@
           [:li [:a {:href "#/lunch-types"} "Diety"]]
           [:li [:a {:href "#/school-holidays"} "Prázdniny"]]
           [:li [:a {:href "#/bank-holidays"} "Státní svátky"]]
+          [:li [:a {:href "#/branches"} "Pobočky"]]
           [:li [:a {:href "#/groups"} "Třídy"]]
           [:li [:a {:href "#/transactions"} "Transakce"]]
           [:li [:a {:href "#/configs"} "Základní nastavení"]]]])

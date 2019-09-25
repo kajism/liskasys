@@ -15,6 +15,7 @@
 
 (defn page-groups []
   (let [groups (re-frame/subscribe [:entities :group])
+        branches (re-frame/subscribe [:entities :branch])
         table-state (re-frame/subscribe [:table-state :groups])]
     (fn []
       [re-com/v-box
@@ -45,12 +46,14 @@
                         [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :group (:db/id row)])]]]))
                   :none]
                  ["Název" :group/label]
+                 ["Pobočka" #(:branch/label (get @branches (some-> % :group/branch :db/id)))]
                  ["Kapacita" :group/max-capacity]
                  ["Povinný důvod omluvenky?" :group/mandatory-excuse?]]]]])))
 
 (defn page-group []
   (let [group (re-frame/subscribe [:entity-edit :group])
         groups (re-frame/subscribe [:entities :group])
+        branches (re-frame/subscribe [:entities :branch])
         validation-fn #(cond-> {}
                          (str/blank? (:group/label %))
                          (assoc :group/label "Vyplňte název")
@@ -65,6 +68,17 @@
          [[:h3 "Třídy"]
           [re-com/label :label "Název"]
           [input-text item :group :group/label]
+          [re-com/label :label "Pobočka"]
+          [re-com/single-dropdown
+           :model (get-in item [:group/branch :db/id])
+           :on-change #(re-frame/dispatch [:entity-change :group (:db/id item) :group/branch {:db/id %}])
+           :choices (->> @branches
+                         (vals)
+                         (util/sort-by-locale :branch/label))
+           :id-fn :db/id
+           :label-fn :branch/label
+           :filter-box? true
+           :width "250px"]
           [re-com/label :label "Kapacita"]
           (let [error-msg (some-> item :-errors :group/max-capacity)]
             [re-com/input-text
