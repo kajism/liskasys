@@ -164,7 +164,7 @@
         {:keys [tx-data total]} (lunch-order-tx-total date (db-queries/find-price-lists-by-id db) plans-with-lunches)]
     (db/transact conn nil tx-data)
     (if (seq plans-with-lunches)
-      (emailing/send-lunch-order-email db date plans-with-lunches)
+      (emailing/send-lunch-order-emails db date plans-with-lunches)
       (timbre/info (:config/org-name (d/pull db '[*] :liskasys/config))
                    ": no lunches for " date ". Sending skipped."))))
 

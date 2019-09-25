@@ -61,16 +61,26 @@
                                            (reduce + 0))
                            "\n\n")}]}))
 
-(defn send-lunch-order-email [db date plans-with-lunches]
+(defn send-lunch-order-emails [db date plans-with-lunches]
   (let [org-name (:config/org-name (d/pull db '[*] :liskasys/config))
-        msg (lunch-order-msg (db-queries/find-auto-sender-email db)
-                             (mapv :person/email (db-queries/find-persons-with-role db "obědy"))
-                             org-name
-                             (-> (db/find-by-type db :lunch-type {})
-                                 (all-diet-labels-by-id))
-                             date
-                             plans-with-lunches)]
-    (send-message org-name msg)))
+        branches-by-id (->> (db/find-by-type db :branch {})
+                            (map (juxt :db/id identity))
+                            (into {}))]
+    (for [[branch-id plans] (group-by #(some-> % :daily-plan/person :person/group :group/branch :db/id)
+                                        plans-with-lunches)
+            :let [{:branch/keys [label address lunch-order-email-addr] :as branch} (get branches-by-id branch-id)
+                  msg (lunch-order-msg (db-queries/find-auto-sender-email db)
+                                       (cond-> (mapv :person/email (db-queries/find-persons-with-role db "obědy"))
+                                         (not (str/blank? lunch-order-email-addr))
+                                         (conj lunch-order-email-addr))
+                                       (if-not branch
+                                         org-name
+                                         (str label ", " address))
+                                       (-> (db/find-by-type db :lunch-type {})
+                                           (all-diet-labels-by-id))
+                                       date
+                                       plans)]]
+      (send-message org-name msg))))
 
 (defn name-att-diet-str [{:daily-plan/keys [person child-att] :as dp}]
   (str (cljc.util/person-fullname person)

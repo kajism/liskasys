@@ -61,7 +61,7 @@
           [input-text item :branch :branch/label]
           [re-com/label :label "Adresa"]
           [input-text item :branch :branch/address]
-          [re-com/label :label "Email dodavatele obědů pro pobočku (sem se pošle objednávka pro pobočku)"]
+          [re-com/label :label "Email dodavatele obědů pro pobočku (pouze pokud se liší)"]
           [input-text item :branch :branch/lunch-order-email-addr]
           [:br]
           [re-com/h-box :align :center :gap "5px"
