@@ -26,16 +26,17 @@
                     twarc/start)]
       (doseq [[db-key conn] (:conns datomic)
               :let [db (d/db conn)
-                    {:config/keys [cancel-time order-time]} (d/pull db '[*] :liskasys/config)
+                    {:config/keys [cancel-time order-time can-cancel-after-lunch-order?]} (d/pull db '[*] :liskasys/config)
                     [cancel-hour cancel-min] (str/split cancel-time #":")
                     [order-hour order-min] (str/split order-time #":")]]
-        ;; cron expression: sec min hour day-of-mon mon day-of-week ?year
-        (timbre/info db-key "process-cancellation-closing-job sched at " cancel-hour ":" cancel-min)
-        (process-cancellation-closing-job sched
-                                          [conn]
-                                          :trigger {:cron {:expression (str "0 " cancel-min " " cancel-hour " * * ?")
-                                                           :misfire-handling :fire-and-process
-                                                           :time-zone (TimeZone/getTimeZone "Europe/Prague")}})
+        (when can-cancel-after-lunch-order?
+          ;; cron expression: sec min hour day-of-mon mon day-of-week ?year
+          (timbre/info db-key "process-cancellation-closing-job sched at " cancel-hour ":" cancel-min)
+          (process-cancellation-closing-job sched
+                                            [conn]
+                                            :trigger {:cron {:expression (str "0 " cancel-min " " cancel-hour " * * ?")
+                                                             :misfire-handling :fire-and-process
+                                                             :time-zone (TimeZone/getTimeZone "Europe/Prague")}}))
         (timbre/info db-key "process-lunch-order-and-substitutions-job sched at " order-hour ":" order-min)
         (process-lunch-order-and-substitutions-job sched
                                                    [conn]

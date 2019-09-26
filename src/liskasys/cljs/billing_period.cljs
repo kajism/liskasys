@@ -71,7 +71,8 @@
 (defn page-billing-period []
   (let [item-id (re-frame/subscribe [:entity-edit-id :billing-period])
         billing-period (re-frame/subscribe [:entity-edit :billing-period])
-        person-bills (re-frame/subscribe [:entities-where :person-bill {:person-bill/period @item-id}])]
+        person-bills (re-frame/subscribe [:entities-where :person-bill {:person-bill/period @item-id}])
+        configs (re-frame/subscribe [:entities :config])]
     (fn []
       (let [item @billing-period]
         [re-com/v-box :gap "5px"
@@ -108,10 +109,13 @@
                 :class "btn-danger"
                 :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "generate"])]
                (when (some #(= (get-in % [:person-bill/status :db/ident]) :person-bill.status/new) (vals @person-bills))
-                 [re-com/button
-                  :label "Zveřejnit nové a poslat emaily"
-                  :class "btn-danger"
-                  :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "publish-all-bills"])])]]
+                 (let [{:config/keys [person-bill-email?]} (first (vals @configs))]
+                   [re-com/button
+                    :label (if person-bill-email?
+                             "Zveřejnit nové a poslat emaily"
+                             "Zveřejnit nové (emaily vypnuty)")
+                    :class "btn-danger"
+                    :on-click #(re-frame/dispatch [::send-cmd (:db/id item) "publish-all-bills"])]))]]
              [person-bill/person-bills person-bills]])]]))))
 
 (secretary/defroute "/billing-periods" []

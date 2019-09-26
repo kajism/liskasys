@@ -619,7 +619,20 @@
            :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]
          [{:db/id :liskasys/config
-           :config/future-subst? false}]]}
+           :config/future-subst? false}]
+         [{:db/ident :config/person-bill-email?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}
+          {:db/ident :config/can-cancel-after-lunch-order?
+           :db/valueType :db.type/boolean
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/id :liskasys/config
+           :config/person-bill-email? true
+           :config/can-cancel-after-lunch-order? true}]]}
  :liskasys/class-register
  {:txes [[{:db/ident :class-register/date
            :db/valueType :db.type/instant

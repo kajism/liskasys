@@ -199,19 +199,20 @@
                            footer-text full-url)}]}))
 
 (defn make-bill-published-sender [db]
-  (let [{:config/keys [org-name] :as config} (d/pull db '[*] :liskasys/config)
+  (let [{:config/keys [org-name person-bill-email?] :as config} (d/pull db '[*] :liskasys/config)
         from (db-queries/find-auto-sender-email db)
         price-lists (db-queries/find-price-lists-by-id db)]
     (fn [bill]
-      (let [price-list (get price-lists (get-in bill [:person-bill/person :person/price-list :db/id]))
-            payment-due-to (or (:price-list/payment-due-date price-list)
-                               "20. dne tohoto měsíce")
-            msg (bill-published-msg from
-                                    config
-                                    price-list
-                                    payment-due-to
-                                    bill)]
-        (send-message org-name msg)))))
+      (when person-bill-email?
+        (let [price-list (get price-lists (get-in bill [:person-bill/person :person/price-list :db/id]))
+              payment-due-to (or (:price-list/payment-due-date price-list)
+                                 "20. dne tohoto měsíce")
+              msg (bill-published-msg from
+                                      config
+                                      price-list
+                                      payment-due-to
+                                      bill)]
+          (send-message org-name msg))))))
 
 (defn substitution-result-msg [from {:config/keys [org-name full-url]} {:daily-plan/keys [person child-att] :as dp} going?]
   {:from from

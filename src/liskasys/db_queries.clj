@@ -290,14 +290,15 @@
       (cljc.util/parse-int)))
 
 (defn make-can-cancel-today?-fn [db]
-  (let [{:config/keys [cancel-time]} (d/pull db '[*] :liskasys/config)]
+  (let [{:config/keys [cancel-time can-cancel-after-lunch-order?]} (d/pull db '[*] :liskasys/config)]
     (fn [date]
       (let [now (Date.)]
-        (or (< (.getTime now) (.getTime date))
-            (and (= (time/to-format now time/ddMMyyyy)
-                    (time/to-format date time/ddMMyyyy))
-                 (< (HHmm--int (time/to-format now time/HHmm))
-                    (HHmm--int cancel-time))))))))
+        (and can-cancel-after-lunch-order?
+             (or (< (.getTime now) (.getTime date))
+                 (and (= (time/to-format now time/ddMMyyyy)
+                         (time/to-format date time/ddMMyyyy))
+                      (< (HHmm--int (time/to-format now time/HHmm))
+                         (HHmm--int cancel-time)))))))))
 
 (defn find-next-person-daily-plans
   "Select ongoing DPs to be offered for cancellation. Already substituted DPs are excluded."

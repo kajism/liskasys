@@ -71,6 +71,11 @@
            :model (str (:config/automat-email item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/automat-email %])
            :width "200px"]
+          [re-com/label :label "Lze zadat omluvenku s nárokem na náhradu po objednávce oběda?"]
+          [re-com/checkbox
+           :label "tzn. lze omlouvat a do následujícího dne do času zadaného v následujícím poli"
+           :model (:config/can-cancel-after-lunch-order? item)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/can-cancel-after-lunch-order? %])]
           [re-com/label :label "Čas konce omlouvání na dnešek [hh:mm] (změna vyžaduje restart aplikace na serveru)"]
           [re-com/input-text
            :model (str (:config/cancel-time item))
@@ -99,6 +104,11 @@
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/max-subst-periods (cljc.util/parse-int %)])
            :width "200px"
            :validation-regex #"^(\d{0,2})$"]
+          [re-com/label :label "Odesílat rodičům email o platbě docházky?"]
+          [re-com/checkbox
+           :label "ano, odeslat email po zveřejnění rozpisů plateb"
+           :model (:config/person-bill-email? item)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/person-bill-email? %])]
           [re-com/label :label "Možno nahrazovat dříve než omluvený den uplyne?"]
           [re-com/checkbox
            :label "tzn. dovolím nahrazovat budoucí omluvenky?"
