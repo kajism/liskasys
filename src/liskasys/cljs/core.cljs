@@ -83,7 +83,7 @@
      [:ul.nav.navbar-nav
       [:li [:a {:href "#/persons"} "Lidé"]]
       [:li [:a {:href "#/daily-plans"} "Denní plány"]]
-      [:li [:a {:href "#/class-registers"} "Třídní kniha"]]
+      #_[:li [:a {:href "#/class-registers"} "Třídní kniha"]]
       [:li [:a {:href "#/billing-periods"} "Platební období"]]
       [:li [:a {:href "#/lunch-menus"} "Jídelníček"]]
       [:li [:a {:href "#/lunch-orders"} "Oběd-návky"]]]
