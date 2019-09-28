@@ -35,8 +35,10 @@
           (when (roles "parent")
             [:li [:a {:href "/"} "Omluvenky"]])
           [:li [:a {:href "/jidelni-listek"} "Jídelníček"]]
-          [:li [:a {:href "/platby"} "Platby"]]
-          (when (roles "parent")
+          (when (:-person-bill-page? user)
+            [:li [:a {:href "/platby"} "Platby"]])
+          (when (and (:-substs-page? user)
+                     (roles "parent"))
             [:li [:a {:href "/nahrady"} "Náhrady"]])]
          [:ul.nav.navbar-nav.navbar-right
           [:li

@@ -71,6 +71,11 @@
            :model (str (:config/automat-email item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/automat-email %])
            :width "200px"]
+          [re-com/label :label "Zobrazovat rodičům stránku Náhrady?"]
+          [re-com/checkbox
+           :label "ano, budeme používat možnost náhrad za omluvené dny"
+           :model (:config/substs-page? item)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/substs-page? %])]
           [re-com/label :label "Lze zadat omluvenku s nárokem na náhradu po objednávce oběda?"]
           [re-com/checkbox
            :label "tzn. lze omlouvat a do následujícího dne do času zadaného v následujícím poli"
@@ -104,16 +109,21 @@
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/max-subst-periods (cljc.util/parse-int %)])
            :width "200px"
            :validation-regex #"^(\d{0,2})$"]
-          [re-com/label :label "Odesílat rodičům email o platbě docházky?"]
-          [re-com/checkbox
-           :label "ano, odeslat email po zveřejnění rozpisů plateb"
-           :model (:config/person-bill-email? item)
-           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/person-bill-email? %])]
           [re-com/label :label "Možno nahrazovat dříve než omluvený den uplyne?"]
           [re-com/checkbox
            :label "tzn. dovolím nahrazovat budoucí omluvenky?"
            :model (:config/future-subst? item)
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/future-subst? %])]
+          [re-com/label :label "Zobrazovat rodičům stránku Platby?"]
+          [re-com/checkbox
+           :label "ano, zobrazí se menu Platby"
+           :model (:config/person-bill-page? item)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/person-bill-page? %])]
+          [re-com/label :label "Odesílat rodičům email o platbě docházky?"]
+          [re-com/checkbox
+           :label "ano, odeslat email po zveřejnění rozpisů plateb"
+           :model (:config/person-bill-email? item)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/person-bill-email? %])]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :config])]

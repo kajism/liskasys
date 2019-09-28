@@ -76,9 +76,11 @@
        (let [db (d/db (conns server-name))
              ucd (user-children-data db (:db/id user) (:child-id params))
              substs (db-queries/find-person-substs db (:selected-id ucd))]
-         (main-hiccup/liskasys-frame
-          user
-          (main-hiccup/substitutions ucd substs))))
+         (if-not (:-substs-page? user)
+           (response/redirect "/jidelni-listek")
+           (main-hiccup/liskasys-frame
+            user
+            (main-hiccup/substitutions ucd substs)))))
 
      (POST "/nahrady" {:keys [params]}
        (let [subst-req-date (-> params
@@ -102,12 +104,14 @@
          (response/redirect "/nahrady")))
 
      (GET "/platby" {:keys [params]}
-          (let [db (d/db (conns server-name))
-                person-bills (db-queries/find-person-bills db (:db/id user))]
-         (main-hiccup/liskasys-frame
-          user
-          (main-hiccup/person-bills person-bills
-                                    #(db-queries/find-price-list db (:db/id %))))))
+          (if-not (:-person-bill-page? user)
+            (response/redirect "/jidelni-listek")
+            (let [db (d/db (conns server-name))
+                  person-bills (db-queries/find-person-bills db (:db/id user))]
+              (main-hiccup/liskasys-frame
+               user
+               (main-hiccup/person-bills person-bills
+                                         #(db-queries/find-price-list db (:db/id %)))))))
 
      (GET "/qr-code" [id :<< as-int]
        (let [db (d/db (conns server-name))
@@ -158,7 +162,8 @@
      (POST "/login" [username pwd :as req]
        (try
          (let [db (d/db (conns server-name))
-               person (main-service/login db username pwd)]
+               person (main-service/login db username pwd)
+               {:config/keys [org-name person-bill-page? substs-page?]} (d/pull db '[*] :liskasys/config)]
            (when-not person
              (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
            (-> (response/redirect "/" :see-other)
@@ -172,7 +177,9 @@
                                       (some :person/active? (:person/_parent person))
                                       (conj "parent"))
                                     :-server-name server-name
-                                    :-org-name (:config/org-name (d/pull db '[:config/org-name] :liskasys/config)))))))
+                                    :-org-name org-name
+                                    :-person-bill-page? person-bill-page?
+                                    :-substs-page? substs-page?)))))
          (catch Exception e
            (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
 
