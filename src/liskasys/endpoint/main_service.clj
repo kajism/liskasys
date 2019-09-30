@@ -191,7 +191,7 @@
         person-id--bill (atom (->> (db/find-where db {:person-bill/period period-id})
                                    (map #(vector (get-in % [:person-bill/person :db/id]) %))
                                    (into {})))
-        price-lists (db-queries/find-price-lists-by-id db)
+        price-lists (db-queries/find-price-lists db)
         second-month-start (t/plus period-start-ld (t/months 1))
         out (->>
              (for [person (->> (db/find-where db {:person/active? true})

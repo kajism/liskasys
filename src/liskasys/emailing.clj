@@ -201,7 +201,7 @@
 (defn make-bill-published-sender [db]
   (let [{:config/keys [org-name person-bill-email?] :as config} (d/pull db '[*] :liskasys/config)
         from (db-queries/find-auto-sender-email db)
-        price-lists (db-queries/find-price-lists-by-id db)]
+        price-lists (db-queries/find-price-lists db)]
     (fn [bill]
       (when person-bill-email?
         (let [price-list (get price-lists (get-in bill [:person-bill/person :person/price-list :db/id]))

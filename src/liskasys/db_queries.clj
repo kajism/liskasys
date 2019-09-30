@@ -30,19 +30,20 @@
            db)
       #inst "2000"))
 
-(defn find-price-lists-by-id [db]
+(defn find-price-lists [db]
   (->> (db/find-by-type db :price-list {})
        (map (juxt :db/id identity))
        (into {})))
 
 (defn find-price-list [db person-id]
   (or
-   (d/q '[:find (pull ?e [*]) .
-          :in $ ?person-id
-          :where
-          [?person-id :person/price-list ?e]]
-        db person-id)
-   (first (vals (find-price-lists-by-id db))) ;; for history before :person/price-list
+   (when person-id
+     (d/q '[:find (pull ?e [*]) .
+            :in $ ?person-id
+            :where
+            [?person-id :person/price-list ?e]]
+          db person-id))
+   (first (vals (find-price-lists db))) ;; for history before :person/price-list
    ))
 
 (defn find-person-by-email [db email]

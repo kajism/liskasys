@@ -161,7 +161,7 @@
 (defn- process-lunch-order [conn date]
   (let [db (d/db conn)
         plans-with-lunches (db-queries/find-person-daily-plans-with-lunches db date)
-        {:keys [tx-data total]} (lunch-order-tx-total date (db-queries/find-price-lists-by-id db) plans-with-lunches)]
+        {:keys [tx-data total]} (lunch-order-tx-total date (db-queries/find-price-lists db) plans-with-lunches)]
     (db/transact conn nil tx-data)
     (if (seq plans-with-lunches)
       (emailing/send-lunch-order-emails db date plans-with-lunches)
