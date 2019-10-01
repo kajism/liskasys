@@ -182,7 +182,7 @@
 (defn find-person-daily-plans-with-lunches [db date]
   (d/q '[:find [(pull ?e [:db/id :daily-plan/lunch-req
                           {:daily-plan/person [:db/id :person/lunch-type :person/lunch-fund :person/child?
-                                               :person/price-list
+                                               :person/child-portion? :person/price-list
                                                {:person/group [*]}]}]) ...]
          :in $ ?date
          :where

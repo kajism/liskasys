@@ -440,6 +440,10 @@
                  :children
                  [[input-text item :person :person/roles]
                   "možné role oddělené čárkou: admin, koordinátor, obědy, průvodce, inspektor (email s objednávkou obědů se posíla na emaily všech s rolí obědy; denní přehled se posílá všem s rolí průvodce; systém odesílá emaily z emailové adresy koordinátora)"]]
+                [re-com/checkbox
+                 :label "dětská porce oběda?"
+                 :model (:person/child-portion? item)
+                 :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/child-portion? %])]
                 (when (seq (get @kids (:db/id item)))
                   [re-com/v-box
                    :children

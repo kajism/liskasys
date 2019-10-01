@@ -7,8 +7,8 @@
 (def plans-with-lunches [{:daily-plan/lunch-req 1 :daily-plan/person {:person/lunch-type {:db/id 2} :person/child? true}}
                          {:daily-plan/lunch-req 1 :daily-plan/person {:person/lunch-type {:db/id 2}}}
                          {:daily-plan/lunch-req 1 :daily-plan/person {:person/lunch-type {:db/id 3}}}
-                         {:daily-plan/lunch-req 3}
-                         {:daily-plan/lunch-req 1}
+                         {:daily-plan/lunch-req 4}
+                         {:daily-plan/lunch-req 1 :daily-plan/person {:person/child-portion? true}}
                          {:daily-plan/lunch-req 2 :daily-plan/person {:person/child? true}}
                          {}])
 
@@ -20,7 +20,7 @@
                                  {:db/id 3 :lunch-type/label "gluten free"}]))))
 
 (deftest lunch-counts-by-diet-label-test
-  (is (= {"běžná" 6 "lactose free" 2 "gluten free" 1}
+  (is (= {"běžná" 7 "lactose free" 2 "gluten free" 1}
          (lunch-counts-by-diet-label diet-labels-by-id
                                      plans-with-lunches))))
 
@@ -35,7 +35,7 @@
 -------------------------------------------------
 
 * DĚTI
-  běžná: 2
+  běžná: 3
   lactose free: 1
 
 * DOSPĚLÍ
@@ -43,7 +43,7 @@
   gluten free: 1
   lactose free: 1
 -------------------------------------------------
-CELKEM: 9\n\n"}]}
+CELKEM: 10\n\n"}]}
          (lunch-order-msg "me@test-school.org"
                           ["someone@yahoo.com" "anotherone@gmail.com"]
                           "Test school"

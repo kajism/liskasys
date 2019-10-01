@@ -36,7 +36,8 @@
 
 (defn lunch-order-msg [from tos org-name diet-labels-by-id date plans-with-lunches]
   (let [subj (str org-name ": Objednávka obědů na " (time/format-day-date date))
-        plans-by-child? (group-by #(boolean (get-in % [:daily-plan/person :person/child?])) plans-with-lunches)]
+        plans-by-child? (group-by #(boolean (or (get-in % [:daily-plan/person :person/child?])
+                                                (get-in % [:daily-plan/person :person/child-portion?]))) plans-with-lunches)]
     {:from from
      :to tos
      :subject subj
