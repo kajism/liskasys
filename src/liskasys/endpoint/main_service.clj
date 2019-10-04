@@ -277,22 +277,23 @@
                :where
                [?e :person-bill/period ?period-id]
                [?e :person-bill/status :person-bill.status/published]]
-             db bill-id)
-        order-date (tc/to-local-date (db-queries/find-max-lunch-order-date db))
-        dates (->> period-id
-                   (db/find-by-id db)
-                   (cljc.util/period-start-end-lds)
-                   (apply cljc.util/period-local-dates (db-queries/make-holiday?-fn db))
-                   (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
-        bill (db-queries/merge-person-bill-facts db bill) ;; ensure data as of bill generation
-        {:person-bill/keys [person total att-price]} bill
-        tx-result (->> (generate-daily-plans person dates)
-                       (map #(-> % (assoc :db/id (d/tempid :db.part/user)
-                                          :daily-plan/bill bill-id)))
-                       (into [[:db/add bill-id :person-bill/status :person-bill.status/paid]
-                              [:db.fn/cas (:db/id person) :person/lunch-fund
-                               (:person/lunch-fund person) (+ (or (:person/lunch-fund person) 0)
-                                                              (- total att-price))]])
-                       (db/transact conn user-id))]
-    (db/find-by-type (:db-after tx-result) :person-bill {:db/id bill-id})))
+             db bill-id)]
+    (when bill
+      (let [order-date (tc/to-local-date (db-queries/find-max-lunch-order-date db))
+            dates (->> period-id
+                       (db/find-by-id db)
+                       (cljc.util/period-start-end-lds)
+                       (apply cljc.util/period-local-dates (db-queries/make-holiday?-fn db))
+                       (drop-while #(not (t/after? (tc/to-local-date %) order-date))))
+            bill (db-queries/merge-person-bill-facts db bill) ;; ensure data as of bill generation
+            {:person-bill/keys [person total att-price]} bill
+            tx-result (->> (generate-daily-plans person dates)
+                           (map #(-> % (assoc :db/id (d/tempid :db.part/user)
+                                              :daily-plan/bill bill-id)))
+                           (into [[:db/add bill-id :person-bill/status :person-bill.status/paid]
+                                  [:db.fn/cas (:db/id person) :person/lunch-fund
+                                   (:person/lunch-fund person) (+ (or (:person/lunch-fund person) 0)
+                                                                  (- total att-price))]])
+                           (db/transact conn user-id))]
+        (db/find-by-type (:db-after tx-result) :person-bill {:db/id bill-id})))))
 
