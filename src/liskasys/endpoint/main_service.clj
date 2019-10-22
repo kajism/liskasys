@@ -20,7 +20,7 @@
       (if passwd
         (scrypt/check pwd passwd)
         (->> _parent
-             (filter #(= pwd (str (:person/var-symbol %))))
+             (filter #(= pwd (str (:person/vs %))))
              (not-empty)))))
 
 (defn login [db username pwd]

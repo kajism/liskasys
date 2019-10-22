@@ -2,10 +2,10 @@
   (:import [cz.geek.spayd CzechBankAccount CzechSpaydPayment SpaydQRFactory]
            java.io.File))
 
-(defn save-qr-code [account amount var-symbol recipient msg]
+(defn save-qr-code [account amount vs recipient msg]
   (let [payment (doto (CzechSpaydPayment. (CzechBankAccount. account))
                   (.setAmount amount)
-                  (.setVs var-symbol)
+                  (.setVs vs)
                   (.setRecipientName recipient)
                   (.setMessage msg))
         tmp-file (File/createTempFile "qrcode" ".png")]

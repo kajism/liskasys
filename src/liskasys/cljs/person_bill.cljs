@@ -72,7 +72,7 @@
                                 [:a {:href (str "#/person/" (get-in row [:person-bill/person :db/id]) "e")}
                                  value]
                                 value)])}
-                 ["Var symbol" (comp str :person/var-symbol :person-bill/person)]
+                 ["Var symbol" (comp str :person/vs :person-bill/person)]
                  {:header "Stav"
                   :val-fn #(row->status %)
                   :td-comp (fn [& {:keys [value row row-state]}]
@@ -110,7 +110,7 @@
           [re-com/label :label "Jméno"]
           [:b (row->person-fullname item @persons)]
           [re-com/label :label "Variabilní symbol"]
-          [:b (-> item :person-bill/person :person/var-symbol)]
+          [:b (-> item :person-bill/person :person/vs)]
           [re-com/label :label "Stav"]
           [re-com/single-dropdown
            :model (some-> item :person-bill/status :db/ident)

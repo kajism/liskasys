@@ -114,7 +114,7 @@ Toto je automaticky generovaný email ze systému http://testschool.org/liskasys
                              "do konce roku"
                              {:person-bill/total 100000
                               :person-bill/person {:person/firstname "Oliver" :person/lastname "Miarka"
-                                                   :person/var-symbol "222"
+                                                   :person/vs "222"
                                                    :person/parent [{:person/email "someone@yahoo.com"}
                                                                    {:person/email "anotherone@gmail.com"}]}
                               :person-bill/period {:billing-period/from-yyyymm 201901
@@ -153,7 +153,7 @@ Toto je automaticky generovaný email ze systému http://testschool.org/liskasys
                              {:person-bill/total 100000
                               :person-bill/att-price 80000
                               :person-bill/person {:person/firstname "Oliver" :person/lastname "Miarka"
-                                                   :person/var-symbol "222"
+                                                   :person/vs "222"
                                                    :person/parent [{:person/email "someone@yahoo.com"}
                                                                    {:person/email "anotherone@gmail.com"}]}
                               :person-bill/period {:billing-period/from-yyyymm 201901

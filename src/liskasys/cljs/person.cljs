@@ -111,7 +111,7 @@
                ["Jméno" :person/firstname]
                ["Šablona docházky" (comp cljc.util/att-pattern->text :person/att-pattern)]
                ["Šablona obědů" (comp cljc.util/lunch-pattern->text :person/lunch-pattern)]
-               ["Variabilní symbol" #(str (:person/var-symbol %))]
+               ["Variabilní symbol" #(str (:person/vs %))]
                ["Email rodičů" #(or (:person/email %)
                                     (parent-attrs-fn % :person/email))]
                ["Telefon rodičů" #(or (:person/phone %)
@@ -256,8 +256,8 @@
              :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/active? %])]
             [re-com/label :label "Variabilní symbol"]
             [re-com/input-text
-             :model (str (:person/var-symbol item))
-             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/var-symbol (cljc.util/parse-int %)])
+             :model (str (:person/vs item))
+             :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/vs %])
              :validation-regex #"^(\d{0,10})$"]
             [re-com/label :label "Ceník"]
             [re-com/single-dropdown

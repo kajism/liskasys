@@ -185,7 +185,7 @@
                            "------------------------------------------------------------------------------\n\n"
                            "Číslo účtu: " bank-account "\n"
                            "Částka: " (/ (if separate-lunches? att-price total) 100.0) " Kč\n"
-                           "Variabilní symbol: " (:person/var-symbol person) "\n"
+                           "Variabilní symbol: " (:person/vs person) "\n"
                            "Do poznámky: " (cljc.util/person-fullname person) " " period-text "\n"
                            "Splatnost do: " payment-due-to "\n\n"
                            (when-not separate-lunches?
@@ -194,7 +194,7 @@
                              (str "--- Obědy ----------------------------------------------------------------------------------\n\n"
                                   "Číslo účtu: " bank-account-lunches "\n"
                                   "Částka: " (/ (- total att-price) 100.0) " Kč\n"
-                                  "Variabilní symbol: " (:person/var-symbol person) "\n"
+                                  "Variabilní symbol: " (:person/vs person) "\n"
                                   "Do poznámky: " (cljc.util/person-fullname person) " " period-text "\n"
                                   "Splatnost do: " payment-due-to))
                            footer-text full-url)}]}))

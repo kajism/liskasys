@@ -238,7 +238,7 @@ return true;
         [:tr
          [:td (cljc.util/period->text period)]
          [:td (cljc.util/person-fullname person)]
-         [:td.right (:person/var-symbol person)]
+         [:td.right (:person/vs person)]
          [:td.right [:b (cljc.util/cents->text total)]]
          [:td.right (cljc.util/cents->text att-price)]
          [:td.right (str lunch-count " x " (cljc.util/from-cents -lunch-price) " = " (cljc.util/from-cents -total-lunch-price))]

@@ -18,8 +18,20 @@
            (timbre/info server-name "connected to datomic DB" db-name ", going to run conformity")
            (conformity/ensure-conforms conn norms-map)
 
-           (let [db (d/db conn)]
-             )
+           (let [db (d/db conn)
+                 var-symbols (d/q '[:find ?e ?v
+                                    :in $
+                                    :where [?e :person/var-symbol ?v]] db)]
+
+             (when (> (count var-symbols) 0)
+               (->> var-symbols
+                    (mapcat (fn [[e v]]
+                              [[:db/retract e :person/var-symbol v]
+                               [:db/add e :person/vs (str v)]]))
+                    (d/transact conn))
+               (timbre/info server-name " var symbols converted to strings")
+
+               ))
 
            (assoc-in out [:conns server-name] conn)))
        component

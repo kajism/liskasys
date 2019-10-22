@@ -120,7 +120,7 @@
              {:config/keys [org-name full-url]} (d/pull db '[*] :liskasys/config)
              qr-code-file (qr-code/save-qr-code (db-queries/find-bank-account db (:db/id person))
                                                 (/ (:person-bill/total person-bill) 100)
-                                                (str (:person/var-symbol person))
+                                                (str (:person/vs person))
                                                 org-name
                                                 (str (cljc.util/person-fullname person) " "
                                                      (-> person-bill :person-bill/period cljc.util/period->text)))

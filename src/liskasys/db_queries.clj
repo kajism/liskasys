@@ -47,7 +47,7 @@
    ))
 
 (defn find-person-by-email [db email]
-  (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/var-symbol :person/active?]}]) .
+  (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/vs :person/active?]}]) .
          :in $ ?lower-email1
          :where
          [?e :person/email ?email]
@@ -143,12 +143,17 @@
         as-of-db (d/as-of db tx)
         person-id (get-in person-bill [:person-bill/person :db/id])
         person (d/pull as-of-db
-                       [:person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email :person/child?
+                       [:person/vs :person/var-symbol :person/att-pattern :person/lunch-pattern :person/firstname :person/lastname :person/email :person/child?
                         {:person/group [:db/id :group/pattern :group/subst-group]}
                         {:person/parent [:person/email]}]
                        person-id)
         price-list (find-price-list as-of-db person-id)
-        person (assoc person :person/price-list price-list)
+        person (cond-> person
+                 (and (nil? (:person/vs person))
+                      (some? (:person/var-symbol person)))
+                 (assoc :person/vs (str (:person/var-symbol person)))
+                 :always
+                 (assoc :person/price-list price-list))
         lunch-price (cljc.util/person-lunch-price person price-list)
         total-lunch-price (* lunch-price lunch-count)
         paid-status (d/entid db :person-bill.status/paid)]

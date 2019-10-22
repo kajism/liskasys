@@ -94,7 +94,7 @@
                   matched-bill-ids (->> published-bills
                                         (keep #(when (contains?
                                                       vs-amounts
-                                                      [(str (-> % :person-bill/person :person/var-symbol))
+                                                      [(str (-> % :person-bill/person :person/vs))
                                                        (str (/ (:person-bill/total %) 100))])
                                                    (:db/id %))))]
               (swap! form-data assoc
