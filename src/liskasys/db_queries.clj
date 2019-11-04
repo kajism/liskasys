@@ -46,8 +46,10 @@
    (first (vals (find-price-lists db))) ;; for history before :person/price-list
    ))
 
-(defn find-person-by-email [db email]
-  (let [p (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/vs :person/active?]}]) .
+(defn find-person-by-email
+  "Used for user login."
+  [db email]
+  (let [p (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/vs :person/active?]}]) . ;; :person/vs is necessary for passwd check!
                  :in $ ?lower-email1
                  :where
                  [?e :person/email ?email]
