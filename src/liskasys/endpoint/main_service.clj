@@ -75,7 +75,7 @@
         can-cancel-lunch?-fn (make-can-cancel-lunch?-fn db)
         can-cancel-today?-fn (db-queries/make-can-cancel-today?-fn db)]
     (if-not  (contains? (->> user-id
-                             (db-queries/find-active-children-by-person-id db)
+                             (db-queries/find-active-children-by-person-id db true)
                              (map :db/id)
                              (set))
                         child-id)

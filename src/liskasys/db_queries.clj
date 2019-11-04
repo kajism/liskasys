@@ -47,7 +47,7 @@
    ))
 
 (defn find-person-by-email [db email]
-  (let [p (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/active?]}]) .
+  (let [p (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/vs :person/active?]}]) .
                  :in $ ?lower-email1
                  :where
                  [?e :person/email ?email]
