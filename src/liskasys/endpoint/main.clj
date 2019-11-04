@@ -32,8 +32,8 @@
 (defn- upload-dir [server-name]
   (or (:upload-dir env) "./uploads/" (get config/dbs server-name) "/"))
 
-(defn- user-children-data [db user-id selected-id]
-  (let [user-children (->> (db-queries/find-active-children-by-person-id db user-id)
+(defn- user-children-data [db user-id selected-id include-parent-with-lunches?]
+  (let [user-children (->> (db-queries/find-active-children-by-person-id db user-id include-parent-with-lunches?)
                            (util/sort-by-locale cljc.util/person-fullname))
         sid (or selected-id (:db/id (first user-children)))]
     {:user-children user-children
@@ -47,7 +47,7 @@
        (if-not (contains? roles "parent")
          (response/redirect "/jidelni-listek")
          (let [db (d/db (get conns server-name))
-               ucd (user-children-data db (:db/id user) (:child-id params))
+               ucd (user-children-data db (:db/id user) (:child-id params) true)
                child-daily-plans (db-queries/find-next-person-daily-plans db (:selected-id ucd))]
            (main-hiccup/liskasys-frame
             user
@@ -74,7 +74,7 @@
 
      (GET "/nahrady" {:keys [params]}
        (let [db (d/db (conns server-name))
-             ucd (user-children-data db (:db/id user) (:child-id params))
+             ucd (user-children-data db (:db/id user) (:child-id params) false)
              substs (db-queries/find-person-substs db (:selected-id ucd))]
          (if-not (:-substs-page? user)
            (response/redirect "/jidelni-listek")

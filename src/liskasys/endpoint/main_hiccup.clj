@@ -38,7 +38,7 @@
           (when (:-person-bill-page? user)
             [:li [:a {:href "/platby"} "Platby"]])
           (when (and (:-substs-page? user)
-                     (roles "parent"))
+                     (contains? roles "parent"))
             [:li [:a {:href "/nahrady"} "Náhrady"]])]
          [:ul.nav.navbar-nav.navbar-right
           [:li

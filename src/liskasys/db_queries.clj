@@ -267,8 +267,8 @@
        next-school-day-date))))
 
 (defn find-active-children-by-person-id
-  "Returns children plus person itself if has lunch pattern to allow its cancellations."
-  [db parent-id]
+  "Returns children plus possibly person itself if has lunch pattern to allow its cancellations."
+  [db parent-id include-parent-with-lunches?]
   (let [out (d/q '[:find [(pull ?e [* {:person/group [*]}]) ...]
                    :in $ ?parent
                    :where
@@ -277,8 +277,9 @@
                  db parent-id)
         p (d/pull db '[*] parent-id)]
     (cond-> out
-            (not (cljc.util/zero-patterns? p))
-            (conj p))))
+      (and include-parent-with-lunches?
+           (not (cljc.util/zero-patterns? p)))
+      (conj p))))
 
 (defn find-person-bills [db user-id]
   (->> (d/q '[:find [(pull ?e [* {:person-bill/person [*] :person-bill/period [*]}]) ...]
