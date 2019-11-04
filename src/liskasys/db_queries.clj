@@ -47,14 +47,17 @@
    ))
 
 (defn find-person-by-email [db email]
-  (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/vs :person/active?]}]) .
-         :in $ ?lower-email1
-         :where
-         [?e :person/email ?email]
-         [(clojure.string/lower-case ?email) ?lower-email2]
-         [(= ?lower-email1 ?lower-email2)]
-         [?e :person/active? true]]
-       db (-> email str/trim str/lower-case)))
+  (let [p (d/q '[:find (pull ?e [* {:person/_parent [:db/id :person/active?]}]) .
+                 :in $ ?lower-email1
+                 :where
+                 [?e :person/email ?email]
+                 [(clojure.string/lower-case ?email) ?lower-email2]
+                 [(= ?lower-email1 ?lower-email2)]
+                 [?e :person/active? true]]
+               db (-> email str/trim str/lower-case))]
+    (cond-> p
+      (not (cljc.util/zero-patterns? p))
+      (update :person/_parent conj (select-keys p [:db/id :person/active?])))))
 
 (defn find-persons-with-role [db role]
   (when (not-empty role)
@@ -263,13 +266,19 @@
               1)
        next-school-day-date))))
 
-(defn find-active-children-by-person-id [db parent-id]
-  (d/q '[:find [(pull ?e [* {:person/group [*]}]) ...]
-         :in $ ?parent
-         :where
-         [?e :person/parent ?parent]
-         [?e :person/active? true]]
-       db parent-id))
+(defn find-active-children-by-person-id
+  "Returns children plus person itself if has lunch pattern to allow its cancellations."
+  [db parent-id]
+  (let [out (d/q '[:find [(pull ?e [* {:person/group [*]}]) ...]
+                   :in $ ?parent
+                   :where
+                   [?e :person/parent ?parent]
+                   [?e :person/active? true]]
+                 db parent-id)
+        p (d/pull db '[*] parent-id)]
+    (cond-> out
+            (not (cljc.util/zero-patterns? p))
+            (conj p))))
 
 (defn find-person-bills [db user-id]
   (->> (d/q '[:find [(pull ?e [* {:person-bill/person [*] :person-bill/period [*]}]) ...]

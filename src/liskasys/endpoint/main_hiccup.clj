@@ -32,7 +32,7 @@
           [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
         [:div#liskasys-navbar.collapse.navbar-collapse
          [:ul.nav.navbar-nav
-          (when (roles "parent")
+          (when (contains? roles "parent")
             [:li [:a {:href "/"} "Omluvenky"]])
           [:li [:a {:href "/jidelni-listek"} "Jídelníček"]]
           (when (:-person-bill-page? user)
@@ -69,10 +69,9 @@ for (var i=0; i < xs.length; i++) {
 console.log(\"Ok\");
 return true;
 }"]
-   [:h3 "Omluvenky"]
+   [:h3 "Omluvenky a odhlášky obědů"]
    [:div
     [:div.form-group
-     [:label {:for "child"} "Dítě"]
      [:form {:method "get"
              :role "form"}
       [:select#child.form-control {:name "child-id"
