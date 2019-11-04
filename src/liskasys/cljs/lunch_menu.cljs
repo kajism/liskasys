@@ -18,7 +18,7 @@
     (fn []
       [re-com/v-box
        :children
-       [[:h3 "Jídelníček"]
+       [[:h3 "Týdenní jídelníčky"]
         [data-table
          :table-id :lunch-menus
          :rows lunch-menus
@@ -54,7 +54,7 @@
             errors (:-errors item)]
         [re-com/v-box :gap "5px"
          :children
-         [[:h3 "Jídelníček"]
+         [[:h3 "Týdenní jídelníček"]
           [re-com/label :label "Platný od"]
           [re-com/input-text
            :model (time/to-format (:lunch-menu/from item) time/ddMMyyyy)
