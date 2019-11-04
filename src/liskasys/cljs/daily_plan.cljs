@@ -47,18 +47,18 @@
                      :tooltip "Přenačíst ze serveru"
                      :on-click #(re-frame/dispatch [:entities-load :daily-plan])]]]
                   (fn [row]
-                     (when (and (= (:db/id row) (:selected-row-id @table-state)))
-                              [re-com/h-box :gap "5px" :justify :end
-                               :children
-                               [(when (or (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))
-                                          (contains? (:-roles @user) "superadmin"))
-                                  [re-com/hyperlink-href
-                                   :href (str "#/daily-plan/" (:db/id row) "e")
-                                   :label [re-com/md-icon-button
-                                           :md-icon-name "zmdi-edit"
-                                           :tooltip "Editovat"]])
-                                (when (contains? (:-roles @user) "superadmin")
-                                  [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)]) :emphasise? true])]]))
+                    (let [future? (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))]
+                      (when (and (= (:db/id row) (:selected-row-id @table-state))
+                                 (or future?
+                                     (contains? (:-roles @user) "superadmin")))
+                        [re-com/h-box :gap "5px" :justify :end
+                         :children
+                         [[re-com/hyperlink-href
+                           :href (str "#/daily-plan/" (:db/id row) "e")
+                           :label [re-com/md-icon-button
+                                   :md-icon-name "zmdi-edit"
+                                   :tooltip "Editovat"]]
+                          [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)]) :emphasise? (not future?)]]])))
                   :none]
                  ["Datum" :daily-plan/date]
                  {:header "Jméno"
