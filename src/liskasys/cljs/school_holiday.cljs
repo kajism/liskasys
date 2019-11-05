@@ -44,11 +44,21 @@
                         [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :school-holiday (:db/id row)])]]]))
                   :none]
                  ["Název" :school-holiday/label]
-                 ["Od" :school-holiday/from]
-                 ["Do" :school-holiday/to]
                  ["Každoročně?" :school-holiday/every-year?]
-                 ["Pouze vyšší?" :school-holiday/higher-schools-only?]]
-         :order-by 2]]])))
+                 {:header "Od"
+                  :val-fn :school-holiday/from
+                  :td-comp (fn [& {:keys [row value]}]
+                             [:td (time/to-format value (if (:school-holiday/every-year? row)
+                                                          time/ddMM
+                                                          time/ddMMyyyy))])}
+                 {:header "Do"
+                  :val-fn :school-holiday/to
+                  :td-comp (fn [& {:keys [row value]}]
+                             [:td (time/to-format value (if (:school-holiday/every-year? row)
+                                                          time/ddMM
+                                                          time/ddMMyyyy))])}
+                 ["Školka funguje, náhrady zakázány?" :school-holiday/higher-schools-only?]]
+         :order-by 3]]])))
 
 (defn page-school-holiday []
   (let [school-holiday (re-frame/subscribe [:entity-edit :school-holiday])]
@@ -62,6 +72,11 @@
            :model (str (:school-holiday/label item))
            :on-change #(re-frame/dispatch [:entity-change :school-holiday (:db/id item) :school-holiday/label %])
            :width "400px"]
+          [re-com/label :label "Každoročně? (libovolný zadaný rok v Od - Od bude ignorován)"]
+          [re-com/checkbox
+           :model (:school-holiday/every-year? item)
+           :on-change #(re-frame/dispatch [:entity-change :school-holiday (:db/id item) :school-holiday/every-year? %])]
+
           [re-com/label :label "Od"]
           [re-com/input-text
            :model (time/to-format (:school-holiday/from item) time/ddMMyyyy)
@@ -74,11 +89,7 @@
            :on-change #(re-frame/dispatch [:entity-change :school-holiday (:db/id item) :school-holiday/to (time/from-dMyyyy %)])
            :validation-regex #"^\d{0,2}$|^\d{0,2}\.\d{0,2}$|^\d{0,2}\.\d{0,2}\.\d{0,4}$"
            :width "100px"]
-          [re-com/label :label "Každoročně?"]
-          [re-com/checkbox
-           :model (:school-holiday/every-year? item)
-           :on-change #(re-frame/dispatch [:entity-change :school-holiday (:db/id item) :school-holiday/every-year? %])]
-          [re-com/label :label "Pouze vyšší školy? (mateřské fungují, ale bez možnosti náhrad)"]
+          [re-com/label :label "Školka funguje, náhrady zakázány? (prázdniny ZŠ a vyšších škol)"]
           [re-com/checkbox
            :model (:school-holiday/higher-schools-only? item)
            :on-change #(re-frame/dispatch [:entity-change :school-holiday (:db/id item) :school-holiday/higher-schools-only? %])]
