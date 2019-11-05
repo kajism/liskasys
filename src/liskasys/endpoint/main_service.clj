@@ -74,10 +74,10 @@
   (let [db (d/db conn)
         can-cancel-lunch?-fn (make-can-cancel-lunch?-fn db)
         can-cancel-today?-fn (db-queries/make-can-cancel-today?-fn db)]
-    (if-not  (contains? (->> user-id
-                             (db-queries/find-active-children-by-person-id db true)
-                             (map :db/id)
-                             (set))
+    (if-not  (contains? (->>
+                         (db-queries/find-active-children-by-person-id db user-id true)
+                         (map :db/id)
+                         (set))
                         child-id)
       (timbre/error "User" user-id "attempts to change cancellations of child" child-id)
       (->> (d/q '[:find [(pull ?e [*]) ...]
