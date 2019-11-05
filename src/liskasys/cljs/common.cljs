@@ -117,7 +117,9 @@
     (if id [kw id attr] [:new-ents kw attr])
     (cond-> val
       (string? val)
-      (str/trim)))))
+      (-> (str/replace #"\n" "#@")
+          (str/trim)
+          (str/replace #"#@" "\n"))))))
 
 (re-frame/reg-event-fx
  :entity-save
