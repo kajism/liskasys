@@ -73,7 +73,8 @@
 (defn transact-cancellations [conn user-id child-id cancel-dates uncancel-dates excuses-by-date]
   (let [db (d/db conn)
         can-cancel-lunch?-fn (make-can-cancel-lunch?-fn db)
-        can-cancel-today?-fn (db-queries/make-can-cancel-today?-fn db)]
+        can-cancel-today?-fn (db-queries/make-can-cancel-today?-fn db)
+        dates-union (set/union cancel-dates uncancel-dates (set (keys excuses-by-date)))]
     (if-not  (contains? (->>
                          (db-queries/find-active-children-by-person-id db user-id true)
                          (map :db/id)
@@ -85,7 +86,7 @@
                   :where
                   [?e :daily-plan/person ?person]
                   [?e :daily-plan/date ?date]]
-                db child-id (set/union cancel-dates uncancel-dates (keys excuses-by-date)))
+                db child-id dates-union)
            (mapcat (fn [{:keys [:db/id] :daily-plan/keys [date lunch-req lunch-ord substituted-by subst-req-on excuse]}]
                      (cond
                        (and (not (can-cancel-lunch?-fn date))
