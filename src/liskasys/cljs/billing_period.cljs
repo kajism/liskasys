@@ -1,5 +1,5 @@
 (ns liskasys.cljs.billing-period
-  (:require [clojure.set :refer [union]]
+  (:require [clojure.set :refer [intersection]]
             [clojure.string :as str]
             [cljs-time.core :as t]
             [liskasys.cljc.util :as cljc.util]
@@ -74,33 +74,44 @@
   (let [reader (js/FileReader.)]
     (set! (.. reader -onload)
           (fn [e]
-            (let [content (->> (-> e .-target .-result (str/split #"\n"))
-                               (map #(as-> % $
-                                       (subs $ 1)
-                                       (str/trim $)
-                                       (subs $ 0 (dec (count $)))))
-                               (map #(str/split % #"\";\"")))
-                  find-idx #(->> (first content)
+            (let [lines (-> e .-target .-result (str/split #"\n"))
+                  quotes? (str/starts-with? (first lines) "\"")
+                  separator (if quotes?
+                              #"\";\""
+                              #";")
+                  lines (cond->> lines
+                          quotes?
+                          (map #(subs % 1))
+                          :always
+                          (map #(str/trim %))
+                          quotes?
+                          (map #(subs % 0 (dec (count %))))
+                          :always
+                          (map #(str/split % separator)))
+                  find-idx #(->> (first lines)
                                  (map-indexed vector)
                                  (some (fn [[idx column-name]]
-                                         (when (= column-name %)
+                                         (when (str/index-of column-name %)
                                            idx))))
                   amount-idx (or (find-idx "Objem")
-                                 (find-idx "Částka v měně účtu")
+                                 (find-idx "stka v m")
                                  #_(find-idx (:amount-column-name @form-data)))
+                  _ (println "amount-idx" amount-idx)
                   vs-idx (or (find-idx "VS")
-                             (find-idx "Variabilní symbol")
+                             (find-idx "Variabiln")
                              #_(find-idx (:vs-column-name @form-data)))
-                  vs-amounts (->> content
+                  _ (println "vs-idx" vs-idx)
+                  vs-amounts (->> lines
                                   (drop 1)
-                                  (map (juxt #(-> (get % vs-idx) (str/replace #"^0+" ""))
+                                  (map (juxt #(some-> (get % vs-idx) (str/replace #"^0+" ""))
                                              #(get % amount-idx)))
                                   (set))
+                  _ (println "vs-amounts" vs-amounts)
                   matched-bill-ids (->> published-bills
                                         (keep (fn [bill]
                                                 (when (contains?
                                                        vs-amounts
-                                                       [(str (-> bill :person-bill/person :person/vs (str/replace #"^0+" "")))
+                                                       [(str (some-> bill :person-bill/person :person/vs (str/replace #"^0+" "")))
                                                         (str (/ (bill-amount-fn bill) 100))])
                                                   (:db/id bill))))
                                         (set))]
@@ -110,7 +121,7 @@
 (defn csv-import-dialog-markup [form-data published-bills process-ok process-cancel]
   (let [{:keys [matched-bill-ids matched-att-price-bill-ids matched-lunch-price-bill-ids]} @form-data
         matched-ids (or matched-bill-ids
-                        (union matched-att-price-bill-ids matched-lunch-price-bill-ids))]
+                        (intersection matched-att-price-bill-ids matched-lunch-price-bill-ids))]
     [re-com/border
      :border "1px solid #eee"
      :child  [re-com/v-box
@@ -119,19 +130,18 @@
               :children [[re-com/title :label "Import CSV souborů s platbami" :level :level1]
                          [re-com/v-box
                           :class    "form-group"
-                          :children [(comment
-                                       [:label {:for "amount-column-name"} "Název sloupce s částkou"]
-                                       [re-com/input-text
-                                        :model       (:amount-column-name @form-data)
-                                        :on-change   #(swap! form-data assoc :amount-column-name %)
-                                        :class       "form-control"
-                                        :attr        {:id "amount-column-name"}]
-                                       [:label {:for "vs-column-name"} "Název sloupce s variabilním symbolem"]
-                                       [re-com/input-text
-                                        :model       (:vs-column-name @form-data)
-                                        :on-change   #(swap! form-data assoc :vs-column-name %)
-                                        :class       "form-control"
-                                        :attr        {:id "vs-column-name"}])
+                          :children [;; [:label {:for "amount-column-name"} "Název sloupce s částkou"]
+                                     ;; [re-com/input-text
+                                     ;;  :model       (:amount-column-name @form-data)
+                                     ;;  :on-change   #(swap! form-data assoc :amount-column-name %)
+                                     ;;  :class       "form-control"
+                                     ;;  :attr        {:id "amount-column-name"}]
+                                     ;; [:label {:for "vs-column-name"} "Název sloupce s variabilním symbolem"]
+                                     ;; [re-com/input-text
+                                     ;;  :model       (:vs-column-name @form-data)
+                                     ;;  :on-change   #(swap! form-data assoc :vs-column-name %)
+                                     ;;  :class       "form-control"
+                                     ;;  :attr        {:id "vs-column-name"}]
                                      [:label {:for "csv-file"} "CSV soubor s celkovými platbami"]
                                      [:input {:id "csv-file"
                                               :type "file"
@@ -152,7 +162,7 @@
                                               :on-change #(-> % .-target .-files (aget 0)
                                                               (read-and-process-csv-file form-data published-bills (fn [{:person-bill/keys [total att-price]}] (- total att-price)) :matched-lunch-price-bill-ids))}]]]
                          [re-com/line :color "#ddd" :style {:margin "10px 0 10px"}]
-                         (when (seq? matched-ids)
+                         (when (coll? matched-ids)
                            [re-com/title
                             :label (if (zero? (count matched-ids))
                                      "Dle částky a VS nespárovány žádné platby..."
@@ -164,7 +174,7 @@
                           :children [[re-com/button
                                       :label    (str "Označit " (count matched-ids) " zaplacené!")
                                       :class    "btn-danger"
-                                      :on-click process-ok
+                                      :on-click #(process-ok matched-ids)
                                       :disabled? (zero? (count matched-ids))]
                                      [re-com/button
                                       :label    "Zrušit"
@@ -172,12 +182,12 @@
 
 (defn select-paid-by-csv-dialog []
   (let [form-data (reagent/atom nil)
+        _  (add-watch form-data :key (fn [k r os ns] (print k r os ns)))
         default-form-data {:show? true
                            :amount-column-name "Objem"
                            :vs-column-name "VS"}
-        process-ok (fn [event]
-                     ;; ***** PROCESS THE RETURNED DATA HERE
-                     (doseq [db-id (:matched-bill-ids @form-data)]
+        process-ok (fn [ids]
+                     (doseq [db-id ids]
                        (re-frame/dispatch [::send-cmd nil "set-bill-as-paid" db-id]))
                      (reset! form-data nil)
                      false) ;; Prevent default "GET" form submission (if used)
