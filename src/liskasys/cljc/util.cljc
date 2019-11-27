@@ -94,10 +94,13 @@
     (let [m (rem ym 100)]
       (str (quot ym 100) "/" (if (<= m 9) "0") m))))
 
+(defn yyyymm-start-ld [ym]
+  (t/local-date (quot ym 100) (rem ym 100) 1))
+
 (defn period-start-end-lds
   "Returns local dates with end exclusive!!"
-  [{:keys [:billing-period/from-yyyymm :billing-period/to-yyyymm] :as period}]
-  [(t/local-date (quot from-yyyymm 100) (rem from-yyyymm 100) 1)
+  [{:billing-period/keys [from-yyyymm to-yyyymm]}]
+  [(yyyymm-start-ld from-yyyymm)
    (t/plus (t/local-date (quot to-yyyymm 100) (rem to-yyyymm 100) 1)
            (t/months 1))])
 
@@ -140,6 +143,16 @@
   (let [ld (tc/to-local-date date)]
     (+ (* (t/year ld) 100)
        (t/month ld))))
+
+(defn previous-yyyymm [yyyymm]
+  (if-not (= (rem yyyymm 100) 1)
+    (dec yyyymm)
+    (+ (* (dec (quot yyyymm 100)) 100) 12)))
+
+(defn next-yyyymm [yyyymm]
+  (if-not (= (rem yyyymm 100) 12)
+    (inc yyyymm)
+    (+ (* (inc (quot yyyymm 100)) 100) 1)))
 
 (defn last-september [yyyymm]
   (let [y (quot yyyymm 100)

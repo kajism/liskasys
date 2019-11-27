@@ -1,6 +1,8 @@
 (ns liskasys.component.scheduler
   (:require [com.stuartsierra.component :as component]
             [liskasys.service :as service]
+            [liskasys.cljc.time :as time]
+            [liskasys.cljc.util :as cljc.util]
             [taoensso.timbre :as timbre]
             [twarc.core :as twarc]
             [datomic.api :as d]
@@ -19,6 +21,14 @@
     (catch Exception e
       (timbre/error "process-lunch-order-and-substitutions-job error" e))))
 
+(twarc/defjob process-monthly-lunch-orders-job [scheduler conn]
+  (try
+    (service/process-monthly-lunch-orders conn (-> (time/today)
+                                                   (cljc.util/date-yyyymm)
+                                                   (cljc.util/previous-yyyymm)))
+    (catch Exception e
+      (timbre/error "process-monthly-lunch-orders-job error" e))))
+
 (defrecord Scheduler [datomic twarc-scheduler quartz-props]
   component/Lifecycle
   (start [component]
@@ -32,17 +42,21 @@
         (when can-cancel-after-lunch-order?
           ;; cron expression: sec min hour day-of-mon mon day-of-week ?year
           (timbre/info db-key "process-cancellation-closing-job sched at " cancel-hour ":" cancel-min)
-          (process-cancellation-closing-job sched
-                                            [conn]
+          (process-cancellation-closing-job sched [conn]
                                             :trigger {:cron {:expression (str "0 " cancel-min " " cancel-hour " * * ?")
                                                              :misfire-handling :fire-and-process
                                                              :time-zone (TimeZone/getTimeZone "Europe/Prague")}}))
         (timbre/info db-key "process-lunch-order-and-substitutions-job sched at " order-hour ":" order-min)
-        (process-lunch-order-and-substitutions-job sched
-                                                   [conn]
+        (process-lunch-order-and-substitutions-job sched [conn]
                                                    :trigger {:cron {:expression (str "0 " order-min " " order-hour " * * ?")
                                                                     :misfire-handling :fire-and-process
-                                                                    :time-zone (TimeZone/getTimeZone "Europe/Prague")}}))
+                                                                    :time-zone (TimeZone/getTimeZone "Europe/Prague")}})
+
+        (timbre/info db-key "process-monthly-lunch-orders-job scheduled")
+        (process-monthly-lunch-orders-job sched [conn]
+                                          :trigger {:cron {:expression (str "0 0 5 1 * ?")
+                                                           :misfire-handling :fire-and-process
+                                                           :time-zone (TimeZone/getTimeZone "Europe/Prague")}}))
       (assoc component :twarc-scheduler sched)))
   (stop [component]
     (when twarc-scheduler

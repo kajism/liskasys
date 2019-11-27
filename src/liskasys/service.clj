@@ -183,3 +183,8 @@
     (if (> (count today-atts) 0)
       (emailing/send-today-child-counts db today-atts)
       (timbre/info (:org-name (d/pull db '[*] :liskasys/config)) ": no attendance today"))))
+
+(defn process-monthly-lunch-orders [conn yyyymm]
+  (let [db (d/db conn)
+        person-totals (db-queries/find-monthly-lunch-totals db yyyymm)]
+    (emailing/send-monthly-lunch-order-totals db yyyymm person-totals)))

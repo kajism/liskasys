@@ -62,7 +62,7 @@
       (update :person/_parent conj (select-keys p [:db/id :person/active?])))))
 
 (defn find-persons-with-role [db role]
-  (when (not-empty role)
+  (when-not (str/blank? role)
     (d/q '[:find [(pull ?e [*]) ...]
            :in $ ?role
            :where
@@ -430,3 +430,21 @@
                                           {:person/lunch-type [:lunch-type/label]
                                            :person/parent [:person/email]
                                            :person/group [:db/id]}]}]))
+
+(defn find-monthly-lunch-totals [db yyyymm]
+  (let [from (time/to-date (cljc.util/yyyymm-start-ld yyyymm))
+        to (time/to-date (cljc.util/yyyymm-start-ld (cljc.util/next-yyyymm yyyymm)))]
+    (->>
+     (d/q '[:find (pull ?p [:db/id :person/firstname :person/lastname]) (sum ?ord)
+            :in $ ?from ?to
+            :with ?e
+            :where
+            [?e :daily-plan/person ?p]
+            [?e :daily-plan/date ?d]
+            [(>= ?d ?from)]
+            [(< ?d ?to)]
+            [?e :daily-plan/lunch-ord ?ord]
+            [(> ?ord 0)]]
+          db from to)
+     (sort-by (juxt (comp :person/lastname first)
+                    (comp :person/firstname first))))))

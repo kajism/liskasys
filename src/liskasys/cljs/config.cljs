@@ -45,9 +45,9 @@
                  ["Konec oml." :config/cancel-time]
                  ["Obj. obědů" :config/order-time]
                  ["Obj. v prac. dny?" :config/order-workdays-only?]
-                 ["Příjemce počtu" :config/closing-msg-role]
-                 ["Období náhrad" :config/max-subst-periods]
-                 ["Nahrazovat předem?" :config/future-subst?]]]]])))
+                 #_["Příjemce počtu" :config/closing-msg-role]
+                 #_["Období náhrad" :config/max-subst-periods]
+                 #_["Nahrazovat předem?" :config/future-subst?]]]]])))
 
 (defn page-config []
   (let [config (re-frame/subscribe [:entity-edit :config])]
@@ -102,6 +102,11 @@
           [re-com/input-text
            :model (str (:config/closing-msg-role item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/closing-msg-role %])
+           :width "200px"]
+          [re-com/label :label "Role (pouze jedna) příjemce emailu s měsíčním počtem objednaných obědů na osobu"]
+          [re-com/input-text
+           :model (str (:config/lunch-totals-role item))
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/lunch-totals-role %])
            :width "200px"]
           [re-com/label :label "Počet předchozích platebních období, za které je možné nahrazovat omluvenky (pouze v rámci školního roku)"]
           [re-com/input-text

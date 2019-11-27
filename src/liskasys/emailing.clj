@@ -171,6 +171,29 @@
                                     today-att-dps)]
     (send-message org-name msg)))
 
+
+(defn monthly-lunch-order-totals-msg [from tos {:config/keys [org-name full-url]} yyyymm person-totals]
+  (let [subj (str org-name ": Objednávky obědů na osobu za uplynulý měsíc (" yyyymm ")")]
+    {:from from
+     :to tos
+     :subject subj
+     :body [{:type content-type
+             :content (str subj "\n\n"
+                           (reduce (fn [out [person total]]
+                                     (str out (cljc.util/person-fullname person) ": " total "\n"))
+                                   ""
+                                   person-totals)
+                           footer-text full-url)}]}))
+
+(defn send-monthly-lunch-order-totals [db yyyymm person-totals]
+  (let [{:config/keys [org-name lunch-totals-role] :as config} (d/pull db '[*] :liskasys/config)
+        msg (monthly-lunch-order-totals-msg (db-queries/find-auto-sender-email db)
+                                            (mapv :person/email (db-queries/find-persons-with-role db lunch-totals-role))
+                                            config
+                                            yyyymm
+                                            person-totals)]
+    (send-message org-name msg)))
+
 (defn bill-published-msg [from {:config/keys [org-name full-url]} {:price-list/keys [bank-account bank-account-lunches]} payment-due-to {:person-bill/keys [total att-price person period]}]
   (let [period-text (cljc.util/period->text period)
         subj (str org-name ": Platba školkovného a obědů na období " period-text)

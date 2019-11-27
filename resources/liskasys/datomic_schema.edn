@@ -656,7 +656,14 @@
            :db.install/_attribute :db.part/db}]
          [{:db/id :liskasys/config
            :config/person-bill-page? true
-           :config/substs-page? true}]]}
+           :config/substs-page? true}]
+         [{:db/ident :config/lunch-totals-role
+           :db/valueType :db.type/string
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/id :liskasys/config
+           :config/lunch-totals-role ""}]]}
  :liskasys/class-register
  {:txes [[{:db/ident :class-register/date
            :db/valueType :db.type/instant
