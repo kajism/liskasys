@@ -185,13 +185,34 @@
                                    person-totals)
                            footer-text full-url)}]}))
 
-(defn send-monthly-lunch-order-totals [db yyyymm person-totals]
+(defn send-monthly-lunch-order-totals-per-person [db yyyymm person-totals]
   (let [{:config/keys [org-name lunch-totals-role] :as config} (d/pull db '[*] :liskasys/config)
         msg (monthly-lunch-order-totals-msg (db-queries/find-auto-sender-email db)
                                             (mapv :person/email (db-queries/find-persons-with-role db lunch-totals-role))
                                             config
                                             yyyymm
                                             person-totals)]
+    (send-message org-name msg)))
+
+(defn monthly-lunch-fund-totals-msg [from tos {:config/keys [org-name full-url]} yyyymm {:keys [total-portions adult-portions child-portions total-lunch-fund-cents]}]
+  (let [subj (str org-name ": Objednávky obědů za uplynulý měsíc (" yyyymm ")")]
+    {:from from
+     :to tos
+     :subject subj
+     :body [{:type content-type
+             :content (str subj "\n\n"
+                           "Dětské porce: " child-portions "\n"
+                           "Dospělé porce: " adult-portions "\n"
+                           "Zbývá ve fondu: " (quot total-lunch-fund-cents 100) " Kč\n"
+                           footer-text full-url)}]}))
+
+(defn send-monthly-lunch-fund-totals [db yyyymm fund-totals]
+  (let [{:config/keys [org-name lunch-fund-totals-role] :as config} (d/pull db '[*] :liskasys/config)
+        msg (monthly-lunch-fund-totals-msg (db-queries/find-auto-sender-email db)
+                                            (mapv :person/email (db-queries/find-persons-with-role db lunch-fund-totals-role))
+                                            config
+                                            yyyymm
+                                            fund-totals)]
     (send-message org-name msg)))
 
 (defn bill-published-msg [from {:config/keys [org-name full-url]} {:price-list/keys [bank-account bank-account-lunches]} payment-due-to {:person-bill/keys [total att-price person period]}]

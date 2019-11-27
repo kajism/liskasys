@@ -108,6 +108,11 @@
            :model (str (:config/lunch-totals-role item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/lunch-totals-role %])
            :width "200px"]
+          [re-com/label :label "Role (pouze jedna) příjemce emailu s měsíčním celkovým počtem objednaných porcí a celkovou částkou ve fondu obědů"]
+          [re-com/input-text
+           :model (str (:config/lunch-fund-totals-role item))
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/lunch-fund-totals-role %])
+           :width "200px"]
           [re-com/label :label "Počet předchozích platebních období, za které je možné nahrazovat omluvenky (pouze v rámci školního roku)"]
           [re-com/input-text
            :model (str (:config/max-subst-periods item))

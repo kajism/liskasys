@@ -186,5 +186,7 @@
 
 (defn process-monthly-lunch-orders [conn yyyymm]
   (let [db (d/db conn)
-        person-totals (db-queries/find-monthly-lunch-totals db yyyymm)]
-    (emailing/send-monthly-lunch-order-totals db yyyymm person-totals)))
+        person-totals (db-queries/find-monthly-lunch-totals-per-person db yyyymm)
+        pcs-price-totals (db-queries/find-monthly-lunch-fund-totals db yyyymm)]
+    (emailing/send-monthly-lunch-order-totals-per-person db yyyymm person-totals)
+    (emailing/send-monthly-lunch-fund-totals db yyyymm pcs-price-totals)))

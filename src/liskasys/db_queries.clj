@@ -431,7 +431,7 @@
                                            :person/parent [:person/email]
                                            :person/group [:db/id]}]}]))
 
-(defn find-monthly-lunch-totals [db yyyymm]
+(defn find-monthly-lunch-totals-per-person [db yyyymm]
   (let [from (time/to-date (cljc.util/yyyymm-start-ld yyyymm))
         to (time/to-date (cljc.util/yyyymm-start-ld (cljc.util/next-yyyymm yyyymm)))]
     (->>
@@ -439,12 +439,52 @@
             :in $ ?from ?to
             :with ?e
             :where
-            [?e :daily-plan/person ?p]
             [?e :daily-plan/date ?d]
             [(>= ?d ?from)]
             [(< ?d ?to)]
             [?e :daily-plan/lunch-ord ?ord]
-            [(> ?ord 0)]]
+            [(> ?ord 0)]
+            [?e :daily-plan/person ?p]]
           db from to)
      (sort-by (juxt (comp :person/lastname first)
                     (comp :person/firstname first))))))
+
+(defn find-monthly-lunch-fund-totals [db yyyymm]
+  (let [from (time/to-date (cljc.util/yyyymm-start-ld yyyymm))
+        to (time/to-date (cljc.util/yyyymm-start-ld (cljc.util/next-yyyymm yyyymm)))
+        portions (->>
+                  (d/q '[:find ?ch (sum ?ord)
+                         :in $ ?from ?to
+                         :with ?e
+                         :where
+                         [?e :daily-plan/date ?d]
+                         [(>= ?d ?from)]
+                         [(< ?d ?to)]
+                         [?e :daily-plan/lunch-ord ?ord]
+                         [(> ?ord 0)]
+                         [?e :daily-plan/person ?p]
+                         [?p :person/child? ?ch]]
+                       db from to)
+                  (into {}))
+        total-portions (d/q '[:find (sum ?ord) .
+                              :in $ ?from ?to
+                              :with ?e
+                              :where
+                              [?e :daily-plan/date ?d]
+                              [(>= ?d ?from)]
+                              [(< ?d ?to)]
+                              [?e :daily-plan/lunch-ord ?ord]]
+                            db from to)
+        lunch-fund (d/q '[:find (sum ?lf) .
+                          :in $
+                          :with ?e
+                          :where
+                          [?e :person/lunch-fund ?lf]]
+                        db)
+        out {:total-portions (or total-portions 0)
+             :adult-portions (get portions false 0)
+             :child-portions (get portions true 0)
+             :total-lunch-fund-cents lunch-fund}]
+    (when-not (= total-portions (reduce + (vals portions)))
+      (throw (ex-info "Invalid total count of lunches" out)))
+    out))
