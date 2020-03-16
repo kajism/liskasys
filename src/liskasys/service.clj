@@ -97,18 +97,17 @@
 
 (defn- daily-summary [group group-dps temp-closure?]
   (when (seq group-dps)
-    (let [max-group-capacity (or (when temp-closure?
-                                   0)
-                                 (:group/max-capacity group)
-                                 (count group-dps))
-          [going not-going] (->> group-dps
-                                 (filter cljc.util/daily-plan-attendance?)
-                                 (sort-by :daily-plan/subst-req-on)
-                                 (split-at (max max-group-capacity
-                                                (->> group-dps
-                                                     (filter cljc.util/daily-plan-attendance?)
-                                                     (remove :daily-plan/subst-req-on)
-                                                     (count)))))]
+    (let [[going not-going] (if temp-closure?
+                              [[] group-dps]
+                              (->> group-dps
+                                   (filter cljc.util/daily-plan-attendance?)
+                                   (sort-by :daily-plan/subst-req-on)
+                                   (split-at (max (or (:group/max-capacity group)
+                                                      (count group-dps))
+                                                  (->> group-dps
+                                                       (filter cljc.util/daily-plan-attendance?)
+                                                       (remove :daily-plan/subst-req-on)
+                                                       (count))))))]
       {:group group
        :not-going not-going
        :going going
@@ -117,29 +116,33 @@
                            (remove cljc.util/daily-plan-attendance?)
                            (filter cljc.util/daily-plan-lunch?))})))
 
-(defn prepare-daily-summaries [db date]
-  (let [dps-by-group-id (->> (db-queries/find-daily-plans-by-date db date)
-                             (group-by #(get-in % [:daily-plan/group :db/id])))
-        temp-closure? (:config/temp-closure? (d/pull db '[*] :liskasys/config))]
-    (keep (fn [group]
-            (daily-summary group (get dps-by-group-id (:db/id group)) temp-closure?))
-          (db/find-by-type db :group {}))))
+(defn prepare-daily-summaries [dps-by-group-id groups temp-closure?]
+  (keep (fn [group]
+          (daily-summary group (get dps-by-group-id (:db/id group)) temp-closure?))
+        groups))
 
 (defn- process-substitutions [conn date]
   (let [db (d/db conn)
-        daily-summaries (prepare-daily-summaries db date)
+        dps-by-group-id (->> (db-queries/find-daily-plans-by-date db date)
+                             (group-by #(get-in % [:daily-plan/group :db/id])))
+        groups (db/find-by-type db :group {})
+        temp-closure? (:config/temp-closure? (d/pull db '[*] :liskasys/config))
+        daily-summaries (prepare-daily-summaries dps-by-group-id groups temp-closure?)
         send-substitution-result-to-parents (emailing/make-substitution-result-sender db)]
 
     (doseq [{:keys [not-going going]} daily-summaries]
       (db/transact conn nil (mapv #(-> [:db.fn/retractEntity (:db/id %)])
                                   not-going))
-      (doseq [daily-plan not-going]
-        (send-substitution-result-to-parents daily-plan false))
+      (doseq [dp not-going
+              :when (:daily-plan/subst-req-on db)]
+        (send-substitution-result-to-parents dp false))
 
-      (doseq [daily-plan (filter :daily-plan/subst-req-on going)]
-        (send-substitution-result-to-parents daily-plan true)))
+      (doseq [dp going
+              :when (:daily-plan/subst-req-on db)]
+        (send-substitution-result-to-parents dp true)))
 
-    (emailing/send-daily-summary db date daily-summaries)))
+    (when-not temp-closure?
+      (emailing/send-daily-summary db date daily-summaries))))
 
 (defn- lunch-order-tx-total [date price-lists plans-with-lunches]
   (let [out
