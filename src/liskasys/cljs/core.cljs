@@ -112,11 +112,16 @@
 (pages/add-page :main #'page-main)
 
 (defn main-app-area []
-  (let [user (re-frame/subscribe [:auth-user])]
+  (let [user (re-frame/subscribe [:auth-user])
+        configs (re-frame/subscribe [:entities :config])
+        current-page (re-frame/subscribe [:current-page])]
     (fn []
       (if-not @user
         [re-com/throbber]
         [:div
+         (when (and (:config/temp-closure? (first (vals @configs)))
+                    (not= @current-page :config))
+           [:div.alert.alert-danger "Objednávání obědů je pozastaveno viz. stránka Základní nastavení!!!"])
          [menu @user]
          [:div.container-fluid
           [pages/page]

@@ -95,9 +95,11 @@
   (->> (new-lunch-order-ent date nil)
        (db/transact-entity conn nil)))
 
-(defn- daily-summary [group group-dps]
+(defn- daily-summary [group group-dps temp-closure?]
   (when (seq group-dps)
-    (let [max-group-capacity (or (:group/max-capacity group)
+    (let [max-group-capacity (or (when temp-closure?
+                                   0)
+                                 (:group/max-capacity group)
                                  (count group-dps))
           [going not-going] (->> group-dps
                                  (filter cljc.util/daily-plan-attendance?)
@@ -117,9 +119,10 @@
 
 (defn prepare-daily-summaries [db date]
   (let [dps-by-group-id (->> (db-queries/find-daily-plans-by-date db date)
-                             (group-by #(get-in % [:daily-plan/group :db/id])))]
+                             (group-by #(get-in % [:daily-plan/group :db/id])))
+        temp-closure? (:config/temp-closure? (d/pull db '[*] :liskasys/config))]
     (keep (fn [group]
-            (daily-summary group (get dps-by-group-id (:db/id group))))
+            (daily-summary group (get dps-by-group-id (:db/id group)) temp-closure?))
           (db/find-by-type db :group {}))))
 
 (defn- process-substitutions [conn date]
@@ -160,7 +163,10 @@
 
 (defn- process-lunch-order [conn date]
   (let [db (d/db conn)
-        plans-with-lunches (db-queries/find-person-daily-plans-with-lunches db date)
+        temp-closure? (:config/temp-closure? (d/pull db '[*] :liskasys/config))
+        plans-with-lunches (if temp-closure?
+                             []
+                             (db-queries/find-person-daily-plans-with-lunches db date))
         {:keys [tx-data total]} (lunch-order-tx-total date (db-queries/find-price-lists db) plans-with-lunches)]
     (db/transact conn nil tx-data)
     (if (seq plans-with-lunches)

@@ -39,6 +39,7 @@
                                :tooltip "Editovat"]]
                       #_[buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :config (:db/id row)])]]])
                   :none]
+                 ["Dočasně uzavřeno?" :config/temp-closure?]
                  ["Název organizace" :config/org-name]
                  ["Celé URL" :config/full-url]
                  #_["Odesilatel emalů" :config/automat-email]
@@ -56,6 +57,11 @@
         [re-com/v-box :gap "5px"
          :children
          [[:h3 "Základní nastavení"]
+          [re-com/label :label "Školka dočasně uzavřena? (nebudou se objednávat obědy)"]
+          [re-com/checkbox
+           :label "ano, máme z mimořádných důvodů do odvolání zavřeno"
+           :model (:config/temp-closure? item)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/temp-closure? %])]
           [re-com/label :label "Název organizace"]
           [re-com/input-text
            :model (str (:config/org-name item))
