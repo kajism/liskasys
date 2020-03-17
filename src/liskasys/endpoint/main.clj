@@ -267,6 +267,15 @@
             "delete" (db/retract-entity conn (:db/id user) ?data)
             (case msg-id
               :user/auth user
+              :bulk/retract (do
+                              (run! #(db/retract-entity conn (:db/id user) %)
+                                    ?data)
+                              ?data)
+              :bulk/transact-attr (let [{:keys [attr v ids]} ?data]
+                                    (run! #(db/transact conn (:db/id user) [{:db/id %
+                                                                             attr v}])
+                                          ids)
+                                    ids)
               :entity/retract (db/retract-entity conn (:db/id user) ?data)
               :entity/retract-attr (db/retract-attr conn (:db/id user) ?data)
               :entity/history (db/entity-history (d/db conn) ?data)

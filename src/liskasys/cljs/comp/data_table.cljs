@@ -177,7 +177,7 @@
  :header-modifier
  }
 
-(defn data-table [& {:keys [table-id order-by desc? rows-per-page row-checkboxes? rows colls] :as args}]
+(defn data-table [& {:keys [table-id order-by desc? rows-per-page row-checkboxes? rows colls bottom-buttons] :as args}]
   (let [order-by (or order-by 1)
         colls (into {} (->> colls
                             (keep identity)
@@ -312,4 +312,6 @@
             [:li.next
              [:a {:class (str "" (when (= (:row-to @table-rows) (count (:filtered-rows @table-rows))) "btn disabled"))
                   :on-click #(change-state-fn :page-no inc)}
-              "Následující"]]])]))))
+              "Následující"]]])
+         (when bottom-buttons
+           [bottom-buttons (mapv :db/id (:final-rows @table-rows))])]))))

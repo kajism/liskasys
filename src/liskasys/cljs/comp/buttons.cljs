@@ -4,9 +4,9 @@
             [re-frame.core :as re-frame]
             [taoensso.timbre :as timbre]))
 
-(defn button-with-confirmation [label confirm-query yes-evt position]
+(defn button-with-confirmation []
   (let [showing? (reagent/atom false)]
-    (fn []
+    (fn [label confirm-question yes-evt position]
       [re-com/popover-anchor-wrapper
        :showing? showing?
        :position position
@@ -17,7 +17,7 @@
                  :on-cancel #(reset! showing? false)
                  :body [re-com/v-box
                         :gap "10px"
-                        :children [confirm-query
+                        :children [confirm-question
                                    [re-com/h-box
                                     :gap "5px"
                                     :children [[re-com/button

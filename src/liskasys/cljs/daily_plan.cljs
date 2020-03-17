@@ -21,6 +21,67 @@
     2 "půldenní"
     "-"))
 
+#_(re-frame/reg-event-fx
+ :all-daily-plans
+ (fn [_ [_ action ids]]
+   {:dispatch-n (mapcat (fn [id]
+                          (case action
+                            :cancel-lunch [[:entity-change :daily-plan id :daily-plan/lunch-req 0]
+                                           [:entity-save :daily-plan nil id]]
+                            :cancel [[:entity-change :daily-plan id :daily-plan/att-cancelled? true]
+                                     [:entity-save :daily-plan nil id]]
+                            :delete [[:entity-delete :daily-plan id]]))
+                        ids)}))
+
+(re-frame/reg-event-fx
+ :bulk-cancel-lunch
+ (fn [_ [_ ids]]
+   {:server-call {:req-msg [:bulk/transact-attr {:attr :daily-plan/lunch-req
+                                                 :v 0
+                                                 :ids ids}]
+                  :resp-evt [:bulk-resp :daily-plan/lunch-req 0]}}))
+
+(re-frame/reg-event-fx
+ :bulk-cancel
+ (fn [_ [_ ids]]
+   {:server-call {:req-msg [:bulk/transact-attr {:attr :daily-plan/att-cancelled?
+                                                 :v true
+                                                 :ids ids}]
+                  :resp-evt [:bulk-resp :daily-plan/att-cancelled? true]}}))
+
+(re-frame/reg-event-db
+ :bulk-resp
+ (fn [db [_ attr v ids]]
+   (update db :daily-plan #(reduce (fn [out id]
+                                     (assoc-in out [id attr] v))
+                                   %
+                                   ids))))
+
+(re-frame/reg-event-fx
+ :bulk-delete
+ (fn [_ [_ ids]]
+   {:server-call {:req-msg [:bulk/retract ids]
+                  :resp-evt [:bulk-delete-resp]}}))
+
+(re-frame/reg-event-db
+ :bulk-delete-resp
+ (fn [db [_ ids]]
+   (update db :daily-plan #(apply dissoc % ids))))
+
+(defn daily-plan-bottom-buttons [ids]
+  [re-com/h-box :gap "5px" :align :center
+   :children
+   [(str "Akce pro zobrazené záznamy (" (count ids)  "):")
+    [buttons/button-with-confirmation "Zrušit oběd"
+     "Chcete všem právě zobrazeným denním plánům zrušit oběd?"
+     [:bulk-cancel-lunch ids] :above-right]
+    [buttons/button-with-confirmation "Omluvit"
+     "Chcete všem právě zobrazeným denním plánům nastavit omluvenku (včetně zrušení oběda)?"
+     [:bulk-cancel ids] :above-right]
+    [buttons/button-with-confirmation "Smazat"
+     "Chcete opravdu smazat všechny právě zobrazené denní plány?"
+     [:bulk-delete ids] :above-right]]])
+
 (defn page-daily-plans []
   (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
         persons (re-frame/subscribe [:entities :person])
@@ -85,7 +146,8 @@
                   :td-comp (fn [& {:keys [value]}]
                              [:td (time/to-format value time/ddMMyyyyHHmmss)])}
                  ["Nahrazováno" #(some-> % :daily-plan/substituted-by :db/id (@daily-plans) :daily-plan/date)]]
-         :desc? true]]])))
+         :desc? true
+         :bottom-buttons daily-plan-bottom-buttons]]])))
 
 (defn page-daily-plan []
   (let [daily-plan (re-frame/subscribe [:entity-edit :daily-plan])
