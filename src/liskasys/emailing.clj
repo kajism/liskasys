@@ -194,8 +194,8 @@
                                             person-totals)]
     (send-message org-name msg)))
 
-(defn monthly-lunch-fund-totals-msg [from tos {:config/keys [org-name full-url]} yyyymm {:keys [total-portions adult-portions child-portions total-lunch-fund-cents]}]
-  (let [subj (str org-name ": Objednávky obědů za uplynulý měsíc (" yyyymm ")")]
+(defn monthly-lunch-fund-totals-msg [from tos {:config/keys [org-name full-url]} yyyymm {:keys [total-portions adult-portions child-portions total-lunch-fund-cents total-lunch-down-payment-cents next-total-lunch-down-payment-cents lunch-total-cents]}]
+  (let [subj (str org-name ": Objednávky obědů za uplynulý měsíc (" (cljc.util/yyyymm->text yyyymm) ")")]
     {:from from
      :to tos
      :subject subj
@@ -203,6 +203,11 @@
              :content (str subj "\n\n"
                            "Dětské porce: " child-portions "\n"
                            "Dospělé porce: " adult-portions "\n"
+                           "Celková cena porcí: " (quot lunch-total-cents 100) " Kč\n"
+                           (when total-lunch-down-payment-cents
+                             (str "Zaplacené zálohy na obědy " (cljc.util/yyyymm->text yyyymm) ": " (quot total-lunch-down-payment-cents 100) " Kč\n"))
+                           (when next-total-lunch-down-payment-cents
+                             (str "Zaplacené zálohy na obědy " (cljc.util/yyyymm->text (cljc.util/next-yyyymm yyyymm)) ": " (quot next-total-lunch-down-payment-cents 100) " Kč\n"))
                            "Zbývá ve fondu: " (quot total-lunch-fund-cents 100) " Kč\n"
                            footer-text full-url)}]}))
 

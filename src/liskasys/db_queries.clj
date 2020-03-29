@@ -449,9 +449,57 @@
      (sort-by (juxt (comp :person/lastname first)
                     (comp :person/firstname first))))))
 
-(defn find-monthly-lunch-fund-totals [db yyyymm]
+(defn find-down-payments [db yyyymm]
+  (let [[total att-price] (first
+                           (d/q '[:find (sum ?total) (sum ?att-price)
+                                  :in $ ?yyyymm
+                                  :with ?pb
+                                  :where
+                                  [?period :billing-period/from-yyyymm ?yyyymm]
+                                  [?pb :person-bill/period ?period]
+                                  [?pb :person-bill/total ?total]
+                                  [?pb :person-bill/status :person-bill.status/paid]
+                                  [?pb :person-bill/att-price ?att-price]]
+                                db yyyymm))]
+    (if total
+      (- total att-price)
+      0)))
+
+(defn find-lunch-fund-total [db]
+  (d/q '[:find (sum ?lf) .
+         :in $
+         :with ?e
+         :where
+         [?e :person/lunch-fund ?lf]]
+       db))
+
+(defn find-lunch-fund-substraction-total [conn from to]
+  (let [db (d/db conn)
+        lunch-order-txs (d/q '[:find [?tx ...]
+                               :in $ ?from ?to
+                               :where
+                               [?e :lunch-order/date ?d]
+                               [(>= ?d ?from)]
+                               [(< ?d ?to)]
+                               [?e :lunch-order/total ?t ?tx]
+                               [(> ?t 0)]]
+                             db from to)]
+    (->> lunch-order-txs
+         (mapcat #(->> (db/tx-datoms conn %)
+                    (filter (fn [{:keys [a]}]
+                              (= a :person/lunch-fund)))
+                    (group-by :e)
+                    (map (fn [[e datoms]]
+                           (let [m (->> datoms
+                                        (map (juxt :added? :v))
+                                        (into {}))]
+                             (- (get m false) (get m true)))))))
+         (reduce +))))
+
+(defn find-monthly-lunch-fund-totals [conn yyyymm]
   (let [from (time/to-date (cljc.util/yyyymm-start-ld yyyymm))
         to (time/to-date (cljc.util/yyyymm-start-ld (cljc.util/next-yyyymm yyyymm)))
+        db (d/as-of (d/db conn) to)
         portions (->>
                   (d/q '[:find ?ch (sum ?ord)
                          :in $ ?from ?to
@@ -475,15 +523,16 @@
                               [(< ?d ?to)]
                               [?e :daily-plan/lunch-ord ?ord]]
                             db from to)
-        lunch-fund (d/q '[:find (sum ?lf) .
-                          :in $
-                          :with ?e
-                          :where
-                          [?e :person/lunch-fund ?lf]]
-                        db)
+        lunch-fund (find-lunch-fund-total db)
+        ;; down-payments (find-down-payments db yyyymm)
+        ;; next-down-payments (find-down-payments db (cljc.util/next-yyyymm yyyymm))
+        lunch-total-cents (find-lunch-fund-substraction-total conn from to)
         out {:total-portions (or total-portions 0)
              :adult-portions (get portions false 0)
              :child-portions (get portions true 0)
+             ;; :total-lunch-down-payment-cents down-payments
+             ;; :next-total-lunch-down-payment-cents next-down-payments
+             :lunch-total-cents lunch-total-cents
              :total-lunch-fund-cents lunch-fund}]
     (when-not (= total-portions (reduce + (vals portions)))
       (throw (ex-info "Invalid total count of lunches" out)))
