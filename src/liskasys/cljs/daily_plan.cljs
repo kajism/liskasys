@@ -108,7 +108,8 @@
                      :tooltip "Přenačíst ze serveru"
                      :on-click #(re-frame/dispatch [:entities-load :daily-plan])]]]
                   (fn [row]
-                    (let [future? (not (:daily-plan/lunch-ord row))]
+                    (let [future? (and (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))
+                                       (not (:daily-plan/lunch-ord row)))]
                       (when (and (= (:db/id row) (:selected-row-id @table-state))
                                  (or future?
                                      (contains? (:-roles @user) "superadmin")))
