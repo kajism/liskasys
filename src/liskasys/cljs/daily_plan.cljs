@@ -108,7 +108,7 @@
                      :tooltip "Přenačíst ze serveru"
                      :on-click #(re-frame/dispatch [:entities-load :daily-plan])]]]
                   (fn [row]
-                    (let [future? (-> row :daily-plan/date tc/to-local-date (t/after? (t/today)))]
+                    (let [future? (not (:daily-plan/lunch-ord row))]
                       (when (and (= (:db/id row) (:selected-row-id @table-state))
                                  (or future?
                                      (contains? (:-roles @user) "superadmin")))
@@ -118,7 +118,8 @@
                            :href (str "#/daily-plan/" (:db/id row) "e")
                            :label [re-com/md-icon-button
                                    :md-icon-name "zmdi-edit"
-                                   :tooltip "Editovat"]]
+                                   :tooltip "Editovat"
+                                   :emphasise? (not future?)]]
                           [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :daily-plan (:db/id row)]) :emphasise? (not future?)]]])))
                   :none]
                  ["Datum" :daily-plan/date]
