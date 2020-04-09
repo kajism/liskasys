@@ -412,16 +412,18 @@
          [?bill-id :person-bill/period ?period-id]]
        db period-id))
 
-(defn find-lunch-count-planned [db person-id]
+(defn find-lunch-count-planned [db person-id from]
   (or (d/q '[:find (sum ?lunch-req) .
              :with ?e
-             :in $ ?person
+             :in $ ?person ?from
              :where
              [?e :daily-plan/person ?person]
              [?e :daily-plan/lunch-req ?lunch-req]
+             [?e :daily-plan/date ?d]
+             [(>= ?d ?from)]
              (not [?e :daily-plan/lunch-ord])
              (not [?e :daily-plan/lunch-cancelled? true])]
-           db person-id)
+           db person-id from)
       0))
 
 (defn find-daily-plans-by-date [db date]
@@ -465,13 +467,13 @@
       (- total att-price)
       0)))
 
-(defn find-lunch-fund-total [db]
+(defn find-lunch-fund-total [db to]
   (d/q '[:find (sum ?lf) .
          :in $
          :with ?e
          :where
          [?e :person/lunch-fund ?lf]]
-       db))
+       (d/as-of db to)))
 
 (defn find-lunch-fund-substraction-total [conn from to]
   (let [db (d/db conn)
@@ -499,7 +501,7 @@
 (defn find-monthly-lunch-fund-totals [conn yyyymm]
   (let [from (time/to-date (cljc.util/yyyymm-start-ld yyyymm))
         to (time/to-date (cljc.util/yyyymm-start-ld (cljc.util/next-yyyymm yyyymm)))
-        db (d/as-of (d/db conn) to)
+        db (d/db conn)
         portions (->>
                   (d/q '[:find ?ch (sum ?ord)
                          :in $ ?from ?to
@@ -523,7 +525,7 @@
                               [(< ?d ?to)]
                               [?e :daily-plan/lunch-ord ?ord]]
                             db from to)
-        lunch-fund (find-lunch-fund-total db)
+        lunch-fund (find-lunch-fund-total db to)
         ;; down-payments (find-down-payments db yyyymm)
         ;; next-down-payments (find-down-payments db (cljc.util/next-yyyymm yyyymm))
         lunch-total-cents (find-lunch-fund-substraction-total conn from to)

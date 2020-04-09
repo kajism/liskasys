@@ -181,7 +181,6 @@
 (defn- generate-person-bills-tx [db period-id]
   (let [billing-period (db/find-by-id db period-id)
         [period-start-ld period-end-ld] (cljc.util/period-start-end-lds billing-period)
-        dates (cljc.util/period-local-dates (db-queries/make-holiday?-fn db) period-start-ld period-end-ld)
         person-id--2nd-previous-dps (some->> (db-queries/find-school-year-previous-periods db (tc/to-date period-start-ld))
                                              (second)
                                              :db/id
@@ -194,6 +193,13 @@
                                    (into {})))
         price-lists (db-queries/find-price-lists db)
         second-month-start (t/plus period-start-ld (t/months 1))
+        day-after-last-order-ld (t/plus (tc/to-local-date (db-queries/find-max-lunch-order-date db))
+                                        (t/days 1))
+        dates (cljc.util/period-local-dates (db-queries/make-holiday?-fn db)
+                                            (if (t/after? period-start-ld day-after-last-order-ld)
+                                              period-start-ld
+                                              day-after-last-order-ld)
+                                            period-end-ld)
         out (->>
              (for [person (->> (db/find-where db {:person/active? true})
                                (remove #(or (cljc.util/zero-patterns? %)
@@ -213,14 +219,15 @@
                          att-price (calculate-att-price price-list
                                                         months-count
                                                         (count (->> person :person/att-pattern pattern-map vals (filter (partial = 1))))
-                                                        (count (->> person :person/att-pattern pattern-map vals (filter (partial = 2))))
-                                                        #_(->> daily-plans
-                                                             (filter #(-> % :daily-plan/child-att (= 2)))
-                                                             count))
+                                                        (count (->> person :person/att-pattern pattern-map vals (filter (partial = 2)))))
                          lunch-count-next (->> daily-plans
                                                (keep :daily-plan/lunch-req)
                                                (reduce + 0))
-                         existing-bill (get @person-id--bill (:db/id person))]]
+                         existing-bill (get @person-id--bill (:db/id person))
+                         total (+ att-price
+                                  (- (* (cljc.util/person-lunch-price person price-list)
+                                        (+ lunch-count-next (db-queries/find-lunch-count-planned db (:db/id person) (tc/to-date day-after-last-order-ld))))
+                                     (or (:person/lunch-fund person) 0)))]]
                (do
                  (when existing-bill
                    (swap! person-id--bill dissoc (:db/id person)))
@@ -232,10 +239,7 @@
                                              :person-bill/status :person-bill.status/new})
                           {:person-bill/lunch-count lunch-count-next
                            :person-bill/att-price att-price
-                           :person-bill/total (+ att-price
-                                                 (- (* (cljc.util/person-lunch-price person price-list)
-                                                       (+ lunch-count-next (db-queries/find-lunch-count-planned db (:db/id person))))
-                                                    (or (:person/lunch-fund person) 0)))}))))
+                           :person-bill/total (if (< total 0) 0 total)}))))
              (filterv some?))]
     (->> (vals @person-id--bill)
          (mapcat #(service/retract-person-bill-tx db (:db/id %) true))
