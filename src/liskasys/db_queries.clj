@@ -516,20 +516,22 @@
                          [?p :person/child? ?ch]]
                        db from to)
                   (into {}))
-        total-portions (d/q '[:find (sum ?ord) .
-                              :in $ ?from ?to
-                              :with ?e
-                              :where
-                              [?e :daily-plan/date ?d]
-                              [(>= ?d ?from)]
-                              [(< ?d ?to)]
-                              [?e :daily-plan/lunch-ord ?ord]]
-                            db from to)
+        total-portions (or
+                        (d/q '[:find (sum ?ord) .
+                                 :in $ ?from ?to
+                                 :with ?e
+                                 :where
+                                 [?e :daily-plan/date ?d]
+                                 [(>= ?d ?from)]
+                                 [(< ?d ?to)]
+                                 [?e :daily-plan/lunch-ord ?ord]]
+                             db from to)
+                        0)
         lunch-fund (find-lunch-fund-total db to)
         ;; down-payments (find-down-payments db yyyymm)
         ;; next-down-payments (find-down-payments db (cljc.util/next-yyyymm yyyymm))
         lunch-total-cents (find-lunch-fund-substraction-total conn from to)
-        out {:total-portions (or total-portions 0)
+        out {:total-portions total-portions
              :adult-portions (get portions false 0)
              :child-portions (get portions true 0)
              ;; :total-lunch-down-payment-cents down-payments
