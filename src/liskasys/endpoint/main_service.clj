@@ -224,10 +224,14 @@
                                                (keep :daily-plan/lunch-req)
                                                (reduce + 0))
                          existing-bill (get @person-id--bill (:db/id person))
-                         total (+ att-price
-                                  (- (* (cljc.util/person-lunch-price person price-list)
-                                        (+ lunch-count-next (db-queries/find-lunch-count-planned db (:db/id person) (tc/to-date day-after-last-order-ld))))
-                                     (or (:person/lunch-fund person) 0)))]]
+                         lunch-price (* (cljc.util/person-lunch-price person price-list)
+                                        (+ lunch-count-next
+                                           (db-queries/find-lunch-count-planned db (:db/id person)
+                                                                                (tc/to-date day-after-last-order-ld))))
+
+                         lunch-total (- lunch-price
+                                        (or (:person/lunch-fund person) 0))
+                         total (+ att-price (max lunch-total 0))]]
                (do
                  (when existing-bill
                    (swap! person-id--bill dissoc (:db/id person)))
