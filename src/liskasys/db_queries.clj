@@ -250,11 +250,11 @@
 (defn- days-to-go [db excl-from incl-to]
   (let [{:config/keys [order-workdays-only?]} (d/pull db '[*] :liskasys/config)]
     (cljc.util/period-local-dates (if order-workdays-only?
-                          (some-fn tp/weekend?
-                                   (partial bank-holiday? (db/find-by-type db :bank-holiday {})))
-                          (constantly false))
-                        (t/plus (time/to-ld excl-from) (t/days 1))
-                        (t/plus (time/to-ld incl-to) (t/days 1)))))
+                                    (some-fn tp/weekend?
+                                             (partial bank-holiday? (db/find-by-type db :bank-holiday {})))
+                                    (constantly false))
+                                  (t/plus (time/to-ld excl-from) (t/days 1))
+                                  (t/plus (time/to-ld incl-to) (t/days 1)))))
 
 (defn find-next-lunch-order-date
   "This returns the day for which the lunches should be ordered as late as possible according to the flag order-workdays-only?"
@@ -262,10 +262,9 @@
    (find-next-lunch-order-date db (time/today)))
   ([db at-date]
    (when-let [next-school-day-date (find-next-school-day-date db at-date)]
-     (when (= (count (days-to-go db
-                                 (second (sort [(find-max-lunch-order-date db) at-date])) ;; choose higher date
-                                 next-school-day-date))
-              1)
+     (when (and
+            (= 1 (count (days-to-go db at-date next-school-day-date)))
+            (> (.getTime next-school-day-date) (.getTime (find-max-lunch-order-date db))))
        next-school-day-date))))
 
 (defn find-active-children-by-person-id
@@ -330,8 +329,7 @@
            (or (not (can-cancel-today?-fn date-from))
                ;; aby se nemohli znovu prihlasit ti, co vyzaduji obed, ale nebyl objednan:
                (and (pos-int? (:daily-plan/lunch-req (first out)))
-                    (not (pos-int? (:daily-plan/lunch-ord (first out)))))
-               ))
+                    (not (pos-int? (:daily-plan/lunch-ord (first out)))))))
       (drop 1)
       true
       (remove (let [date-from-ms (some-> date-from (.getTime))]
@@ -488,14 +486,14 @@
                              db from to)]
     (->> lunch-order-txs
          (mapcat #(->> (db/tx-datoms conn %)
-                    (filter (fn [{:keys [a]}]
-                              (= a :person/lunch-fund)))
-                    (group-by :e)
-                    (map (fn [[e datoms]]
-                           (let [m (->> datoms
-                                        (map (juxt :added? :v))
-                                        (into {}))]
-                             (- (get m false) (get m true)))))))
+                       (filter (fn [{:keys [a]}]
+                                 (= a :person/lunch-fund)))
+                       (group-by :e)
+                       (map (fn [[e datoms]]
+                              (let [m (->> datoms
+                                           (map (juxt :added? :v))
+                                           (into {}))]
+                                (- (get m false) (get m true)))))))
          (reduce +))))
 
 (defn find-monthly-lunch-fund-totals [conn yyyymm]
@@ -518,13 +516,13 @@
                   (into {}))
         total-portions (or
                         (d/q '[:find (sum ?ord) .
-                                 :in $ ?from ?to
-                                 :with ?e
-                                 :where
-                                 [?e :daily-plan/date ?d]
-                                 [(>= ?d ?from)]
-                                 [(< ?d ?to)]
-                                 [?e :daily-plan/lunch-ord ?ord]]
+                               :in $ ?from ?to
+                               :with ?e
+                               :where
+                               [?e :daily-plan/date ?d]
+                               [(>= ?d ?from)]
+                               [(< ?d ?to)]
+                               [?e :daily-plan/lunch-ord ?ord]]
                              db from to)
                         0)
         lunch-fund (find-lunch-fund-total db to)
