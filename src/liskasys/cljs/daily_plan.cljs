@@ -152,7 +152,8 @@
          :bottom-buttons daily-plan-bottom-buttons]]])))
 
 (defn page-daily-plan []
-  (let [daily-plan (re-frame/subscribe [:entity-edit :daily-plan])
+  (let [ent-id (re-frame/subscribe [:entity-edit-id :daily-plan])
+        daily-plan (re-frame/subscribe [:entity-edit :daily-plan])
         persons (re-frame/subscribe [:entities :person])
         groups (re-frame/subscribe [:entities :group])
         daily-plans (re-frame/subscribe [:entities :daily-plan])
@@ -270,7 +271,7 @@
                :href (str "#/daily-plan/e")
                :label [re-com/button :label "Nový" :on-click #(re-frame/dispatch [:entity-new :daily-plan (select-keys item [:daily-plan/person :daily-plan/group])])]])
             [re-com/hyperlink-href :label [re-com/button :label "Seznam"] :href (str "#/daily-plans")]]]
-          [history/view (:db/id item)]]]))))
+          [history/view @ent-id]]]))))
 
 (secretary/defroute "/daily-plans" []
   (re-frame/dispatch [:set-current-page :daily-plans]))
