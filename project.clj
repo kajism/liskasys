@@ -1,8 +1,9 @@
 (defproject liskasys "1.0.118-SNAPSHOT"
-  :description "Web information, attendance and lunch cancelation/ordering system for a forest kidergarten"
+  :description "Web information, attendance and lunch cancelation/ordering system for a forest kidergartens"
   :url "https://github.com/kajism/liskasys"
   :min-lein-version "2.0.0"
   :jvm-opts ["-Duser.timezone=UTC" "-XX:-OmitStackTraceInFastThrow"]
+  :javac-options ["-target" "1.8" "-source" "1.8"]
   :dependencies [[cljs-ajax "0.5.2"]
                  [org.apache.httpcomponents/httpclient "4.5.1"]
                  [org.clojure/clojure "1.10.1"]
