@@ -5,7 +5,7 @@
   :jvm-opts ["-Duser.timezone=UTC" "-XX:-OmitStackTraceInFastThrow"]
   :dependencies [[cljs-ajax "0.5.2"]
                  [org.apache.httpcomponents/httpclient "4.5.1"]
-                 [org.clojure/clojure "1.10.0"]
+                 [org.clojure/clojure "1.10.1"]
                  [org.clojure/clojurescript "1.10.439"]
                  [org.clojure/core.async "0.4.490"]
                  [org.clojure/core.cache "0.6.5"]
@@ -15,7 +15,7 @@
                  [com.andrewmcveigh/cljs-time "0.5.2"]
                  [com.cognitect/transit-clj "0.8.313"]
                  [com.cognitect/transit-cljs "0.8.256"]
-                 [com.datomic/datomic-free "0.9.5394"
+                 [com.datomic/datomic-free "0.9.5703.21"
                   :exclusions [com.google.guava/guava]]
                  [com.stuartsierra/component "0.3.1"]
                  [hiccup "1.0.5"]
@@ -33,7 +33,7 @@
                  [http-kit "2.3.0"] ;; older version figwheel dependency causes problems
                  [org.slf4j/slf4j-nop "1.7.14"]
                  [secretary "1.2.3"]
-                 [ring-middleware-format "0.7.0"]
+                 [ring-middleware-format "0.7.4"]
                  [crypto-password "0.2.0"]
                  [twarc "0.1.9"]
                  [prismatic/plumbing "0.5.5"] ;; old used by twarc causing problems
@@ -71,7 +71,7 @@
                                   [duct/figwheel-component "0.3.4"]
                                   #_[eftest "0.1.1"]
                                   [figwheel "0.5.14"]
-                                  [kerodon "0.7.0"]
+                                  #_[kerodon "0.7.0"]
                                   #_[org.clojure/test.check "0.9.0"]
                                   [org.clojure/tools.namespace "0.2.11"]
                                   [reloaded.repl "0.2.3"]
