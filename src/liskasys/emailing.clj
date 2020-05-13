@@ -268,7 +268,7 @@
   {:from from
    :to (mapv :person/email (:person/parent person))
    :subject (str org-name ": " (if going?
-                                 "Zítřejsí náhrada platí!"
+                                 "Zítřejší náhrada platí!"
                                  "Zítřejší náhrada bohužel není možná"))
    :body [{:type content-type
            :content (str (cljc.util/person-fullname person)

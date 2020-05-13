@@ -134,11 +134,11 @@
       (db/transact conn nil (mapv #(-> [:db.fn/retractEntity (:db/id %)])
                                   not-going))
       (doseq [dp not-going
-              :when (:daily-plan/subst-req-on db)]
+              :when (:daily-plan/subst-req-on dp)]
         (send-substitution-result-to-parents dp false))
 
       (doseq [dp going
-              :when (:daily-plan/subst-req-on db)]
+              :when (:daily-plan/subst-req-on dp)]
         (send-substitution-result-to-parents dp true)))
 
     (when-not temp-closure?
