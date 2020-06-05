@@ -493,7 +493,8 @@
                               (let [m (->> datoms
                                            (map (juxt :added? :v))
                                            (into {}))]
-                                (- (get m false) (get m true)))))))
+                                (- (or (get m false) 0)
+                                   (or (get m true) 0)))))))
          (reduce +))))
 
 (defn find-monthly-lunch-fund-totals [conn yyyymm]
