@@ -1,4 +1,4 @@
-(defproject liskasys "1.0.120"
+(defproject liskasys "1.0.121-SNAPSHOT"
   :description "Web information, attendance and lunch cancelation/ordering system for a forest kidergartens"
   :url "https://github.com/kajism/liskasys"
   :min-lein-version "2.0.0"
