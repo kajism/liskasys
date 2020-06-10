@@ -192,6 +192,11 @@
            :db/cardinality :db.cardinality/one
            :db/unique :db.unique/value
            :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/ident :person/att-payment-months
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
            :db.install/_attribute :db.part/db}]]}
  :liskasys/lunch-order
  {:txes [[{:db/ident :lunch-order/date
@@ -673,7 +678,14 @@
            :db/valueType :db.type/boolean
            :db/cardinality :db.cardinality/one
            :db/id #db/id [:db.part/db]
-           :db.install/_attribute :db.part/db}]]}
+           :db.install/_attribute :db.part/db}]
+         [{:db/ident :config/att-payment-months
+           :db/valueType :db.type/long
+           :db/cardinality :db.cardinality/one
+           :db/id #db/id [:db.part/db]
+           :db.install/_attribute :db.part/db}]
+         [{:db/id :liskasys/config
+           :config/att-payment-months 1}]]}
  :liskasys/class-register
  {:txes [[{:db/ident :class-register/date
            :db/valueType :db.type/instant

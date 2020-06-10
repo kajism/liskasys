@@ -140,6 +140,14 @@
            :label "ano, odeslat email po zveřejnění rozpisů plateb"
            :model (:config/person-bill-email? item)
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/person-bill-email? %])]
+          [re-com/label :label "Výchozí platební režim docházky"]
+          [re-com/single-dropdown
+           :model (some-> item :config/att-payment-months)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/att-payment-months %])
+           :choices (vals cljc.util/att-payment-choices)
+           :id-fn :months
+           :label-fn :label
+           :width "250px"]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :config])]

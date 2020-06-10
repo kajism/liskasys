@@ -179,7 +179,7 @@
                          (assoc :daily-plan/child-att child-att))))))))))
 
 (defn- generate-person-bills-tx [db period-id]
-  (let [billing-period (db/find-by-id db period-id)
+  (let [{:billing-period/keys [from-yyyymm to-yyyymm] :as billing-period} (db/find-by-id db period-id)
         [period-start-ld period-end-ld] (cljc.util/period-start-end-lds billing-period)
         person-id--2nd-previous-dps (some->> (db-queries/find-school-year-previous-periods db (tc/to-date period-start-ld))
                                              (second)
@@ -200,21 +200,28 @@
                                               period-start-ld
                                               day-after-last-order-ld)
                                             period-end-ld)
+        {:config/keys [att-payment-months]} (d/pull db '[*] :liskasys/config)
         out (->>
              (for [person (->> (db/find-where db {:person/active? true})
                                (remove #(or (cljc.util/zero-patterns? %)
                                             (some-> (:person/start-date %) (tc/to-local-date) (t/after? period-end-ld)))))
                    :let [daily-plans (generate-daily-plans person dates)
                          previous-dps (get person-id--2nd-previous-dps (:db/id person))
-                         months-count (cond-> (- (:billing-period/to-yyyymm billing-period)
-                                                 (:billing-period/from-yyyymm billing-period)
-                                                 -1)
+                         billing-months (inc (- (:billing-period/to-yyyymm billing-period)
+                                                (:billing-period/from-yyyymm billing-period)))
+                         att-payment-months (or (:person/att-payment-months person) att-payment-months)
+                         months-count (cond-> billing-months
                                         (some-> (:person/start-date person) (tc/to-local-date) (t/before? second-month-start) (not))
                                         (dec)
                                         (some :daily-plan/refund? previous-dps)
                                         (dec)
                                         (and (seq previous-dps) (every? :daily-plan/refund? previous-dps))
-                                        (dec))
+                                        (dec)
+                                        (and (= att-payment-months 10) (= 9 (rem from-yyyymm 100))) ;; yearly payment in September
+                                        (+ (- 10 billing-months))
+                                        (and (= att-payment-months 3) (contains? #{9 12 3} (rem from-yyyymm 100))) ;; quoterly payment in September, December or March
+                                        (+ (- 3 billing-months)))
+
                          price-list (get price-lists (get-in person [:person/price-list :db/id]))
                          att-price (calculate-att-price price-list
                                                         months-count

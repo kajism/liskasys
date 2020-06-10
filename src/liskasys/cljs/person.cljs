@@ -237,7 +237,8 @@
         show-personal-info? (re-frame/subscribe [:liskasys.cljs.common/path-value [::show-personal-info?]])
         show-att-history? (re-frame/subscribe [:liskasys.cljs.common/path-value [::show-att-history?]])
         person-att-months (re-frame/subscribe [::person-att-months])
-        person-dps-by-date (re-frame/subscribe [::person-dps-by-date])]
+        person-dps-by-date (re-frame/subscribe [::person-dps-by-date])
+        configs (re-frame/subscribe [:entities :config])]
     (fn []
       (if-not (and @persons @lunch-types @groups)
         [re-com/throbber]
@@ -317,6 +318,15 @@
                    :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/att-pattern %])
                    :validation-regex #"^[0-2]{0,5}$"]
                   "poútstčtpá: 0 = bez docházky, 1 = celodenní, 2 = půldenní"]]
+                [re-com/label :label "Platební režim docházky"]
+                [re-com/single-dropdown
+                 :model (some-> item :person/att-payment-months)
+                 :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/att-payment-months %])
+                 :choices (vals cljc.util/att-payment-choices)
+                 :id-fn :months
+                 :label-fn :label
+                 :placeholder (str "výchozí platební režim = " (:label (get cljc.util/att-payment-choices (:config/att-payment-months (first (vals @configs))))))
+                 :width "400px"]
                 [re-com/label :label "Datum začátku docházky"]
                 [re-com/input-text
                  :model (time/to-format (:person/start-date item) time/ddMMyyyy)

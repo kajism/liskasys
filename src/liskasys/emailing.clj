@@ -110,7 +110,7 @@
                                      (filter :daily-plan/subst-req-on)
                                      (map name-att-diet-str)
                                      (util/sort-by-locale)))]
-         (str "\n\nNáhradnící (" (count xs) ") ------------------------\n" (str/join "\n" xs)))
+         (str "\n\nNáhradníci (" (count xs) ") ------------------------\n" (str/join "\n" xs)))
        (when-let [xs (not-empty (->> other-lunches
                                      (map name-att-diet-str)
                                      (util/sort-by-locale)))]
