@@ -10,9 +10,15 @@
 
 #_(def max-children-per-day 19)
 
-(def att-payment-choices (array-map 1 {:months 1 :label "měsíčně (každý měsíc)"}
-                                    3 {:months 3 :label "čtvrtletně (3m 3m 3m 1m)"}
-                                    10 {:months 10 :label "ročně (10 měsíců v platbě na září)"}))
+(def att-payment-choices (->> [{:id 1 :label "měsíčně (každý měsíc)"}
+                               {:id 3 :label "čtvrtletně bez prázdnin (3m 3m 3m 1m)"}
+                               {:id 4 :label "čtvrtletně včetně prázdnin (4 x 3m)"}
+                               {:id 5 :label "půlročně bez prázdnin (6m 4m)"}
+                               {:id 6 :label "půlročně včetně prázdnin (6m 6m)"}
+                               {:id 10 :label "ročně bez prázdnin (10 měsíců v platbě na září)"}
+                               {:id 12 :label "ročně včetně prázdnin (12 měsíců v platbě na září)"}]
+                              (map (juxt :id identity))
+                              (into (array-map))))
 
 (defn person-fullname [{:keys [:person/lastname :person/firstname]}]
   (let [out (str lastname " " firstname)]

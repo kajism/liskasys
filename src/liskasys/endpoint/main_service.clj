@@ -54,7 +54,7 @@
                                   (take-while #(t/before? (t/now)
                                                           (t/minus (tc/from-date %)
                                                                    (t/days 2) ;;don't show new before Saturday
-)))
+                                                                   )))
                                   (count))))
         last-two (->> id-dates
                       (drop new-history)
@@ -147,9 +147,7 @@
        (into {})))
 
 (defn- calculate-att-price [price-list months-count days-per-week half-days-per-week]
-  (let [months-count (if (< months-count 0)
-                       0
-                       months-count)]
+  (let [months-count (max 0 months-count)]
     (+ (* months-count (get price-list (keyword "price-list" (str "days-" days-per-week)) 0))
        (* months-count half-days-per-week (:price-list/half-day price-list)))))
 
@@ -207,21 +205,40 @@
                                             (some-> (:person/start-date %) (tc/to-local-date) (t/after? period-end-ld)))))
                    :let [daily-plans (generate-daily-plans person dates)
                          previous-dps (get person-id--2nd-previous-dps (:db/id person))
-                         billing-months (inc (- (:billing-period/to-yyyymm billing-period)
-                                                (:billing-period/from-yyyymm billing-period)))
-                         att-payment-months (or (:person/att-payment-months person) att-payment-months)
-                         months-count (cond-> billing-months
+                         billing-period-months (inc (- (:billing-period/to-yyyymm billing-period)
+                                                       (:billing-period/from-yyyymm billing-period)))
+                         att-payment-months (or (:person/att-payment-months person) att-payment-months 1)
+                         month (rem from-yyyymm 100)
+                         months-count (cond
+                                        (and (or (= att-payment-months 10) (= att-payment-months 12)) ;; yearly payments
+                                             (= 9 month) ;; in September
+                                             )
+                                        att-payment-months
+                                        (and (= att-payment-months 6) ;; half year payment including summer holidays
+                                             (contains? #{9 3} month) ;; in September and March
+                                             )
+                                        att-payment-months
+                                        (and (= att-payment-months 5) ;; half year payment without summer holidays
+                                             (contains? #{9 3} month) ;; in September and March
+                                             )
+                                        (if (= month 9) 6 4)
+                                        (and (= att-payment-months 4) ;; quoterly payment in September, December, March, June including summer holidays
+                                             (contains? #{9 12 3 6} month))
+                                        3
+                                        (and (= att-payment-months 3) ;; quoterly payment in September, December or March without summer holidays
+                                             (contains? #{9 12 3 6} month))
+                                        (if (= month 6) 1 3)
+                                        (= att-payment-months 1)
+                                        billing-period-months
+                                        :else
+                                        0)
+                         months-count (cond-> months-count
                                         (some-> (:person/start-date person) (tc/to-local-date) (t/before? second-month-start) (not))
                                         (dec)
                                         (some :daily-plan/refund? previous-dps)
                                         (dec)
                                         (and (seq previous-dps) (every? :daily-plan/refund? previous-dps))
-                                        (dec)
-                                        (and (= att-payment-months 10) (= 9 (rem from-yyyymm 100))) ;; yearly payment in September
-                                        (+ (- 10 billing-months))
-                                        (and (= att-payment-months 3) (contains? #{9 12 3} (rem from-yyyymm 100))) ;; quoterly payment in September, December or March
-                                        (+ (- 3 billing-months)))
-
+                                        (dec))
                          price-list (get price-lists (get-in person [:person/price-list :db/id]))
                          att-price (calculate-att-price price-list
                                                         months-count

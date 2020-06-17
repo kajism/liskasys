@@ -145,9 +145,7 @@
            :model (some-> item :config/att-payment-months)
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/att-payment-months %])
            :choices (vals cljc.util/att-payment-choices)
-           :id-fn :months
-           :label-fn :label
-           :width "250px"]
+           :width "400px"]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :config])]

@@ -323,8 +323,6 @@
                  :model (some-> item :person/att-payment-months)
                  :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/att-payment-months %])
                  :choices (vals cljc.util/att-payment-choices)
-                 :id-fn :months
-                 :label-fn :label
                  :placeholder (str "výchozí platební režim = " (:label (get cljc.util/att-payment-choices (:config/att-payment-months (first (vals @configs))))))
                  :width "400px"]
                 [re-com/label :label "Datum začátku docházky"]
