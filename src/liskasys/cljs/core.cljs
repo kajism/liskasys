@@ -69,7 +69,7 @@
        (secretary/dispatch! (.-token event))))
     (.setEnabled true)))
 
-(defn menu [user]
+(defn menu [{roles :-roles styling :-styling :as user}]
   [:nav.navbar.navbar-default
    [:div.container-fluid
     [:div.navbar-header
@@ -77,8 +77,9 @@
       [:span.icon-bar]
       [:span.icon-bar]
       [:span.icon-bar]]
+     (.log js/console styling)
      [:a {:href "#"}
-      [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
+      [:img {:src (str "/img/" (or (not-empty (:logo styling)) "logo_background.jpg")) :alt "LiškaSys" :height "60"}]]]
     [:div#liskasys-navbar.collapse.navbar-collapse
      [:ul.nav.navbar-nav
       [:li [:a {:href "#/persons"} "Lidé"]]
@@ -88,7 +89,7 @@
       [:li [:a {:href "#/lunch-menus"} "Jídelníček"]]
       [:li [:a {:href "#/lunch-orders"} "Oběd-návky"]]]
      [:ul.nav.navbar-nav.navbar-right
-      (when (contains? (:-roles user) "admin")
+      (when (contains? roles "admin")
         [:li.dropdown
          [:a.dropdown-toggle {:data-toggle "dropdown" :href "#"}
           "Nastavení" [:span.caret]]

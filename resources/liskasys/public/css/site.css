@@ -2,12 +2,12 @@ body {
     background-color: #bdfb80;
 }
 
-.table-striped > tbody > tr:nth-of-type(odd) {
+.table-striped > tbody > tr:nth-of-type(odd), .navbar-default {
     background-color: #7cf504;
 }
 
-.navbar-default {
-    background-color: #7cf504;
+.navbar-default .navbar-nav > li > a {
+    color: #337ab7;
 }
 
 .error-page body {

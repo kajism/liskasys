@@ -40,6 +40,17 @@
      :selected-child (some #(when (= (:db/id %) sid) %) user-children)
      :selected-id sid}))
 
+(defn- get-user-base [server-name db]
+  (let [{:config/keys [org-name person-bill-page? substs-page? styling]} (d/pull db '[*] :liskasys/config)
+        [logo bg1 bg2] (str/split (or styling "") #"\s*,\s*")]
+    {:-server-name server-name
+     :-org-name org-name
+     :-person-bill-page? person-bill-page?
+     :-substs-page? substs-page?
+     :-styling {:logo logo
+                :bg1 bg1
+                :bg2 bg2}}))
+
 (defn main-endpoint [{{conns :conns} :datomic}]
   (routes
    (context "" {{{roles :-roles :as user} :user} :session flash-msg :flash server-name :server-name}
@@ -157,31 +168,28 @@
        (response/redirect "/jidelni-listek"))
 
      (GET "/login" []
-       (hiccup/login-page main-hiccup/system-title))
+          (let []
+            (hiccup/login-page (get-user-base server-name (d/db (conns server-name))))))
 
      (POST "/login" [username pwd :as req]
-       (try
-         (let [db (d/db (conns server-name))
-               person (main-service/login db username pwd)
-               {:config/keys [org-name person-bill-page? substs-page?]} (d/pull db '[*] :liskasys/config)]
-           (when-not person
-             (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
-           (-> (response/redirect "/" :see-other)
-               (assoc-in [:session :user]
-                         (-> person
-                             (select-keys [:db/id :person/lastname :person/firstname :person/email])
-                             (assoc :-roles
-                                    (cond-> (->> (str/split (str (:person/roles person)) #",")
-                                                 (map str/trim)
-                                                 (set))
-                                      (some :person/active? (:person/_parent person))
-                                      (conj "parent"))
-                                    :-server-name server-name
-                                    :-org-name org-name
-                                    :-person-bill-page? person-bill-page?
-                                    :-substs-page? substs-page?)))))
-         (catch Exception e
-           (hiccup/login-page main-hiccup/system-title (.getMessage e)))))
+           (let [db (d/db (conns server-name))
+                 user-base (get-user-base server-name db)]
+             (try
+               (if-let [person (main-service/login db username pwd)]
+                 (-> (response/redirect "/" :see-other)
+                     (assoc-in [:session :user]
+                               (-> person
+                                   (select-keys [:db/id :person/lastname :person/firstname :person/email])
+                                   (merge user-base)
+                                   (assoc :-roles
+                                          (cond-> (->> (str/split (str (:person/roles person)) #",")
+                                                       (map str/trim)
+                                                       (set))
+                                            (some :person/active? (:person/_parent person))
+                                            (conj "parent"))))))
+                 (throw (Exception. "Neplatné uživatelské jméno nebo heslo.")))
+               (catch Exception e
+                 (hiccup/login-page user-base (.getMessage e))))))
 
      (GET "/logout" []
        (-> (response/redirect "/" :see-other)
@@ -247,7 +255,7 @@
      (GET "/" []
          (if-not (some (:-roles user) ["admin" "inspektor"])
            (response/redirect "/")
-           (hiccup/cljs-landing-page (str main-hiccup/system-title " Admin: " (:-org-name user)))))
+           (hiccup/cljs-landing-page user)))
 
      (POST "/api" [req-msg]
        (let [[msg-id ?data] req-msg

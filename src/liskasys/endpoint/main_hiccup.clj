@@ -11,15 +11,13 @@
   (:import java.text.Collator
            [java.util Date Locale]))
 
-(def system-title "LiškaSys")
-
 (defn liskasys-frame
   ([user body-hiccup]
    (liskasys-frame user body-hiccup nil))
-  ([{roles :-roles :as user} body-hiccup flash-msg]
+  ([{roles :-roles styling :-styling :as user} body-hiccup flash-msg]
    (hiccup/hiccup-response
     (hiccup/hiccup-frame
-     (str system-title ": " (:-org-name user))
+     user
      [:div
       [:nav.navbar.navbar-default
        [:div.container-fluid
@@ -29,7 +27,7 @@
           [:span.icon-bar]
           [:span.icon-bar]]
          [:a {:href "#"}
-          [:img {:src "/img/logo_background.jpg" :alt "LiškaSys" :height "60"}]]]
+          [:img {:src (str "/img/" (or (not-empty (:logo styling)) "logo_background.jpg")) :alt "LiškaSys" :height "60"}]]]
         [:div#liskasys-navbar.collapse.navbar-collapse
          [:ul.nav.navbar-nav
           (when (contains? roles "parent")

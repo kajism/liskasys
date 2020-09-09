@@ -146,6 +146,11 @@
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/att-payment-months %])
            :choices (vals cljc.util/att-payment-choices)
            :width "400px"]
+          [re-com/label :label "Stylizace (logo, barva pozadi 1, barva pozadi 2)"]
+          [re-com/input-text
+           :model (str (:config/styling item))
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/styling %])
+           :width "400px"]
           [re-com/h-box :align :center :gap "5px"
            :children
            [[re-com/button :label "Uložit" :class "btn-success" :on-click #(re-frame/dispatch [:entity-save :config])]
