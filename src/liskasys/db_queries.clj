@@ -121,7 +121,7 @@
    (find-att-daily-plans db date date))
   ([db date-from date-to]
    (when (and date-from date-to)
-     (d/q '[:find [(pull ?e [* {:daily-plan/person [:db/id :person/group]}]) ...]
+     (d/q '[:find [(pull ?e [* {:daily-plan/person [:db/id :person/group :person/firstname :person/lastname]}]) ...]
             :in $ ?date-from ?date-to
             :where
             (or [?e :daily-plan/child-att 1]

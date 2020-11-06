@@ -156,8 +156,15 @@
      :body [{:type content-type
              :content (str subj "\n\n"
                            (reduce (fn [out group]
-                                     (str out (:group/label group) ": "
-                                          (count (get atts-by-group-id (:db/id group))) "\n"))
+                                     (let [atts (get atts-by-group-id (:db/id group))
+                                           names (->> atts
+                                                      (map #(cljc.util/person-fullname (:daily-plan/person %)))
+                                                      (util/sort-by-locale))
+                                           cnt (count atts)]
+                                       (if (zero? cnt)
+                                         out
+                                         (str out (:group/label group) ": "
+                                              cnt "\n" (str/join "\n" names) "\n\n"))))
                                    ""
                                    groups)
                            footer-text full-url)}]}))
