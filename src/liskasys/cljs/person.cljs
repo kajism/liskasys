@@ -66,6 +66,12 @@
         (sort)
         (reverse))))
 
+(re-frame/reg-event-fx
+ ::load-subst-dps-count
+ (fn [_ [_ person-id]]
+   {:server-call {:req-msg [:person/subst-dps-count person-id]
+                  :resp-evt [:entity-change :person person-id :person/subst-count]}}))
+
 (defn table [rows]
   (let [lunch-types (re-frame/subscribe [:entities :lunch-type])
         groups (re-frame/subscribe [:entities :group])
@@ -331,6 +337,12 @@
                  :on-change #(re-frame/dispatch [:entity-change :person (:db/id item) :person/start-date (time/from-dMyyyy %)])
                  :validation-regex #"^\d{0,2}$|^\d{0,2}\.\d{0,2}$|^\d{0,2}\.\d{0,2}\.\d{0,4}$"
                  :width "100px"]
+                [re-com/label :label "Zbývající počet náhrad:"]
+                (if-let [subst-count (:person/subst-count item)]
+                  [re-com/button :label (str subst-count " dnů (klikem přepočítat znovu)")
+                   :on-click #(re-frame/dispatch [::load-subst-dps-count (:db/id item)])]
+                  [re-com/button :label "Vypočítat zbývající náhrady"
+                   :on-click #(re-frame/dispatch [::load-subst-dps-count (:db/id item)])])
                 [re-com/hyperlink :on-click #(re-frame/dispatch [:liskasys.cljs.common/set-path-value [::show-personal-info?] not]) :label
                  [re-com/h-box :gap "5px" :align :center :children
                   [[re-com/md-icon-button

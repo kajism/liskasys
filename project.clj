@@ -70,7 +70,7 @@
    :project/dev   {:dependencies [[binaryage/devtools "0.9.10"]
                                   [cider/piggieback "0.4.0"]
                                   [duct/figwheel-component "0.3.4"]
-                                  #_[eftest "0.1.1"]
+                                  [eftest "0.1.1"]
                                   [figwheel "0.5.14"]
                                   #_[kerodon "0.7.0"]
                                   #_[org.clojure/test.check "0.9.0"]

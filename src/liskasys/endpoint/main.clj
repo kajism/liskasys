@@ -290,6 +290,8 @@
               :person-bill/generate (main-service/re-generate-person-bills conn (:db/id user) (:person-bill/period ?data))
               :person-bill/publish-all-bills (main-service/publish-all-bills conn (:db/id user) (:person-bill/period ?data))
               :person-bill/set-bill-as-paid (main-service/set-bill-as-paid conn (:db/id user) (:db/id ?data))
+              :person/subst-dps-count (let [{:keys [person groups substable-dps dp-gap-days can-subst?]} (db-queries/find-person-substs (d/db conn) ?data)]
+                                        (if can-subst? (count substable-dps) 0))
               :tx/datoms (db/tx-datoms conn ?data)
               :tx/range (db/last-txes conn (:from-idx ?data) (:n ?data))
               (throw (Exception. (str "Unknown msg-id: " msg-id)))))))))))
