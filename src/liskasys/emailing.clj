@@ -179,7 +179,7 @@
     (send-message org-name msg)))
 
 
-(defn monthly-lunch-order-totals-msg [from tos {:config/keys [org-name full-url]} yyyymm person-totals]
+(defn monthly-lunch-order-totals-msg [from tos {:config/keys [org-name full-url csv-emailing?]} yyyymm person-totals]
   (let [subj (str org-name ": Objednávky obědů na osobu za uplynulý měsíc (" yyyymm ")")]
     {:from from
      :to tos
@@ -187,7 +187,9 @@
      :body [{:type content-type
              :content (str subj "\n\n"
                            (reduce (fn [out [person total]]
-                                     (str out (cljc.util/person-fullname person) ": " total "\n"))
+                                     (if csv-emailing?
+                                       (str out (cljc.util/person-fullname person) ";" (:person/var-symbol person) ";" total "\n")
+                                       (str out (cljc.util/person-fullname person) ": " total "\n")))
                                    ""
                                    person-totals)
                            footer-text full-url)}]}))

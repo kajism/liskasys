@@ -119,6 +119,11 @@
            :model (str (:config/lunch-fund-totals-role item))
            :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/lunch-fund-totals-role %])
            :width "200px"]
+          [re-com/label :label "Posílat mešíční souhrn v CSV formátu?"]
+          [re-com/checkbox
+           :label "ano, oddělit sloupce středníkem"
+           :model (:config/csv-emailing? item)
+           :on-change #(re-frame/dispatch [:entity-change :config (:db/id item) :config/csv-emailing? %])]
           [re-com/label :label "Počet předchozích platebních období, za které je možné nahrazovat omluvenky (pouze v rámci školního roku)"]
           [re-com/input-text
            :model (str (:config/max-subst-periods item))
