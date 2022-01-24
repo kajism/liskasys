@@ -7,7 +7,7 @@
   :dependencies [[cljs-ajax "0.8.4"]
                  [org.apache.httpcomponents/httpclient "4.5.13"]
                  [org.clojure/clojure "1.10.3"]
-                 [org.clojure/clojurescript "1.11.4"]
+                 [org.clojure/clojurescript "1.10.891"]
                  #_[org.clojure/core.async "0.4.490"]
                  [org.clojure/core.cache "1.0.225"]
                  [org.clojure/core.memoize "1.0.253"]
