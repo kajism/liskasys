@@ -22,7 +22,7 @@
             [liskasys.cljs.config]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [reagent.core :as reagent]
+            [reagent.dom]
             [reagent.ratom :as ratom]
             [secretary.core :as secretary]
             [taoensso.timbre :as timbre])
@@ -133,6 +133,6 @@
   (hook-browser-navigation!)
   (when-let [node (.getElementById js/document "app")]
     (re-frame/dispatch [:init-app])
-    (reagent/render [main-app-area] node)))
+    (reagent.dom/render [main-app-area] node)))
 
 (main)
