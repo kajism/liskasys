@@ -25,7 +25,6 @@
                  [re-com "2.13.2"]
                  [re-frame "1.2.0"]
                  [com.taoensso/timbre "5.1.2"]
-                 #_[org.clojure/tools.namespace "0.3.0-alpha3"];;1.1.0 ???
                  [compojure "1.6.2"]
                  [duct "0.5.10"]
                  [environ "1.2.0"]
@@ -42,7 +41,7 @@
                  [cz.geek/geek-spayd "0.2.0"]]
   :plugins [[lein-environ "1.0.2"]
             [lein-gen "0.2.2"]
-            [lein-cljsbuild "1.1.8"]];;cljs-shadow
+            [lein-cljsbuild "1.1.8"]];;shadow-cljs
   :generators [[duct/generators "0.5.10"]]
   :duct {:ns-prefix liskasys}
   :main ^:skip-aot liskasys.main
