@@ -8,10 +8,10 @@
                  [org.apache.httpcomponents/httpclient "4.5.13"]
                  [org.clojure/clojure "1.10.3"]
                  [org.clojure/clojurescript "1.10.891"]
-                 #_[org.clojure/core.async "0.4.490"]
+                 #_[org.clojure/core.async "1.5.648"]
                  [org.clojure/core.cache "1.0.225"]
                  [org.clojure/core.memoize "1.0.253"]
-                 [nrepl "0.8.3"];;0.0.9 ??
+                 [nrepl "0.9.0"]
                  [clj-time "0.15.2"] ;;tick?
                  [com.andrewmcveigh/cljs-time "0.5.2"];;tick?
                  [com.cognitect/transit-clj "1.0.324"]
@@ -67,7 +67,7 @@
    :profiles/dev  {}
    :profiles/test {}
    :project/dev   {:dependencies [[binaryage/devtools "1.0.3"]
-                                  [cider/piggieback "0.5.2"]
+                                  #_[cider/piggieback "0.5.2"]
                                   [duct/figwheel-component "0.3.4"]
                                   [eftest "0.5.9"]
                                   [figwheel "0.5.20"]

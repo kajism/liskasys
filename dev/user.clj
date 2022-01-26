@@ -6,12 +6,14 @@
             [com.stuartsierra.component :as component]
             #_[eftest.runner :as eftest]
             [meta-merge.core :refer [meta-merge]]
-            [reloaded.repl :refer [system init start stop go reset]]
+            [reloaded.repl :refer [system init start stop go]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [duct.component.figwheel :as figwheel]
             [liskasys.config :as config]
             [liskasys.system :as system]
             [datomic.api :as d]))
+
+(def reset reloaded.repl/reset)
 
 (def dev-config
   {:app {:middleware [wrap-stacktrace]}
