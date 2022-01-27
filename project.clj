@@ -31,7 +31,6 @@
                  [environ "1.2.0"]
                  [meta-merge "1.0.0"]
                  [ring-jetty-component "0.3.1"]
-                 [http-kit "2.5.3"]
                  [org.slf4j/slf4j-nop "1.7.30"]
                  [secretary "1.2.3"] ;;reitit
                  [ring-middleware-format "0.7.4"]
@@ -66,7 +65,7 @@
    :uberjar {:aot :all}
    :profiles/dev  {}
    :profiles/test {}
-   :project/dev   {:dependencies [[binaryage/devtools "1.0.3"]
+   :project/dev   {:dependencies [[binaryage/devtools "1.0.4"]
                                   #_[cider/piggieback "0.5.2"]
                                   [duct/figwheel-component "0.3.4"]
                                   [eftest "0.5.9"]
