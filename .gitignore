@@ -1,7 +1,7 @@
 /target
 /classes
-/checkouts*
-/uploads*
+/checkouts
+/uploads
 pom.xml
 pom.xml.asc
 *.jar
@@ -20,3 +20,4 @@ figwheel_server.log
 .idea/
 liskasys.iml
 emailing_integration_test.clj
+.clj-kondo

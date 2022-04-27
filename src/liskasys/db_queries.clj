@@ -170,25 +170,6 @@
                 :-paid? (or (= (:db/id status) paid-status)
                             (= (:db/ident status) :person-bill.status/paid))}))))
 
-(defn find-person-bills [db user-id]
-  (->> (d/q '[:find [(pull ?e [* {:person-bill/person [*] :person-bill/period [*]}]) ...]
-              :in $ % ?user
-              :where
-              (find-person-and-childs ?e ?user)
-              (or
-               [?e :person-bill/status :person-bill.status/published]
-               [?e :person-bill/status :person-bill.status/paid])]
-            db
-            '[[(find-person-and-childs ?e ?user)
-               [?e :person-bill/person ?user]]
-              [(find-person-and-childs ?e ?user)
-               [?ch :person/parent ?user]
-               [?e :person-bill/person ?ch]]]
-            user-id)
-       (map (partial merge-person-bill-facts db))
-       (sort-by (comp :db/id :person-bill/period))
-       reverse))
-
 (defn find-person-daily-plans-with-lunches [db date]
   (d/q '[:find [(pull ?e [:db/id :daily-plan/lunch-req
                           {:daily-plan/person [:db/id :person/lunch-type :person/lunch-fund :person/child?
@@ -489,7 +470,7 @@
                        (filter (fn [{:keys [a]}]
                                  (= a :person/lunch-fund)))
                        (group-by :e)
-                       (map (fn [[e datoms]]
+                       (map (fn [[_ datoms]]
                               (let [m (->> datoms
                                            (map (juxt :added? :v))
                                            (into {}))]
@@ -540,3 +521,23 @@
     (when-not (= total-portions (reduce + (vals portions)))
       (throw (ex-info "Invalid total count of lunches" out)))
     out))
+
+(comment
+  (->>
+    (d/q '[:find ?last ?first ?yyyymm (sum ?lunch-ord)
+           :in $
+           :with ?dp
+           :where
+           [?dp :daily-plan/date ?d]
+           [(> ?lunch-ord 0)]
+           [(liskasys.cljc.util/date-yyyymm ?d) ?yyyymm]
+           [?dp :daily-plan/person ?p]
+           [?p :person/lastname ?last]
+           [?p :person/firstname ?first]
+           [?dp :daily-plan/lunch-ord ?lunch-ord]]
+         (d/db (d/connect "datomic:free://localhost:4334/liska")))
+    (map #(str/join ";" %))
+    (reduce #(str %1 "\n" %2))
+    (spit "liska-obedy.csv"))
+  (d/get-database-names "datomic:free://localhost:4334/*")
+  )
