@@ -535,9 +535,9 @@
            [?p :person/lastname ?last]
            [?p :person/firstname ?first]
            [?dp :daily-plan/lunch-ord ?lunch-ord]]
-         (d/db (d/connect "datomic:free://localhost:4334/liska")))
+         (d/db (d/connect "datomic:free://localhost:2334/liska")))
     (map #(str/join ";" %))
     (reduce #(str %1 "\n" %2))
     (spit "liska-obedy.csv"))
-  (d/get-database-names "datomic:free://localhost:4334/*")
+  (d/get-database-names "datomic:free://localhost:2334/*")
   )

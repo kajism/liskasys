@@ -69,7 +69,7 @@
                   [:div
                    [:div#app "Načítám LiškaSys ..."]
                    (anti-forgery/anti-forgery-field)
-                   [:script {:src "/js/main.js"}]]))))
+                   [:script {:src "/cljs/main.js"}]]))))
 
 (defn passwd-form [{:keys [type msg] :as alert}]
   [:div.container

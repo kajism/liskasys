@@ -1,63 +1,60 @@
 (ns user
-  (:require [clojure.repl :refer :all]
-            [clojure.pprint :refer [pprint]]
-            [clojure.tools.namespace.repl :refer [refresh]]
-            [clojure.java.io :as io]
-            [com.stuartsierra.component :as component]
-            #_[eftest.runner :as eftest]
-            [meta-merge.core :refer [meta-merge]]
-            [reloaded.repl :refer [system init start stop go]]
-            [ring.middleware.stacktrace :refer [wrap-stacktrace]]
-            [duct.component.figwheel :as figwheel]
-            [liskasys.config :as config]
+  (:require [clojure.java.io :as io]
+            [clojure.repl]
+            [clojure.tools.namespace.repl]
+            [shadow.cljs.devtools.api :as shadow]
+            [shadow.cljs.devtools.server :as shadow-server]
+            [datomic.api :as d]
             [liskasys.system :as system]
-            [datomic.api :as d]))
+            [integrant.repl :as ig-repl :refer [halt]]
+            [integrant.repl.state :as ig-state]))
 
-(def reset reloaded.repl/reset)
+(clojure.tools.namespace.repl/set-refresh-dirs "src" "test" "build")
 
-(def dev-config
-  {:app {:middleware [wrap-stacktrace]}
-   :figwheel
-   {:server-port 2449
-    :css-dirs ["resources/liskasys/public/css"]
-    :builds   [{:source-paths ["src" "dev"]
-                :build-options
-                {:optimizations :none
-                 :main "cljs.user"
-                 :asset-path "/js"
-                 :output-to  "target/figwheel/liskasys/public/js/main.js"
-                 :output-dir "target/figwheel/liskasys/public/js"
-                 :source-map true
-                 :source-map-path "/js"}}]}})
+(defonce cljs-started? (atom false))
 
-(def config
-  (meta-merge config/defaults
-              config/environ
-              dev-config))
+(defn reset-cljs-build []
+  (shadow-server/stop!)
+  (shadow-server/start!)
+  (shadow/watch :app {:autobuild false})
+  (reset! cljs-started? true))
 
-(defn new-system []
-  (into (system/new-system config)
-        {:figwheel (figwheel/server (:figwheel config))}))
+(defn reset []
+  (ig-repl/set-prep! (fn [] system/config))
+  (ig-repl/reset)
+  (when-not @cljs-started?
+    (reset-cljs-build))
+  (shadow/watch-compile! :app))
 
-#_(ns-unmap *ns* 'test)
+(comment
+  (shadow-server/reload!)
+  (shadow/active-builds)
+  (shadow/repl :app)
+  (shadow/compile :app)
+  (shadow/watch :app)
+  (shadow/watch :app {:autobuild false})
+  (shadow/watch-compile! :app)
+  (shadow/watch-compile-all!)
 
-#_(defn test []
-  (eftest/run-tests (eftest/find-tests "test") {:multithread? false}))
+  (reset)
+  (halt)
 
-(defn cljs-repl []
-  (figwheel/cljs-repl (:figwheel system)))
+  (remove-ns 'user)
+
+  (clojure.tools.namespace.repl/clear)
+  (clojure.tools.namespace.repl/refresh-all)
+
+  (:app/scheduler ig-state/system)
+  )
 
 (when (io/resource "local.clj")
   (load "local"))
 
-(reloaded.repl/set-init! new-system)
-
 (defn conns []
-  (-> system :datomic :conns))
+  (:datomic/conns ig-state/system))
 
 (defn conn [server-name]
   (get (conns) server-name))
 
 (defn db [server-name]
   (d/db (conn server-name)))
-

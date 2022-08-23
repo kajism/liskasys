@@ -48,3 +48,9 @@
       (cond-> response
         (:child-id params)
         (assoc :session (assoc session :child-id child-id))))))
+
+(defn wrap-check-server-name [conns handler]
+  (fn [{:keys [server-name] :as request}]
+    (if-not (contains? conns server-name)
+      access-denied-response
+      (handler request))))

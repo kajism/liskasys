@@ -1,72 +1,58 @@
 (ns liskasys.system
-  (:require [liskasys.component.nrepl-server :refer [nrepl-server]]
-            [liskasys.middleware :as middleware]
-            [clojure.java.io :as io]
-            [clojure.pprint :refer [pprint]]
-            [com.stuartsierra.component :as component]
-            [duct.component.endpoint :refer [endpoint-component]]
-            [duct.component.handler :refer [handler-component]]
-            [duct.middleware.not-found :refer [wrap-not-found]]
-            [duct.middleware.route-aliases :refer [wrap-route-aliases]]
-            [environ.core :refer [env]]
-            [liskasys.component.datomic :refer [datomic]]
-            [liskasys.component.scheduler :refer [scheduler]]
-            [liskasys.endpoint.main :refer [main-endpoint]]
-            [meta-merge.core :refer [meta-merge]]
-            [ring.component.jetty :refer [jetty-server]]
-            [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
-            [ring.middleware.format :refer [wrap-restful-format]]
-            [ring.middleware.session.cookie :as cookie]
-            [ring.util.response :as response]
-            [taoensso.timbre :as timbre]
-            [taoensso.timbre.appenders.3rd-party.rotor :refer [rotor-appender]]
-            [taoensso.timbre.appenders.core :refer [println-appender]]))
+  (:require [liskasys.config :refer [conf]]
+            [liskasys.system.datomic :as datomic]
+            [liskasys.endpoint.handler :as handler]
+            [liskasys.system.logging] ;;to configure timbre
+            [liskasys.system.scheduler :as scheduler]
+            [integrant.core :as ig]
+            [nrepl.server]
+            [ring.adapter.undertow :as undertow]
+            [taoensso.timbre :as timbre])
+  (:import (io.undertow Undertow)))
 
-(def base-config
-  {:app {:middleware [[middleware/wrap-child-id]
-                      [middleware/wrap-logging]
-                      [wrap-restful-format]
-                      [middleware/wrap-auth :api-routes-pattern]
-                      [middleware/wrap-exceptions :api-routes-pattern]
-                      [wrap-not-found :not-found]
-                      [wrap-defaults :defaults]
-                      [wrap-route-aliases :aliases]]
-         :api-routes-pattern #"/api"
-         :not-found  (io/resource "liskasys/errors/404.html")
-         :defaults   (meta-merge site-defaults (cond-> {:static {:resources "liskasys/public"}
-                                                        :security {:anti-forgery false}
-                                                        :proxy true}
-                                                 (:dev env)
-                                                 (assoc :session {:store (cookie/cookie-store {:key (.getBytes "StursovaListicka")})
-                                                                  :flash true})))
-         :aliases    {}}
-   :ragtime {:resource-path "liskasys/migrations"}})
+(Thread/setDefaultUncaughtExceptionHandler
+  (reify Thread$UncaughtExceptionHandler
+    (uncaughtException [_ thread ex]
+      (timbre/error ex "Uncaught exception on" (.getName thread)))))
 
-(defn new-system [config]
-  (timbre/set-config!
-   {:level     (if (:dev env) :debug :info)
-    :appenders {:println (println-appender)
-                :rotor (rotor-appender
-                        {:path "log/liskasys.log"
-                         :max-size (* 2 1024 1024)
-                         :backlog 10})}})
+(def config
+  {:datomic/conns {:uri (get-in conf [:datomic :uri])
+                  :dbs (get-in conf [:datomic :dbs])}
+   :app/handler {:datomic (ig/ref :datomic/conns)}
+   :http/server {:handler (ig/ref :app/handler)
+                 :port (:http-port conf)}
+   :nrepl/server {:port (:nrepl-port conf)}
+   :app/scheduler {:datomic (ig/ref :datomic/conns)}})
 
-  (timbre/info "Installing default exception handler")
-  (Thread/setDefaultUncaughtExceptionHandler
-   (reify Thread$UncaughtExceptionHandler
-     (uncaughtException [_ thread ex]
-       (timbre/error ex "Uncaught exception on" (.getName thread)))))
+(defmethod ig/init-key :nrepl/server [_ {:keys [port]}]
+  (timbre/info "Starting nrepl server on port " port)
+  (nrepl.server/start-server :port port))
 
-  (let [config (meta-merge base-config config)]
-    (-> (component/system-map
-         :nrepl (nrepl-server (:nrepl-port config))
-         :app  (handler-component (:app config))
-         :http (jetty-server (:http config))
-         :datomic (datomic (:datomic config))
-         :scheduler (scheduler)
-         :main (endpoint-component main-endpoint))
-        (component/system-using
-         {:http [:app]
-          :app  [:main]
-          :scheduler [:datomic]
-          :main [:datomic]}))))
+(defmethod ig/halt-key! :nrepl/server [_ server]
+  (nrepl.server/stop-server server)
+  (timbre/info "Stopped nrepl server"))
+
+(defmethod ig/init-key :datomic/conns [_ {:keys [uri dbs]}]
+  (datomic/start-datomic uri dbs))
+
+(defmethod ig/halt-key! :datomic/conns [_ conn]
+  (datomic/stop-datomic conn))
+
+(defmethod ig/init-key :app/handler [_ deps]
+  (handler/make-handler deps))
+
+(defmethod ig/init-key :http/server [_ {:keys [handler port]}]
+  (timbre/info "Starting HTTP server on port" port)
+  (undertow/run-undertow handler {:host "0.0.0.0"
+                                  :port port}))
+
+(defmethod ig/halt-key! :http/server [_ ^Undertow server]
+  (.stop server)
+  (timbre/info "Stopped HTTP server"))
+
+(defmethod ig/init-key :app/scheduler [_ deps]
+  (scheduler/start deps))
+
+(defmethod ig/halt-key! :app/scheduler [_ scheduler]
+  (scheduler/stop scheduler))
+

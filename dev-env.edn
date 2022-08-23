@@ -1,0 +1,1 @@
+{:dev "true", :port "3002", :datomic-uri "datomic:free://localhost:2334/", :app-domains "localhost jelinek kajism5370", :app-dbs "liskasys  jelinek stromik"}

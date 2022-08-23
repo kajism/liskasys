@@ -1,8 +1,7 @@
 (ns liskasys.cljs.util
   (:require [clojure.string :as str]
             [cognitect.transit :as transit]
-            [liskasys.cljc.util :as cljc.util]
-            [re-com.core :as re-com]))
+            [liskasys.cljc.util :as cljc.util]))
 
 (defn sort-by-locale
   "Tridi spravne cestinu (pouziva funkci js/String.localeCompare). keyfn musi vracet string!"
@@ -24,7 +23,7 @@
 
 (defn bigdec->str [n]
   (when n
-    (.-rep n)))
+    (.-rep ^js n)))
 
 (defn bigdec->float [n]
   (parse-float (bigdec->str n)))
@@ -50,7 +49,7 @@
     (keyword? x)
     nil
     (transit/bigdec? x)
-    (parse-float (.-rep x))
+    (parse-float (.-rep ^js x))
     :else
     x))
 

@@ -38,7 +38,7 @@
                    (let [sort-key-fn (when @sort-key-fn*
                                        (cond->> @sort-key-fn*
                                          (transit/bigdec? (some-> @rows first (@sort-key-fn*)))
-                                         (comp util/parse-float #(when % (.-rep %)))
+                                         (comp util/parse-float #(when % (.-rep ^js %)))
                                          (vector? (some-> @rows first (@sort-key-fn*)))
                                          (comp util/hiccup->val)))]
                      [sort-key-fn
@@ -126,7 +126,7 @@
                                     (= js/Date (type %))
                                     (show-date %)
                                     (transit/bigdec? %)
-                                    (cljc.util/parse-int (.-rep %))
+                                    (cljc.util/parse-int (.-rep ^js %))
                                     (= (type %) js/Boolean)
                                     (cljc.util/boolean->text %)
                                     :else
@@ -142,7 +142,7 @@
      (or (string? value) (vector? value)) value
      (= js/Date (type value)) (show-date value)
      (number? value) (cljc.util/money->text value)
-     (transit/bigdec? value) (cljc.util/money->text (cljc.util/parse-int (.-rep value)))
+     (transit/bigdec? value) (cljc.util/money->text (cljc.util/parse-int (.-rep ^js value)))
      (= (type value) js/Boolean) (cljc.util/boolean->text value)
      :else (str value))])
 
@@ -259,7 +259,7 @@
                     (->> (:filtered-rows @table-rows)
                          (keep val-fn)
                          (map #(if (transit/bigdec? %)
-                                 (util/parse-float (.-rep %))
+                                 (util/parse-float (.-rep ^js %))
                                  %))
                          (apply +)
                          int)) " Kč" [:br]])

@@ -1,11 +1,8 @@
 (ns liskasys.cljs.core
-  (:require [clojure.string :as str]
-            [goog.events :as events]
+  (:require [goog.events :as events]
             [goog.history.EventType :as EventType]
             [liskasys.cljs.ajax]
-            [liskasys.cljs.branch :as branch]
             [liskasys.cljs.common :as common]
-            [liskasys.cljs.group :as group]
             [liskasys.cljs.pages :as pages]
             [liskasys.cljs.bank-holiday]
             [liskasys.cljs.billing-period]
@@ -22,10 +19,8 @@
             [liskasys.cljs.config]
             [re-com.core :as re-com]
             [re-frame.core :as re-frame]
-            [reagent.dom]
-            [reagent.ratom :as ratom]
-            [secretary.core :as secretary]
-            [taoensso.timbre :as timbre])
+            [reagent.dom :as reagent-dom]
+            [secretary.core :as secretary])
   (:import goog.History))
 
 (re-frame/reg-sub
@@ -66,7 +61,7 @@
     (events/listen
      EventType/NAVIGATE
      (fn [event]
-       (secretary/dispatch! (.-token event))))
+       (secretary/dispatch! (.-token ^js event))))
     (.setEnabled true)))
 
 (defn menu [{roles :-roles styling :-styling :as user}]
@@ -112,7 +107,7 @@
 
 (pages/add-page :main #'page-main)
 
-(defn main-app-area []
+(defn main-app-area [shadow]
   (let [user (re-frame/subscribe [:auth-user])
         configs (re-frame/subscribe [:entities :config])
         current-page (re-frame/subscribe [:current-page])]
@@ -129,10 +124,12 @@
           [:br]
           [:br]]]))))
 
+(defn render []
+  (when-let [node (.getElementById js/document "app")]
+    (reagent-dom/render [main-app-area {:shadow (js/Date.now)}] node)))
+
 (defn main []
   (hook-browser-navigation!)
-  (when-let [node (.getElementById js/document "app")]
-    (re-frame/dispatch [:init-app])
-    (reagent.dom/render [main-app-area] node)))
+  (re-frame/dispatch [:init-app])
+  (render))
 
-(main)

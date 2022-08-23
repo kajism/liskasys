@@ -1,0 +1,13 @@
+{:deps {:aliases [:cljs]}
+ :builds
+ {:app {:target :browser
+        :output-dir "resources/liskasys/public/cljs/"
+        :asset-path "/cljs"
+        :module-loader true
+        :modules {:main {:entries [liskasys.cljs.core]
+                         :init-fn liskasys.cljs.core/main}}
+        :devtools {:watch-dir "resources/liskasys/public"
+                   :after-load liskasys.cljs.core/render
+                   :preloads [hashp.core]
+                   :repl-init-ns cljs.user
+                   :repl-pprint true}}}}
