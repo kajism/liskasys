@@ -9,7 +9,7 @@
 ;; Run from sources, without uberjar build:
 ;;       shadow-cljs release app
 ;;       clojure -M -m liskasys.main
-;; Run jar build (no uberjar), just liskasys.jar (20MB), lib/datomic-*.jar, deps.edn:
+;; Run jar build (no uberjar), just liskasys.jar, lib/datomic-*.jar, deps.edn:
 ;;      clojure -M:run-jar
 ;;      DATOMIC_URI=datomic:free://localhost:2334/ APP_DOMAINS=localhost APP_DBS=kajism clojure -M:run-jar
 ;; Run all tests: clj -X:test
