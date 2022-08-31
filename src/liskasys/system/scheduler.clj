@@ -28,13 +28,13 @@
     (catch Exception e
       (timbre/error "process-monthly-lunch-orders-job error" e))))
 
-(defn start [datomic]
+(defn start [{conns :datomic}]
   (let [scheduler (-> (twarc/make-scheduler {:threadPool.class "org.quartz.simpl.SimpleThreadPool"
                                              :threadPool.threadCount 1
                                              :plugin.triggHistory.class "org.quartz.plugins.history.LoggingTriggerHistoryPlugin"
                                              :plugin.jobHistory.class "org.quartz.plugins.history.LoggingJobHistoryPlugin"})
                   twarc/start)]
-    (doseq [[db-key conn] (:conns datomic)
+    (doseq [[db-key conn] conns
             :let [db (d/db conn)
                   {:config/keys [cancel-time order-time can-cancel-after-lunch-order?]} (d/pull db '[*] :liskasys/config)
                   [cancel-hour cancel-min] (str/split cancel-time #":")
