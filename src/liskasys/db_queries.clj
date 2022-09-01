@@ -318,7 +318,7 @@
 
 (defn find-school-year-previous-periods [db before-date]
   (let [to-yyyymm (cljc.util/date-yyyymm before-date)
-        from-yyyymm (cljc.util/last-september to-yyyymm)]
+        from-yyyymm (cljc.util/start-of-school-year to-yyyymm)]
     (->> (d/q '[:find [(pull ?e [*]) ...]
                 :in $ ?start ?end
                 :where

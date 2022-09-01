@@ -164,10 +164,10 @@
     (inc yyyymm)
     (+ (* (inc (quot yyyymm 100)) 100) 1)))
 
-(defn last-september [yyyymm]
+(defn start-of-school-year [yyyymm]
   (let [y (quot yyyymm 100)
         m (rem yyyymm 100)]
-    (+ (* (if (>= m 9)
+    (+ (* (if (>= m 7)
             y
             (dec y))
           100)
