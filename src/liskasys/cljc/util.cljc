@@ -154,6 +154,9 @@
     (+ (* (t/year ld) 100)
        (t/month ld))))
 
+(defn date-from-yyyymm [yyyymm]
+  (tc/to-date (t/local-date (quot yyyymm 100) (rem yyyymm 100) 1)))
+
 (defn previous-yyyymm [yyyymm]
   (if-not (= (rem yyyymm 100) 1)
     (dec yyyymm)

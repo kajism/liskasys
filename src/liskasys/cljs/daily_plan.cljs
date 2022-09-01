@@ -82,17 +82,41 @@
      "Chcete opravdu smazat všechny právě zobrazené denní plány?"
      [:bulk-delete ids] :above-right]]])
 
+(re-frame/reg-sub
+  ::rows
+  (fn [db [_]]
+    (:daily-plan db)))
+
+(re-frame/reg-event-fx
+  ::load
+  (fn [{:keys [db]} [_ full-history?]]
+    {:server-call {:req-msg [:daily-plan/select {:full-history? full-history?}]
+                   :resp-evt [:entities-set :daily-plan nil]}
+     :db (assoc db :daily-plan {})}))
+
 (defn page-daily-plans []
-  (let [daily-plans (re-frame/subscribe [:entities :daily-plan])
+  (let [page-state (re-frame/subscribe [:page-state :daily-plans])
+        daily-plans (re-frame/subscribe [::rows])
         persons (re-frame/subscribe [:entities :person])
         lunch-types (re-frame/subscribe [:entities :lunch-type])
         groups (re-frame/subscribe [:entities :group])
         table-state (re-frame/subscribe [:table-state :daily-plans])
         user (re-frame/subscribe [:auth-user])]
+    (when (nil? @daily-plans)
+      (re-frame/dispatch-sync [::load false]))
     (fn []
       [re-com/v-box
        :children
-       [[:h3 "Denní plány"]
+       [[re-com/h-box :gap "20px" :align :center
+         :children
+         [[:h3 "Denní plány"]
+          [re-com/horizontal-bar-tabs
+           :tabs [{:id nil :label "Pouze tento školní rok"}
+                  {:id true :label "Všechny"}]
+           :model (:full-history? @page-state)
+           :on-change #(do
+                         (re-frame/dispatch [:page-state-change :daily-plans :full-history? %])
+                         (re-frame/dispatch [::load %]))]]]
         [data-table
          :table-id :daily-plans
          :rows daily-plans

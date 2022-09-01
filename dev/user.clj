@@ -1,5 +1,6 @@
 (ns user
-  (:require [clojure.java.io :as io]
+  (:require [cljc.portal]
+            [clojure.java.io :as io]
             [clojure.repl]
             [clojure.tools.namespace.repl]
             [shadow.cljs.devtools.api :as shadow]

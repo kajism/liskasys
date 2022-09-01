@@ -49,6 +49,7 @@
  {:dev {:extra-paths ["dev" "test" "build"]
         :extra-deps {org.clojure/tools.namespace {:mvn/version "1.3.0"}
                      integrant/repl {:mvn/version "0.3.2"}
+                     djblue/portal {:mvn/version "0.29.1"}
                      hashp/hashp {:mvn/version "0.2.1"}
                      zprint/zprint {:mvn/version "1.2.3"}
                      io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500" :exclusions [org.slf4j/slf4j-nop]}}

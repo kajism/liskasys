@@ -15,8 +15,19 @@
   (->> (db/find-by-type-default db ent-type where-m)
        (map #(dissoc % :person/passwd))))
 
-(defmethod db/find-by-type :daily-plan [db ent-type where-m]
-  (db/find-by-type-default db ent-type where-m '[* {:daily-plan/_substituted-by [:db/id]}]))
+(defn find-daily-plans-of-current-school-year [db]
+  (let [from-yyyymm (cljc.util/start-of-school-year (cljc.util/date-yyyymm (Date.)))]
+    (d/q '[:find [(pull ?e [* {:daily-plan/_substituted-by [:db/id]}]) ...]
+           :in $ ?date-from
+           :where
+           [?e :daily-plan/date ?date]
+           [(<= ?date-from ?date)]]
+         db (cljc.util/date-from-yyyymm from-yyyymm))))
+
+(defmethod db/find-by-type :daily-plan [db ent-type {:keys [full-history?] :as where-m}]
+  (if full-history?
+    (db/find-by-type-default db ent-type (dissoc where-m :full-history?) '[* {:daily-plan/_substituted-by [:db/id]}])
+    (find-daily-plans-of-current-school-year db)))
 
 (declare merge-person-bill-facts)
 (defmethod db/find-by-type :person-bill [db ent-type where-m]
