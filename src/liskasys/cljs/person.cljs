@@ -213,12 +213,14 @@
              :model (:active? @page-state)
              :on-change #(re-frame/dispatch [:page-state-change :persons :active? %])]
             (when (and (:active? @page-state) (:child? @page-state))
+              ^{:key :child-page-switch}
               [re-com/horizontal-bar-tabs
                :tabs [{:id false :label "Seznam"}
                       {:id true :label "Denní souhrn"}]
                :model (:daily-summary? @page-state)
                :on-change #(re-frame/dispatch [:page-state-change :persons :daily-summary? %])])
             (when (false? (:child? @page-state))
+              ^{:key :adult-page-switch}
               [re-com/horizontal-bar-tabs
                :tabs [{:id false :label "Seznam"}
                       {:id true :label "Emaily"}]
