@@ -44,7 +44,7 @@
                         [buttons/delete-button :on-confirm #(re-frame/dispatch [:entity-delete :lunch-menu (:db/id row)])]]]))
                   :none]
                  ["Platný od" :lunch-menu/from]
-                 ["Text" #(str (subs (:lunch-menu/text %) 0 100) " ...") ]]
+                 ["Text" #(cljc.util/shorten-txt (:lunch-menu/text %) 100)]]
          :desc? true]]])))
 
 (defn page-lunch-menu []

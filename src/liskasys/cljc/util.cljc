@@ -230,3 +230,9 @@
   (= {:group {:db/id 2 :group/name "Dvojka"}
       :group-plans [{:daily-plan/group {:db/id 2}}]}
      (select-group-for-subst [{:daily-plan/group {:db/id 2}}] {:person/group {:db/id 1}} [{:db/id 1 :group/name "Jednicka"} {:db/id 2 :group/name "Dvojka"}])))
+
+(defn shorten-txt [txt max-length]
+  (let [length (count txt)]
+    (if (<= length max-length)
+      txt
+      (str (subs txt 0 max-length) " ..."))))
