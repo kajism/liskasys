@@ -24,7 +24,7 @@
   com.cognitect/transit-clj {:mvn/version "1.0.329"}
   hiccup/hiccup {:mvn/version "1.0.5"}
   ring/ring {:mvn/version "1.9.6"}
-  ring/ring-defaults {:mvn/version "0.3.3"}
+  ring/ring-defaults {:mvn/version "0.3.4"}
   ring-middleware-format/ring-middleware-format {:mvn/version "0.7.5"}
   com.taoensso/timbre {:mvn/version "5.2.1"}
   org.slf4j/slf4j-api {:mvn/version "1.7.36"}
@@ -37,7 +37,7 @@
   com.datomic/datomic-free {:local/root "lib/datomic-free-0.9.5703.21.jar"
                             :exclusions [org.slf4j/slf4j-nop]}
   environ/environ {:mvn/version "1.2.0"}
-  luminus/ring-undertow-adapter {:mvn/version "1.2.7"}
+  luminus/ring-undertow-adapter {:mvn/version "1.3.0"}
   io.rkn/conformity {:mvn/version "0.5.4"}
   crypto-password/crypto-password {:mvn/version "0.3.0"}
   image-resizer/image-resizer {:mvn/version "0.1.10"}
@@ -49,15 +49,15 @@
  {:dev {:extra-paths ["dev" "test" "build"]
         :extra-deps {org.clojure/tools.namespace {:mvn/version "1.3.0"}
                      integrant/repl {:mvn/version "0.3.2"}
-                     djblue/portal {:mvn/version "0.30.0"}
-                     hashp/hashp {:mvn/version "0.2.1"}
+                     djblue/portal {:mvn/version "0.35.0"}
+                     hashp/hashp {:mvn/version "0.2.2"}
                      zprint/zprint {:mvn/version "1.2.4"}
                      io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500" :exclusions [org.slf4j/slf4j-nop]}}
         :jvm-opts ["-Djdk.tls.client.protocols=TLSv1.2" "-XX:-OmitStackTraceInFastThrow"]}
   :cljs {:extra-paths ["src"]
          :extra-deps
          {;; frontend deps
-          thheller/shadow-cljs {:mvn/version "2.20.1"}
+          thheller/shadow-cljs {:mvn/version "2.20.14"}
           binaryage/devtools {:mvn/version "1.0.6"}
           cljs-ajax/cljs-ajax {:mvn/version "0.8.4"}
           com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
@@ -71,7 +71,7 @@
   :build {:paths ["build"]
           :deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500" :exclusions [org.slf4j/slf4j-nop]}}
           :ns-default build}
-  :nREPL-server {:extra-deps {cider/cider-nrepl {:mvn/version, "0.28.5"}}
+  :nREPL-server {:extra-deps {cider/cider-nrepl {:mvn/version, "0.29.0"}}
                  :main-opts ["-m" "nrepl.cmdline"
                              "--interactive"
                              "--middleware" "[cider.nrepl/cider-middleware shadow.cljs.devtools.server.nrepl/middleware]"]
