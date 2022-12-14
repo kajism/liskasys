@@ -37,9 +37,9 @@
 
 #?(:clj (def clj-tz (t/time-zone-for-id "Europe/Prague")))
 
-(def dMyyyy (tf/formatter "d.M.yyyy"))
-(def ddMMyyyy (tf/formatter "dd.MM.yyyy"))
-(def ddMM (tf/formatter "dd.MM."))
+(def dMyyyy (tf/formatter "d.M.yyyy" #?(:clj clj-tz)))
+(def ddMMyyyy (tf/formatter "dd.MM.yyyy" #?(:clj clj-tz)))
+(def ddMM (tf/formatter "dd.MM." #?(:clj clj-tz)))
 (def dMyyyyHmmss (tf/formatter "d.M.yyyy H:mm:ss" #?(:clj clj-tz)))
 (def ddMMyyyyHHmmss (tf/formatter "dd.MM.yyyy HH:mm:ss" #?(:clj clj-tz)))
 (def ddMMyyyyHHmm (tf/formatter "dd.MM.yyyy HH:mm" #?(:clj clj-tz)))
