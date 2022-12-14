@@ -21,9 +21,6 @@
        (map #(middleware-fn component %))
        (apply comp identity)))
 
-(defn- one-month-later-rfc-1124 []
-  (.format DateTimeFormatter/RFC_1123_DATE_TIME (.plus (OffsetDateTime/now ZoneOffset/UTC) (Duration/ofDays 31))))
-
 (defn make-handler [{:keys [datomic] :as deps}]
   (let [routes (routes/api-routes deps)
         wrap-mw (compose-middleware {:middleware
@@ -42,6 +39,6 @@
                                                   :proxy true
                                                   :session {:store (session-cookie/cookie-store
                                                                      {:key (byte-array [14 -18 73 24 32 12 3 -34 67 -17 19 14 27 -2 71 -120])})
-                                                            :cookie-attrs {:expires (one-month-later-rfc-1124)}}})})
+                                                            :cookie-attrs {:max-age (* 30 24 60 60)}}})})
         handler (wrap-mw routes)]
     handler))
