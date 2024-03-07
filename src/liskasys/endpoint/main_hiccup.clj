@@ -122,7 +122,6 @@ return true;
 (defn substitutions [user-children-data {:keys [dp-gap-days can-subst? substable-dps person groups]}]
   [:div.container
    [:h3 "Náhrady"]
-   #_[:label "Omluvenky z předchozího školního roku nelze nahrazovat v novém. Náhrady pro nový školni rok budou zprovozněny zhruba do poloviny září, po úpravách systému zohledňujících zařazení dětí do tříd."]]
   [:div.container
    [:h3 "Náhrady"]
    [:div
@@ -141,7 +140,7 @@ return true;
      (if-not (seq dp-gap-days)
        [:h3 "Nebyla nalezena žádná možnost náhrady (nebo den, kdy není řádná docházka)."]
        [:div
-        [:label "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem (a oběd objednán) den předem dopoledne."]
+        [:label "Ve dnech, kdy projevíte zájem nahradit docházku, budete zařazeni do pořadníku. Účast bude potvrzena emailem."]
         [:table.table.table-striped
          [:thead
           [:tr
