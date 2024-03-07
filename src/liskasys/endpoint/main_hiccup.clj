@@ -1,15 +1,8 @@
 (ns liskasys.endpoint.main-hiccup
   (:require [liskasys.hiccup :as hiccup]
             [liskasys.cljc.time :as time]
-            [clj-time.coerce :as tc]
-            [clj-time.core :as t]
-            [clj-time.format :as tf]
-            [clj-time.periodic :as tp]
             [clojure.string :as str]
-            [liskasys.cljc.util :as cljc.util]
-            [taoensso.timbre :as timbre])
-  (:import java.text.Collator
-           [java.util Date Locale]))
+            [liskasys.cljc.util :as cljc.util]))
 
 (defn liskasys-frame
   ([user body-hiccup]
@@ -121,7 +114,7 @@ return true;
 
 (defn substitutions [user-children-data {:keys [dp-gap-days can-subst? substable-dps person groups]}]
   [:div.container
-   [:h3 "Náhrady"]
+   [:h3 "Náhrady"]]
   [:div.container
    [:h3 "Náhrady"]
    [:div
