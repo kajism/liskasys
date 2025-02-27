@@ -46,6 +46,8 @@
   (clojure.tools.namespace.repl/refresh-all)
 
   (:app/scheduler ig-state/system)
+
+  (get (:datomic/conns @liskasys.main/system) "obedy.divocinalisen.cz")
   )
 
 (when (io/resource "local.clj")

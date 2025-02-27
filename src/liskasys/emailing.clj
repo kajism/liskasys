@@ -229,6 +229,14 @@
                                             fund-totals)]
     (send-message org-name msg)))
 
+(comment
+  (def db (d/db (get (:datomic/conns @liskasys.main/system) "obedy.divocinalisen.cz")))
+
+  (->> (d/pull db '[*] :liskasys/config)
+       :config/lunch-fund-totals-role
+       #_(mapv :person/email (db-queries/find-persons-with-role db lunch-fund-totals-role)))
+  )
+
 (defn bill-published-msg [from {:config/keys [org-name full-url]} {:price-list/keys [bank-account bank-account-lunches]} payment-due-to {:person-bill/keys [total att-price person period]}]
   (let [period-text (cljc.util/period->text period)
         subj (str org-name ": Platba školkovného a obědů na období " period-text)

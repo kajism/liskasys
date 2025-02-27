@@ -28,6 +28,12 @@
     (catch Exception e
       (timbre/error "process-monthly-lunch-orders-job error" e))))
 
+(comment
+  (service/process-monthly-lunch-orders
+    (get (:datomic/conns @liskasys.main/system) "obedy.divocinalisen.cz")
+    202411)
+  )
+
 (defn start [{conns :datomic}]
   (let [scheduler (-> (twarc/make-scheduler {:threadPool.class "org.quartz.simpl.SimpleThreadPool"
                                              :threadPool.threadCount 1
