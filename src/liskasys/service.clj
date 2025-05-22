@@ -199,3 +199,18 @@
         pcs-price-totals (db-queries/find-monthly-lunch-fund-totals conn yyyymm)]
     (emailing/send-monthly-lunch-order-totals-per-person db yyyymm person-totals)
     (emailing/send-monthly-lunch-fund-totals db yyyymm pcs-price-totals)))
+
+(comment
+
+ (doseq [[domain conn] (:datomic/conns @liskasys.main/system)
+         :let [db (d/db conn)
+               date (db-queries/find-next-lunch-order-date db)]
+         :when date]
+   (println date)
+   (when-let [plans-with-lunches (not-empty (db-queries/find-person-daily-plans-with-lunches db date))]
+
+     (println plans-with-lunches)
+     ;(emailing/send-lunch-order-emails db date plans-with-lunches)
+     ))
+
+ )
